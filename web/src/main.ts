@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 import { SEED_CORES, type CoreDef } from "./cores";
 import { SerialLink, type ConnectionState } from "./serial";
 import { WifiLink } from "./wifiLink";

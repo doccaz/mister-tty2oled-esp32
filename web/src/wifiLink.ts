@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // WiFi transport for the same command protocol SerialLink speaks over
 // WebSerial, tunneled over a WebSocket to the firmware's ws_protocol.cpp
 // (port 81) instead. See ../../firmware/src/ws_protocol.cpp and

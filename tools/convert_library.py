@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erico Mendonca
 """
 Convert tty2oled .gsc (4bpp grayscale, 8192 bytes) / .xbm (1bpp, 2048 bytes)
 marquee files (256x64) into PNG thumbnails, plus a JSON index.

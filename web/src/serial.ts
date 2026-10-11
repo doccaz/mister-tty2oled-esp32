@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // WebSerial transport + wire protocol encoding, mirroring the firmware's
 // protocol.cpp exactly (see ../../firmware/src/protocol.cpp and
 // ../../CLAUDE.md for the full command grammar this implements).

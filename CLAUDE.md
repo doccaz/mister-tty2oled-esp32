@@ -23,7 +23,7 @@ was built from). Summary below.
 
 ## License
 
-GPLv3 (`GPL-3.0-only`) as of 2026-10-11, matching the upstream
+GPLv3-or-later (`GPL-3.0-or-later`) as of 2026-10-11, compatible with the upstream
 `MiSTer_tty2oled` project; it was MIT before that (older copies stay MIT).
 Sole copyright holder, so no one else's consent was needed. Nothing is
 copied from upstream's code - the firmware is still a from-scratch

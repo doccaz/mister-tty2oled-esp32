@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #pragma once
 
 // Shared by protocol.cpp (CMDHWINF reply, CMDSHSYSHW screen), display.cpp

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 import type { DisplayShape } from "./displays";
 
 // Fit presets applied to an image against a canvas of a given size. Each

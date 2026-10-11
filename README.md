@@ -400,11 +400,12 @@ Rough shape of what that would take:
 Copyright (C) 2026 Erico Mendonca.
 
 The code in this repository (`firmware/`, `web/`, `tools/`) is licensed
-under the [GNU General Public License, version 3](LICENSE)
-(`GPL-3.0-only`). It was MIT-licensed until the switch to GPLv3; copies
-obtained under the earlier MIT terms remain MIT.
+under the [GNU General Public License, version 3](LICENSE) or, at your
+option, any later version (`GPL-3.0-or-later`); each source file carries
+an SPDX header saying so. It was MIT-licensed until the switch to GPLv3;
+copies obtained under the earlier MIT terms remain MIT.
 
-This matches the license of the upstream
+This is compatible with the GPLv3 license of the upstream
 [`MiSTer_tty2oled`](https://github.com/venice1200/MiSTer_tty2oled) project
 this firmware is protocol-compatible with. The firmware is still an
 independent, from-scratch reimplementation of the same wire protocol, not a

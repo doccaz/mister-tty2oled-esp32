@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #pragma once
 
 // Onboard 0.42" SSD1306 OLED (72x40 visible area, 128x64 controller RAM)

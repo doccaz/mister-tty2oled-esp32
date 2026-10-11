@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erico Mendonca
 # Rebuilds library/converted/ (and refreshes the web app's static copy)
 # from the community marquee packs bundled in reference/Pictures/ZIPs.
 # Requires: unrar, unzip, python3 + Pillow.

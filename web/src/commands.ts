@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Catalog of every tty2oled wire-protocol command this firmware
 // understands - both the ones compatible with the original
 // venice1200/MiSTer_tty2oled grammar and the new commands added for this

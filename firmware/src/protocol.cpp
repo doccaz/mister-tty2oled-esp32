@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #include "protocol.h"
 #include "display.h"
 #include "oled_status.h"

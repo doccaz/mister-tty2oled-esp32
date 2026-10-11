@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Selectable target displays for the web app's editor/preview. "round"
 // gets a circular safe-area overlay and a circular thumbnail shape;
 // "rect" gets neither. This is a preview/export concept independent of

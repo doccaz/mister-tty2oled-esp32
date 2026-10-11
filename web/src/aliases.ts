@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Best-effort alternate spellings mapping a core id to filenames actually
 // present in the imported local packs (see importLibrary.ts / library/).
 // Needed because the community pack files predate (and don't always match)

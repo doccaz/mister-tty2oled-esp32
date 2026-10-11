@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #include "oled_status.h"
 
 // HAS_ONBOARD_OLED is set by platformio.ini (1 for env:esp32c3, 0 for

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #pragma once
 
 // WiFi command protocol - the same CMDxxx grammar as protocol.cpp's

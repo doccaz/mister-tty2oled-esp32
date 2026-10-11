@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Shared transport interface - SerialLink (WebSerial, serial.ts) and
 // WifiLink (WebSocket, wifiLink.ts) both implement this, so the rest of
 // the app (main.ts's send/preview logic) only ever depends on this shape,

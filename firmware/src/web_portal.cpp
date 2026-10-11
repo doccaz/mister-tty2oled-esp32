@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #include "web_portal.h"
 #include "version.h"
 #include "mqtt_client.h"

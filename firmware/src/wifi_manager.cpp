@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #include "wifi_manager.h"
 #include "wifi_config.h"
 #include "mqtt_config.h"

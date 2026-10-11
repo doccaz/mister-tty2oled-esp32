@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Browser-local persistence for per-core art assignments. No backend -
 // the web app is a standalone previewer/library editor (see CLAUDE.md
 // "Web app design"). Each record stores the already-exported JPEG blob so

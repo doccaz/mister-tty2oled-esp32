@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Curated transition effect set - mirrored in firmware/src/display.cpp's
 // display_draw_jpeg()/display_transition() so the id numbers sent over
 // CMDCORC mean the same thing on both ends. Kept intentionally small

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Console/computer core list, cross-checked against the official MiSTer
 // FPGA docs (https://mister-devel.github.io/MkDocs_MiSTer/cores/console/
 // and .../cores/computer/ - fetched 2026-08-12). `id` uses that

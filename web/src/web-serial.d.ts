@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Minimal ambient types for the Web Serial API (not yet in TS's DOM lib).
 
 interface SerialPortInfo {

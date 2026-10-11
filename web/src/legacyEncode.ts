@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Packs a 256x64 canvas render into the legacy tty2oled 4bpp "GSC"
 // grayscale format: 8192 bytes, one nibble per pixel, two pixels per byte
 // (high nibble = even x, low nibble = odd x), row-major. Byte layout

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 #include "mqtt_client.h"
 #include "mqtt_config.h"
 #include "protocol.h"

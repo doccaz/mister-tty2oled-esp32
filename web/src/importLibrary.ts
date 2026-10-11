@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Browsable local copy of the reference project's community marquee packs
 // (converted from the original .gsc/4bpp-grayscale and .xbm/1bpp text
 // format to PNG - see /home/erico/Projetos/mister-tty2oled-gc9a01/library/

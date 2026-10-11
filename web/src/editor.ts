@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
 // Canvas2D crop/pan/zoom editor for a single core's marquee art, targeting
 // a selectable DisplayProfile (round or rectangular, various resolutions -
 // see displays.ts). Round profiles get a circular safe-area overlay.
