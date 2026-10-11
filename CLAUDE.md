@@ -21,6 +21,17 @@ was built from). Summary below.
   round-native JPEG art for the web app.
 - **WebSerial** is the only web-app transport in v1 — no WiFi/AP firmware.
 
+## License
+
+GPLv3 (`GPL-3.0-only`) as of 2026-10-11, matching the upstream
+`MiSTer_tty2oled` project; it was MIT before that (older copies stay MIT).
+Sole copyright holder, so no one else's consent was needed. Nothing is
+copied from upstream's code - the firmware is still a from-scratch
+reimplementation of the wire protocol - but if upstream code were ever
+copied in, GPLv3 is what makes that legal. See the README's "License"
+section for what the grant does not cover (the `reference/` submodule,
+TFT_eSPI-derived init data, the third-party art packs, dependencies).
+
 ## Local marquee library (imported from the reference project)
 
 `reference/Pictures/ZIPs/` bundles the tty2oled community's marquee packs
