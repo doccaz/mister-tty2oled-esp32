@@ -25,7 +25,7 @@ cores):
 
 https://github.com/user-attachments/assets/1d39b284-55ec-4096-ac44-fd0e79f9ddf0
 
-([download the mp4](docs/mister-demo.mp4), 9 MB)
+([download the mp4](docs/mister-demo.mp4), 8 MB)
 
 Full-color art (the extended `CMDCORC` command, sent by hand):
 
@@ -111,6 +111,13 @@ dashboard (firmware version, core name, RX activity), and the back of the
 GC9A01 module (marked `M128-240240-RGB-7-V1.0`, `IC:GC9A01`) shows the
 jumper wiring from the pin table.
 
+The same discrete build mounted in a 3D-printed case (the
+[BambuHelper case](https://makerworld.com/en/models/3140798-bambuhelper-bambu-lab-printer-status-display-case#profileId-3546296)
+from MakerWorld), cycling through a few core logos
+([download the mp4](docs/case-demo.mp4), 0.3 MB):
+
+<video src="docs/case-demo.mp4" controls muted width="320"></video>
+
 ### All-in-one board: Sunton ESP32-2424S012C
 
 Also supported, and the simplest option: the Sunton **ESP32-2424S012C** is
@@ -192,6 +199,8 @@ cd web
 npm install
 npm run dev                 # open in Chrome or Edge
 ```
+
+![The web app's marquee editor with a core selected and the device connected over USB](docs/web-ui.png)
 
 Pick a display profile (round GC9A01, or a rectangular preview profile —
 see [Display profiles](#display-profiles)), select a core, drop in an
