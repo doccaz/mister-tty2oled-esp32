@@ -113,10 +113,11 @@ jumper wiring from the pin table.
 
 The same discrete build mounted in a 3D-printed case (the
 [BambuHelper case](https://makerworld.com/en/models/3140798-bambuhelper-bambu-lab-printer-status-display-case#profileId-3546296)
-from MakerWorld), cycling through a few core logos
-([download the mp4](docs/case-demo.mp4), 0.3 MB):
+from MakerWorld), cycling through a few core logos:
 
-<video src="docs/case-demo.mp4" controls muted width="320"></video>
+https://github.com/user-attachments/assets/8abdfe0f-2628-4fc1-9971-e4dd4e71f6bb
+
+([download the mp4](docs/case-demo.mp4), 0.3 MB)
 
 ### All-in-one board: Sunton ESP32-2424S012C
 
