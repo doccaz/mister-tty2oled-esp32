@@ -38,7 +38,7 @@ bool idleBlanked = false; // no command/button for kIdleBlankMs, independent of 
 // nothing has talked to the device for a while. Counted from boot too, so the
 // IP/version stay readable after power-up. Any command (serial, WiFi, MQTT) or
 // a GPIO9 press wakes it; tune here.
-constexpr unsigned long kIdleBlankMs = 60000;
+unsigned long g_idleBlankMs = 60000; // 0 = never; set from the device settings (oled_status_set_idle_sec())
 unsigned long lastDraw = 0;
 constexpr unsigned long kRedrawIntervalMs = 100;
 
@@ -93,7 +93,7 @@ void oled_status_loop() {
 
   // Idle blank: clear the glass once, then stay off until something happens.
   unsigned long lastEvent = max(protocol_last_wake_ms(), g_bootMs);
-  if (millis() - lastEvent >= kIdleBlankMs) {
+  if (g_idleBlankMs > 0 && millis() - lastEvent >= g_idleBlankMs) {
     if (!idleBlanked) {
       u8g2.clearBuffer();
       u8g2.sendBuffer(); // by content, not setPowerSave() - that hangs this panel (see oled_status_off())
@@ -116,6 +116,10 @@ void oled_status_resume() {
   if (suspendCount > 0) suspendCount--;
 }
 
+void oled_status_set_idle_sec(uint16_t seconds) {
+  g_idleBlankMs = (unsigned long)seconds * 1000UL;
+}
+
 void oled_status_off() {
   if (!ready) return;
   u8g2.clearBuffer();
@@ -133,6 +137,7 @@ void oled_status_init() {}
 void oled_status_loop() {}
 void oled_status_suspend() {}
 void oled_status_resume() {}
+void oled_status_set_idle_sec(uint16_t) {}
 void oled_status_off() {}
 void oled_status_on() {}
 

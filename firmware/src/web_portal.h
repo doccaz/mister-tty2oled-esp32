@@ -43,6 +43,11 @@ class WebPortal {
   void handleWifiTest(); // AP mode only: "Test connection" button - probes the form's current SSID/pass, doesn't save
   void handleMqttSave();
   void handleMqttTest(); // "Test connection" button - tries the form's current values, doesn't save
+  void handleSettings();     // STA mode: the device settings page (web_portal_settings.cpp)
+  void handleSettingsSave();
+  void handleSettingsPart();
+  void handleSettingsJs();
+  bool authorized();         // true if no admin password is set, or the request carries it (HTTP basic auth)
 
   WebServer _server{80};
   DNSServer _dns;

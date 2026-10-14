@@ -254,6 +254,19 @@ it retries the saved network by itself every couple of minutes while nobody is
 connected to it. `http://<device>/status` shows the signal strength
 (`rssi`, in dBm; around -55 is good, below -75 is marginal).
 
+## Device settings (v0.5.0)
+
+Once the device is on your network, `http://tty2oled-XXXX.local/settings` has a
+settings page: status (firmware, signal, time, free memory), brightness and
+orientation defaults, an **idle clock** (show the time after X minutes idle,
+optionally blank after a further Y minutes; any command or the BOOT button
+brings the picture back), the status-OLED idle blank, **NTP** time with a
+timezone list (or a custom POSIX TZ string), an optional admin password
+(user `admin`) and **tint for monochrome pictures**: the MiSTer's black-and-white
+marquees can be coloured with a fixed colour, a gradient, or a random colour
+per picture. These are the defaults at power-up; a MiSTer's own
+`CMDCON`/`CMDROT`/`CMDSAVER` commands override them until the next reboot.
+
 ## Run the web app
 
 ```bash

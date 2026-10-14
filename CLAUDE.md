@@ -977,6 +977,61 @@ noise came out at 17.7 KB), encodes before clearing the screen, and fails the
 pending send on any `ERR` reply instead of waiting out the ack timeout. The
 buffer is deliberately not raised: WiFi leaves ~30 KB of free heap.
 
+## Device settings page, idle clock, NTP, tint (2026-10-14, v0.5.0)
+
+`http://<device>/settings` (STA mode; `web_portal_settings.cpp`) edits the
+boot defaults stored in NVS (`device_settings.h/.cpp`, keys `s_*`): brightness,
+rotation, idle stages, status-OLED idle blank, NTP server + timezone (dropdown
+of common zones + custom POSIX TZ), optional admin password (HTTP basic auth,
+user `admin`; gates `/`, `/save`, `/reset`, `/mqtt-*`, `/scan`, settings; `/status`
+stays open) and the tint options. MiSTer commands (`CMDCON`, `CMDROT`, `CMDSAVER`)
+still override live until the next reboot.
+
+- **Idle stages** (`protocol_saver_check()`): clock after X min idle, then blank
+  after a further Y min (0 = never); any command or the BOOT button wakes. The
+  clock redraws each minute and never paints over an MQTT notification.
+- **Time** (`time_manager.*`): NTP via `configTzTime`; `CMDSETTIME` is ignored
+  once NTP has synced (it is local time already shifted, NTP is authoritative).
+- **Tint** (`display.cpp`, `display_set_tint`/`display_new_picture`): colours the
+  MiSTer's 4bpp/1bpp pictures by brightness - off / fixed / gradient (top-bottom or
+  left-right) / random hue per new picture (replays keep their colour).
+  Checked by a host g++ test and by eye on the GC9A01.
+- `/status` also reports `ver, name, uptime, heap, heap_max, time, ntp, stage,
+  mqtt, auth, crumb_prev, reset`.
+
+### The hang: big HTTP responses stall this device (found 2026-10-14)
+
+The first `/settings` was one 10.5 KB chunked page. Under repeated loads (and right
+after a reboot) the device stopped answering HTTP, WebSocket and USB serial for
+minutes while **ping kept working** (the loop task was stuck; CPU idle). Method:
+an RTC_NOINIT breadcrumb (`diag.*`, `crumb(C_*)` at loop stages / handlers,
+reported as `crumb_prev` + `reset` in `/status` after a reset) said "inside
+the portal / settings flush"; instrumenting the send with `MSG_DONTWAIT` and a
+3 s deadline showed the stall at ~5.7 KB, i.e. the lwip **send buffer (5744 B) was
+full and the peer's ACKs did not come back for seconds** (curl sees the page cut at a
+fixed offset). Ping still works because small ICMP frames get through; bulk TCP
+from the ESP on this marginal link (RSSI -55..-70, the same environment that makes
+the first WiFi join flaky) stalls, and `WiFiClient::write()` (select loop) then blocks
+the whole loop and the WebServer piles up dead connections.
+
+What did not help: one TCP write per chunk instead of three; non-blocking send with
+a deadline (turns hangs into truncated pages); `TCP_NODELAY` + 512-byte segments
+(worse: pbufs ate the heap, `heap_max` fell to 3.5 KB). **What fixed it: every
+response must fit in the send buffer**, so `handleSettings()` now sends a ~3.2 KB
+shell and `/settings.js` + `/settings-part?p=1..5` (0.5-3 KB each) are fetched by the
+script one after another; the handler returns without waiting for ACKs and lwip
+retransmits in the background. Soak: 3 reboot cycles x 40 full page loads (7 requests
+each), 120/120 exact sizes, 15-50 ms per request, and 90/90 later. **Rule: keep any
+new HTTP response under ~5 KB, never stream a big page.** The same
+mechanism probably explains the earlier slow first `/status`/page loads after boot.
+
+Debugger caveat: attaching OpenOCD/gdb over the C3's USB-JTAG and killing it uncleanly
+left the chip in a state where every boot panicked with "Breakpoint" in
+`semihosting_call_noerrno`; unplugging USB cleared it. It is not a firmware bug.
+Also: `pio run -t upload` auto-picks a newly attached USB serial adapter (a CH340 on
+`/dev/ttyUSB0` made it fail with "This chip is ESP32 not ESP32-C3"); pass
+`--upload-port /dev/ttyACM0`.
+
 ## Wire protocol over WiFi (WebSocket transport, 2026-08-13)
 
 The same `CMDxxx` command grammar the serial path speaks is now also

@@ -12,7 +12,9 @@
 // widened picture-buffer guard shared with protocol.cpp/ws_protocol.cpp).
 
 void mqtt_client_init(); // called once from wifi_manager's enterConnected() - STA-only
-void mqtt_client_loop();  // reconnect/poll + the notification-revert timer; no-op before init() or if disabled
+void mqtt_client_loop();
+bool mqtt_client_notification_active();
+const char *mqtt_client_status(); // "disabled", "connected" or "disconnected" (for /status) // a transient text/image notification is on screen right now  // reconnect/poll + the notification-revert timer; no-op before init() or if disabled
 
 // Synchronous one-shot connect attempt against the given broker, using a
 // throwaway WiFiClient/PubSubClient - entirely separate from the

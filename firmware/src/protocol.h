@@ -89,6 +89,9 @@ const String &protocol_last_command();
 // when the screensaver is disabled (the default).
 void protocol_saver_check();
 
+const char *protocol_idle_stage();
+void protocol_apply_settings();
+
 // Polls the GPIO9 wake button (see pins.h's PIN_WAKE_BTN) - call every
 // loop() iteration, before protocol_saver_check() so a press this
 // iteration can unblank in the same iteration. Only affects the

@@ -8,6 +8,7 @@
 #include "ws_protocol.h"
 #include "mqtt_client.h"
 #include "display.h"
+#include "time_manager.h"
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <ESPmDNS.h>
@@ -158,6 +159,9 @@ void enterConnected() {
   // WS command protocol is STA-mode only (see CLAUDE.md "Wire protocol
   // over WiFi") - AP mode's only job is WiFi bootstrapping.
   ws_protocol_init();
+
+  // NTP + timezone (from the device settings); the clock/idle-clock use it.
+  time_apply_settings();
 
   // Same STA-only scope cut - MQTT notifications only matter once on the
   // real network. No-ops internally if not configured/enabled.

@@ -16,6 +16,13 @@ void display_clear();
 void display_flush();                      // no-op placeholder (GFX draws immediately); kept for CMDDUPD compat
 void display_set_rotation(uint8_t rot);     // 0 = normal, 1 = 180 degrees (mirrors CMDROT semantics)
 void display_set_contrast(uint8_t level);   // 0..255 -> backlight PWM
+// Tint for the legacy monochrome pictures (see display.cpp). mode: 0 off,
+// 1 fixed (color1), 2 gradient (color1 -> color2, dir 0 top-to-bottom / 1
+// left-to-right), 3 random per picture. Colours are 0xRRGGBB.
+void display_set_tint(uint8_t mode, uint32_t color1, uint32_t color2, uint8_t dir);
+// Call when a NEW legacy picture arrives, before drawing it, so random mode
+// picks its colour; replays of the same picture must not call it.
+void display_new_picture();
 void display_on();
 void display_off();
 

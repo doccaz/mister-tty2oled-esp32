@@ -5,9 +5,14 @@
 #include "version.h"
 #include "mqtt_client.h"
 #include "wifi_manager.h"
+#include "web_portal_common.h"
+#include "device_settings.h"
+#include "protocol.h"
+#include "diag.h"
+#include "time_manager.h"
 #include <WiFi.h>
 
-namespace {
+// Shared with web_portal_settings.cpp via web_portal_common.h.
 
 // Minimal inline CSS/markup - same "embedded PROGMEM, no filesystem"
 // approach as chromecast-esp32/src/web_server.h's _handleRoot(). Kept
@@ -69,8 +74,6 @@ String htmlEscape(const String &s) {
   return out;
 }
 
-} // namespace
-
 void WebPortal::begin(WifiConfigStore *config, bool apMode) {
   _config = config;
   _apMode = apMode;
@@ -79,8 +82,14 @@ void WebPortal::begin(WifiConfigStore *config, bool apMode) {
   _server.on("/save", HTTP_POST, [this]() { handleSave(); });
   _server.on("/reset", HTTP_POST, [this]() { handleReset(); });
   _server.on("/status", HTTP_GET, [this]() { handleStatus(); });
+  _server.on("/scan", HTTP_GET, [this]() { handleScan(); }); // setup form, and "change WiFi" on the settings page
+  if (!_apMode) {
+    _server.on("/settings", HTTP_GET, [this]() { handleSettings(); });
+    _server.on("/settings-part", HTTP_GET, [this]() { handleSettingsPart(); });
+    _server.on("/settings.js", HTTP_GET, [this]() { handleSettingsJs(); });
+    _server.on("/settings-save", HTTP_POST, [this]() { handleSettingsSave(); });
+  }
   if (_apMode) {
-    _server.on("/scan", HTTP_GET, [this]() { handleScan(); });
     _server.on("/wifi-test", HTTP_POST, [this]() { handleWifiTest(); });
     _server.onNotFound([this]() { handleRoot(); }); // captive portal
   }
@@ -100,10 +109,25 @@ void WebPortal::startCaptiveDns(IPAddress apIp) {
 
 void WebPortal::loop() {
   if (_dnsActive) _dns.processNextRequest();
+  crumb(C_PORTAL_CLIENT);
   _server.handleClient();
 }
 
+// Optional admin password (device settings): when set, everything that changes
+// something needs HTTP basic auth (user "admin"). Plain HTTP, so it keeps casual
+// LAN visitors out; it is not protection against someone sniffing the network.
+// /status stays open (nothing sensitive) and the AP-mode setup page is never
+// gated - it only exists when there is no working WiFi config yet.
+bool WebPortal::authorized() {
+  const char *pass = settingsStore.cfg.adminPass;
+  if (_apMode || pass[0] == '\0') return true;
+  if (_server.authenticate("admin", pass)) return true;
+  _server.requestAuthentication(BASIC_AUTH, "tty2oled");
+  return false;
+}
+
 void WebPortal::handleRoot() {
+  if (!authorized()) return;
   String body;
   body.reserve(1024);
   body += FPSTR(PAGE_HEAD);
@@ -168,7 +192,8 @@ void WebPortal::handleRoot() {
             "});"
             "</script>";
   } else {
-    body += "<h1>tty2oled status</h1>"
+    body += "<p><b>WiFi &amp; MQTT</b> &middot; <a href='/settings' style='color:var(--accent2)'>Settings</a></p>"
+            "<h1>tty2oled status</h1>"
             "<p>Connected to <b>" + htmlEscape(_config->cfg.wifiSsid) + "</b></p>"
             "<p>IP: " + WiFi.localIP().toString() + "</p>"
             "<p class='muted'>Firmware " FW_VERSION " &middot; " REPO_URL "</p>"
@@ -238,6 +263,7 @@ void WebPortal::handleRoot() {
 }
 
 void WebPortal::handleSave() {
+  if (!authorized()) return;
   String ssid = _server.arg("ssid");
   String pass = _server.arg("pass");
   if (ssid.length() == 0 || ssid.length() >= sizeof(_config->cfg.wifiSsid)) {
@@ -263,6 +289,7 @@ void WebPortal::handleSave() {
 }
 
 void WebPortal::handleReset() {
+  if (!authorized()) return;
   _config->reset();
   String body;
   body += FPSTR(PAGE_HEAD);
@@ -275,6 +302,7 @@ void WebPortal::handleReset() {
 }
 
 void WebPortal::handleMqttSave() {
+  if (!authorized()) return;
   MqttConfig &m = _mqttConfig->cfg;
   m.enabled = _server.hasArg("enabled");
   strncpy(m.host, _server.arg("host").c_str(), sizeof(m.host) - 1);
@@ -319,6 +347,7 @@ void WebPortal::handleWifiTest() {
 }
 
 void WebPortal::handleMqttTest() {
+  if (!authorized()) return;
   String host = _server.arg("host");
   uint16_t port = (uint16_t)_server.arg("port").toInt();
   if (port == 0) port = 1883;
@@ -335,6 +364,7 @@ void WebPortal::handleMqttTest() {
 }
 
 void WebPortal::handleScan() {
+  if (!authorized()) return;
   // Synchronous WiFi.scanNetworks() - same pattern as chromecast-esp32's
   // /wifiscan. Blocks a few seconds, which is fine here: this only runs
   // in AP mode, on-demand from a button click on the setup form, not on
@@ -354,6 +384,7 @@ void WebPortal::handleScan() {
 }
 
 void WebPortal::handleStatus() {
+  crumb(C_STATUS_BEGIN);
   String json = "{";
   json += "\"apMode\":" + String(_apMode ? "true" : "false") + ",";
   json += "\"ssid\":\"" + htmlEscape(_apMode ? WiFi.softAPSSID() : String(_config->cfg.wifiSsid)) + "\",";
@@ -361,6 +392,15 @@ void WebPortal::handleStatus() {
   if (!_apMode) json += ",\"rssi\":" + String(WiFi.RSSI()); // dBm: -50 great, -70 marginal, -80 poor
   json += ",\"txpower\":" + String(wifi_manager_tx_power(), 1); // dBm
   json += "," + wifi_manager_diag_json();
+  json += ",\"ver\":\"" FW_VERSION "\",\"name\":\"" + wifi_manager_device_name() + "\"";
+  json += ",\"uptime\":" + String(millis() / 1000);
+  json += ",\"heap\":" + String(ESP.getFreeHeap()) + ",\"heap_max\":" + String(ESP.getMaxAllocHeap());
+  String hm, date;
+  json += ",\"time\":\"" + (time_get_strings(hm, date) ? hm + " " + date : String("")) + "\"";
+  json += String(",\"ntp\":\"") + time_ntp_state() + "\",\"stage\":\"" + protocol_idle_stage() + "\"";
+  json += String(",\"mqtt\":\"") + mqtt_client_status() + "\"";
+  json += String(",\"auth\":") + (settingsStore.cfg.adminPass[0] ? "true" : "false");
+  json += ",\"crumb_prev\":" + String(crumb_prev()) + ",\"reset\":" + String(reset_reason_raw());
   json += "}";
   _server.send(200, "application/json", json);
 }

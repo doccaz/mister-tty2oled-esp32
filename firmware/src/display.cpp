@@ -260,6 +260,38 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
 // their CMDSSCP "_small" counterparts - same loop, parameterized by
 // destination rect instead of the fixed LEGACY_W/H/Y constants, so the
 // reduced-size redisplay path doesn't duplicate the pixel-decode logic.
+// --- Tint for the legacy monochrome pictures ------------------------------
+// The MiSTer's 1bpp/4bpp marquee packs are grayscale; a tint maps each pixel's
+// brightness onto a colour instead of white: a fixed colour, a gradient across
+// the picture, or a new random colour per picture. Applies only to those legacy
+// pictures (full-colour CMDCORC JPEGs are left alone). Off by default; set from
+// the device's settings page (display_set_tint()).
+uint8_t g_tintMode = 0;     // TintMode in device_settings.h: 0 off, 1 fixed, 2 gradient, 3 random
+uint32_t g_tint1 = 0xFFB000;
+uint32_t g_tint2 = 0x00A0FF;
+uint8_t g_tintDir = 0;      // gradient: 0 top-to-bottom, 1 left-to-right
+uint32_t g_tintRandom = 0xFFFFFF; // this picture's colour in random mode, picked by display_new_picture()
+
+inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+// Colour for a pixel of brightness `gray` (0-255) at (x, y) within a w x h picture.
+uint16_t tintedColor(uint8_t gray, int16_t x, int16_t y, int16_t w, int16_t h) {
+  uint32_t base;
+  if (g_tintMode == 2) {
+    int32_t span = (g_tintDir ? w : h) - 1;
+    int32_t pos = g_tintDir ? x : y;
+    uint32_t t = span > 0 ? (uint32_t)(pos * 255 / span) : 0;
+    auto lerp = [t](uint8_t a, uint8_t b) { return (uint8_t)((a * (255 - t) + b * t) / 255); };
+    base = ((uint32_t)lerp(g_tint1 >> 16, g_tint2 >> 16) << 16) |
+           ((uint32_t)lerp(g_tint1 >> 8, g_tint2 >> 8) << 8) | lerp(g_tint1, g_tint2);
+  } else {
+    base = (g_tintMode == 3) ? g_tintRandom : g_tint1;
+  }
+  return rgb565(((base >> 16) & 0xFF) * gray / 255, ((base >> 8) & 0xFF) * gray / 255, (base & 0xFF) * gray / 255);
+}
+
 void drawLegacyScaled(const uint8_t *buf, uint8_t effect, bool isGsc,
                        int16_t dstW, int16_t dstH, int16_t dstX, int16_t dstY) {
   gfx.fillScreenFast(0x0000);
@@ -272,10 +304,12 @@ void drawLegacyScaled(const uint8_t *buf, uint8_t effect, bool isGsc,
         uint8_t byte = buf[(srcX / 2) + srcY * LEGACY_SRC_LINE_4BPP];
         uint8_t nibble = (srcX % 2 == 0) ? (byte >> 4) : (byte & 0x0F); // 4-bit grayscale
         uint8_t gray = nibble * 17; // 0..15 -> 0..255
-        color = ((gray >> 3) << 11) | ((gray >> 2) << 5) | (gray >> 3); // RGB565
+        color = g_tintMode ? tintedColor(gray, x, y, dstW, dstH)
+                           : (((gray >> 3) << 11) | ((gray >> 2) << 5) | (gray >> 3)); // RGB565
       } else {
         uint8_t byte = buf[srcX / 8 + srcY * LEGACY_SRC_LINE_1BPP];
-        color = bitRead(byte, srcX % 8) ? 0xFFFF : 0x0000;
+        bool on = bitRead(byte, srcX % 8);
+        color = g_tintMode ? tintedColor(on ? 255 : 0, x, y, dstW, dstH) : (on ? 0xFFFF : 0x0000);
       }
       gfx.drawPixel(dstX + x, dstY + y, color);
     }
@@ -306,6 +340,32 @@ void display_flush() {
 void display_set_rotation(uint8_t rot) {
   g_rotation = rot ? 1 : 0;
   gfx.setRotation(g_rotation ? 2 : 0); // 180 degree flip, matches CMDROT semantics
+}
+
+void display_set_tint(uint8_t mode, uint32_t color1, uint32_t color2, uint8_t dir) {
+  g_tintMode = mode > 3 ? 0 : mode;
+  g_tint1 = color1 & 0xFFFFFF;
+  g_tint2 = color2 & 0xFFFFFF;
+  g_tintDir = dir ? 1 : 0;
+  if (g_tintMode == 3) display_new_picture(); // make sure random mode has a colour before the first picture
+}
+
+// A new legacy picture is about to be drawn (not a replay of the last one).
+// In random mode this is where its colour is chosen: a fully saturated, fully
+// bright hue, so a random tint never comes out muddy or dark.
+void display_new_picture() {
+  if (g_tintMode != 3) return;
+  uint32_t hue = esp_random() % 360, x = (60 - abs((int)((hue % 120)) - 60)) * 255 / 60; // 0..255 ramp inside each 120-degree sector
+  uint8_t r = 0, g = 0, b = 0;
+  switch (hue / 60) {
+    case 0: r = 255; g = x; break;
+    case 1: r = x; g = 255; break;
+    case 2: g = 255; b = x; break;
+    case 3: g = x; b = 255; break;
+    case 4: r = x; b = 255; break;
+    default: r = 255; b = x; break;
+  }
+  g_tintRandom = ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
 }
 
 void display_set_contrast(uint8_t level) {

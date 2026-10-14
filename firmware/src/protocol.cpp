@@ -7,6 +7,10 @@
 #include "pins.h"
 #include "version.h"
 #include "wifi_manager.h"
+#include "time_manager.h"
+#include "device_settings.h"
+#include "mqtt_client.h"
+#include "diag.h"
 #include <Arduino.h>
 #include <cstring>
 #include <sys/time.h>
@@ -35,28 +39,14 @@ uint8_t legacyBuf[LEGACY_BUF_SIZE];
 constexpr size_t COLOR_BUF_MAX = 20000;
 uint8_t colorBuf[COLOR_BUF_MAX];
 
-// Wall clock, set by CMDSETTIME. tty2oled.sh sends the MiSTer's local time
-// as epoch seconds already shifted by the timezone offset, so it's stored
-// as-is and read back with gmtime_r() (no TZ handling on this side).
-bool clockSet = false;
-
-void clockSetEpoch(time_t epoch) {
-  struct timeval tv = {epoch, 0};
-  settimeofday(&tv, nullptr);
-  clockSet = true;
-}
-
+// The time itself (NTP, or the MiSTer's CMDSETTIME as a fallback) lives in
+// time_manager.cpp; this just draws it.
 void showClock() {
-  if (!clockSet) {
+  String hm, date;
+  if (!time_get_strings(hm, date)) {
     display_show_corename("Time not set!");
     return;
   }
-  time_t now = time(nullptr);
-  struct tm t;
-  gmtime_r(&now, &t);
-  char hm[8], date[16];
-  strftime(hm, sizeof(hm), "%H:%M", &t);
-  strftime(date, sizeof(date), "%d-%b-%y", &t);
   display_show_clock(hm, date);
 }
 
@@ -87,6 +77,15 @@ PictureKind lastPictureKind = PictureKind::NONE;
 bool saverEnabled = false;
 unsigned long saverIntervalMs = 60000;
 bool saverBlanked = false;
+
+// Idle clock (a setting on the device's web page, not a MiSTer command): after
+// clockIdleMs with nothing received, the clock replaces the picture, refreshed
+// each minute; any activity brings the picture back. Runs before the blank
+// above: clock first, then dark. 0 = off.
+unsigned long clockIdleMs = 0;
+enum class IdleStage { NORMAL, CLOCK, BLANK };
+IdleStage idleStage = IdleStage::NORMAL;
+int lastClockMinute = -1;
 
 // Debug channel: hardware UART0 (GPIO20/21, via an external USB-serial
 // adapter), completely independent of the native USB-CDC "Serial" object
@@ -237,6 +236,7 @@ void handleLegacyPicture(const String &cmd, int prefixLen) {
   oled_status_suspend();
   size_t n = readFixed(legacyBuf, LEGACY_BUF_SIZE);
   oled_status_resume();
+  if (n == 2048 || n == 8192) display_new_picture(); // new art: pick this picture's tint
   if (n == 2048) {
     display_draw_legacy_xbm(legacyBuf, resolveEffect(effect));
     lastPictureKind = PictureKind::XBM;
@@ -353,7 +353,7 @@ void protocol_dispatch_line(const String &cmd) {
     display_show_sysinfo(FW_VERSION);
   } else if (cmd.startsWith("CMDSETTIME")) {
     long epoch = splitField(cmd, 1).toInt();
-    if (epoch > 0) clockSetEpoch((time_t)epoch);
+    if (epoch > 0) time_set_manual_local((time_t)epoch); // ignored once NTP owns the clock
   } else if (cmd == "CMDSHTIME") {
     showClock();
   } else if (cmd == "CMDHWINF") {
@@ -384,6 +384,7 @@ void protocol_dispatch_line(const String &cmd) {
       memset(legacyBuf, (uint8_t)((c << 4) | c), LEGACY_BUF_SIZE);
       actCorename = "No Core";
       uint8_t effect = resolveEffect(tT.toInt());
+      display_new_picture();
       display_draw_legacy_gsc(legacyBuf, effect);
       lastPictureKind = PictureKind::GSC;
     }
@@ -621,25 +622,69 @@ void protocol_saver_check() {
   // fight the QR toggle with a second idle timer.
   if (wifi_manager_is_ap_mode()) return;
 
-  if (!saverEnabled) {
-    if (saverBlanked) {
-      display_on();
-      redisplayCurrent(0);
-      oled_status_on();
-      saverBlanked = false;
+  unsigned long idle = millis() - lastWakeMs;
+  bool wantBlank = saverEnabled && idle >= saverIntervalMs;
+  struct tm now;
+  bool haveTime = time_get_local(now);
+  bool wantClock = !wantBlank && clockIdleMs > 0 && idle >= clockIdleMs && haveTime;
+  IdleStage want = wantBlank ? IdleStage::BLANK : (wantClock ? IdleStage::CLOCK : IdleStage::NORMAL);
+
+  if (want == idleStage) {
+    // Still in the clock stage: redraw when the minute rolls over.
+    if (idleStage == IdleStage::CLOCK && now.tm_min != lastClockMinute) {
+      lastClockMinute = now.tm_min;
+      showClock();
     }
     return;
   }
-  bool shouldBlank = (millis() - lastWakeMs) >= saverIntervalMs;
-  if (shouldBlank && !saverBlanked) {
+
+  // Leaving a stage: undo what it did.
+  if (idleStage == IdleStage::BLANK) {
+    display_on();
+    oled_status_on();
+    saverBlanked = false;
+  }
+  if (want == IdleStage::NORMAL) {
+    // A transient MQTT notification may be on screen right now; don't paint over it.
+    crumb(C_SAVER_NORMAL);
+    if (!mqtt_client_notification_active()) redisplayCurrent(0);
+  } else if (want == IdleStage::CLOCK) {
+    crumb(C_SAVER_CLOCK);
+    lastClockMinute = now.tm_min;
+    showClock();
+  } else { // BLANK
+    crumb(C_SAVER_BLANK);
     display_off();
     oled_status_off(); // an always-on static dashboard burns in a real OLED over time
     saverBlanked = true;
-  } else if (!shouldBlank && saverBlanked) {
-    display_on();
-    redisplayCurrent(0);
-    oled_status_on();
-    saverBlanked = false;
+  }
+  idleStage = want;
+}
+
+const char *protocol_idle_stage() {
+  switch (idleStage) {
+    case IdleStage::CLOCK: return "clock";
+    case IdleStage::BLANK: return "blank";
+    default: return "normal";
+  }
+}
+
+void protocol_apply_settings() {
+  const DeviceSettings &c = settingsStore.cfg;
+  display_set_contrast(c.contrast);
+  display_set_rotation(c.rotation);
+  display_set_tint(c.tintMode, c.tintColor1, c.tintColor2, c.tintDir);
+  oled_status_set_idle_sec(c.oledIdleSec);
+  clockIdleMs = (unsigned long)c.clockIdleMin * 60000UL;
+  // The blank stage's default. A MiSTer CMDSAVER still overrides it live (until
+  // the next reboot): tty2oled.sh sends CMDSAVER,0,0,0 at start-up when its own
+  // SCREENSAVER setting is "no", which therefore turns this blank off, while the
+  // idle clock above is unaffected.
+  if (c.blankMin > 0) {
+    saverEnabled = true;
+    saverIntervalMs = ((unsigned long)c.clockIdleMin + c.blankMin) * 60000UL;
+  } else {
+    saverEnabled = false;
   }
 }
 

@@ -264,3 +264,12 @@ void mqtt_client_loop() {
     protocol_redisplay_current(0);
   }
 }
+
+bool mqtt_client_notification_active() {
+  return notificationActive;
+}
+
+const char *mqtt_client_status() {
+  if (!configStore.cfg.enabled || configStore.cfg.host[0] == '\0') return "disabled";
+  return mqtt.connected() ? "connected" : "disconnected";
+}

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 // Onboard 0.42" SSD1306 OLED (72x40 visible area, 128x64 controller RAM)
 // status display - separate I2C panel from the main GC9A01 SPI display,
 // shows firmware/connection status rather than marquee art. See pins.h
@@ -37,3 +39,7 @@ void oled_status_resume();
 // way porting the WLED usermod this module is based on - see CLAUDE.md).
 void oled_status_off();
 void oled_status_on();
+
+// Seconds of no activity before the OLED blanks itself (0 = never). Default 60;
+// the device settings page changes it.
+void oled_status_set_idle_sec(uint16_t seconds);
