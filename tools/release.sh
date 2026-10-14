@@ -4,8 +4,8 @@
 #
 # Release checklist: builds the three firmware variants, merges each into a
 # single flash image, verifies them, tags the commit and creates the GitHub
-# release with the images attached. Publishing the release triggers the Pages
-# workflow, which puts these exact images on the web flasher.
+# release with the images attached, then dispatches the Pages workflow, which
+# puts these exact images on the web flasher.
 #
 #   tools/release.sh [--notes FILE | --generate-notes] [--dry-run] [--yes]
 #
@@ -113,5 +113,8 @@ if [ -n "${NOTES_FILE}" ]; then
 else
   gh release create "${TAG}" --title "${TAG}" --generate-notes "${OUT}"/*.bin "${OUT}/SHA256SUMS"
 fi
-echo "== Released ${TAG}. The Pages workflow now publishes these images to the web flasher:"
+# The Pages workflow must run on main (the github-pages environment rejects
+# runs on a tag ref), so it's dispatched here rather than triggered by the release.
+gh workflow run pages.yml -f tag="${TAG}"
+echo "== Released ${TAG} and started the Pages workflow, which puts these images on the web flasher:"
 echo "   gh run list --workflow pages.yml -L 1"

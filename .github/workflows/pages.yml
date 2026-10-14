@@ -9,15 +9,17 @@
 # `pio run` resolves to a different (official, consistent) Arduino toolchain
 # than the tested local one - see CLAUDE.md "Web flasher + GitHub Pages".
 #
-# Runs when a release is published, or by hand (Actions -> Pages -> Run
-# workflow, optionally naming a tag; default is the latest release).
+# Run it by hand (Actions -> Pages -> Run workflow, optionally naming a tag;
+# default is the latest release) - tools/release.sh dispatches it after
+# publishing. Deliberately NOT triggered by the `release` event: that run
+# executes on the tag ref, and the github-pages environment only allows
+# deploys from main, so it was rejected ("Tag v0.4.2 is not allowed to deploy
+# to github-pages"). A workflow_dispatch run executes on main.
 #
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions".
 name: Pages
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -54,7 +56,7 @@ jobs:
       - name: Download release firmware
         id: fw
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          TAG="${{ inputs.tag }}"
           if [ -z "$TAG" ]; then
             TAG="$(gh release view --json tagName -q .tagName)"
           fi

@@ -514,9 +514,13 @@ assembles `site/` (gitignored): the merged flash images, the generated
 manifests, the flasher at `/`, and the Vite-built web app at `/app/`
 (`--base=./`, so `importLibrary.ts` builds its fetch URLs from
 `import.meta.env.BASE_URL` instead of a hardcoded `/library/`).
-`.github/workflows/pages.yml` runs it when a release is published, or by
-hand ("Run workflow", optional tag, default latest release) and deploys with
-the Pages actions. Setup is Settings -> Pages -> Source: GitHub Actions.
+`.github/workflows/pages.yml` is `workflow_dispatch` only ("Run workflow",
+optional tag, default latest release; `tools/release.sh` dispatches it after
+publishing) and deploys with the Pages actions. It is NOT triggered by the
+`release` event: that run executes on the tag ref and the `github-pages`
+environment only allows deploys from main, so GitHub rejected it (v0.4.2:
+"Tag is not allowed to deploy to github-pages") - a dispatched run executes on
+main and works. Setup is Settings -> Pages -> Source: GitHub Actions.
 
 **The workflow publishes a release's attached `.bin` files; it does not
 build firmware.** Releases are cut with `tools/release.sh` (checklist prompts,

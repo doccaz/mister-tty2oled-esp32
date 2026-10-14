@@ -211,8 +211,8 @@ extension). All dependencies (`JPEGDEC`, `Adafruit GFX Library`,
 `U8g2` in the OLED variant) are pulled automatically via `platformio.ini`.
 
 Maintainers: `tools/release.sh` builds the three variants, verifies them, tags
-the commit and publishes the GitHub release; publishing it also updates the
-web flasher (see `CLAUDE.md`).
+the commit, publishes the GitHub release and updates the web flasher with the
+same images (see `CLAUDE.md`).
 
 ## First boot: WiFi setup
 
