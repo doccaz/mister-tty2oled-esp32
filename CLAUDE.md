@@ -523,6 +523,15 @@ platform (tried, reverted) makes clean machines fail with `WiFiClientSecure.h
 not found`. If the firmware is ever moved to a reproducible toolchain,
 re-verify everything in this file on hardware first, then CI can build it.
 
+First real flash from the page (2026-10-13, Super Mini): "Failed to
+initialize" until BOOT was held while plugging in. `esptool.py` from the CLI
+entered the bootloader fine on the same port (so USB/hardware were OK and
+ModemManager had no modems) - the browser's esp-web-tools 10.0.1 just can't
+auto-reset the C3's native USB while the firmware's HWCDC is running. The
+page now puts "hold BOOT while plugging in" as step 1. If newer ESP Web
+Tools handles the USB-JTAG reset, try bumping the pinned version and drop
+the requirement.
+
 Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
 holds the gitignored third-party art pack, which a *local* Vite build copies
 in and must never be published. Web Serial can't be exercised headlessly, so

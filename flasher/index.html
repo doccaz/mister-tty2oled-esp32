@@ -118,17 +118,20 @@
       <div class="card">
         <h2>How it works</h2>
         <ol>
-          <li>Plug the board into this computer with a data-capable USB cable.</li>
+          <li><b>Hold the BOOT button</b> on the board, plug it into this computer with a
+              data-capable USB cable, then let go. (The browser usually can't reset these
+              boards into download mode by itself; this step is what makes it connect.)</li>
           <li>Pick your board above, press <b>Connect and install</b>, then choose the serial port
               (it shows up as "USB JTAG/serial debug unit").</li>
-          <li>Wait for the flash to finish. The board restarts on its own.</li>
+          <li>Wait for the flash to finish, then unplug and replug the board normally.</li>
         </ol>
       </div>
 
       <div class="note" style="margin-bottom:16px">
-        <b>Port not listed or the connection fails?</b> Hold the <b>BOOT</b> button while plugging
-        the USB cable in (or while pressing reset) to force download mode, then try again.
-        Close other programs that might be using the port (serial monitors, the marquee web app).
+        <b>"Failed to initialize" or the port isn't listed?</b> The board isn't in download mode:
+        unplug it and repeat step 1 with BOOT held. Also close anything else using the port
+        (serial monitors, the marquee web app) and make sure you picked "USB JTAG/serial debug unit",
+        not another serial device.
       </div>
 
       <div class="card">

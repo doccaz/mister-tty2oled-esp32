@@ -164,8 +164,10 @@ and the WiFi/MQTT features.
 No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
 writes the latest release to the board over USB (Chrome, Edge or Opera on
 a desktop; it uses WebSerial and [ESP Web Tools](https://esphome.github.io/esp-web-tools/)).
-Pick your board, press "Connect and install", choose the serial port. If
-the port doesn't show up, hold BOOT while plugging the cable in. Flashing
+First hold BOOT while plugging the board in (the browser can't reset the
+C3's native USB into download mode on its own; without this the page says
+"Failed to initialize"), then pick your board, press "Connect and install"
+and choose the serial port ("USB JTAG/serial debug unit"). Flashing
 keeps your saved WiFi settings. The same site hosts the
 [marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)
 (the local art pack isn't included, it isn't redistributed). The merged
