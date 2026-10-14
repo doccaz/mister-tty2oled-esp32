@@ -232,6 +232,13 @@ a **Command console** (documents and lets you exercise every command the
 firmware understands) and an **About** panel with links back to this
 project and the ones it's built on.
 
+**Back up** and **Restore** in the header save your library (every core's
+saved art) to a single JSON file and merge it back in. Browser storage is
+per browser and per site, so it's worth backing up before clearing site
+data or switching machines (this matters most on the hosted
+`github.io` copy). Restoring never overwrites a core you've since edited:
+a saved core is only replaced when the backup's copy is newer.
+
 ### Building the local marquee library
 
 The editor's "Browse local packs" button needs a converted image index,

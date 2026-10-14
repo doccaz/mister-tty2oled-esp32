@@ -73,3 +73,16 @@ export async function deleteCoreArt(coreId: string): Promise<void> {
     tx.onerror = () => reject(tx.error);
   });
 }
+
+/** Writes whole records as-is (keeps their `updatedAt`) in one transaction. Used by library restore. */
+export async function putCoreArtRecords(records: CoreArtRecord[]): Promise<void> {
+  if (records.length === 0) return;
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    for (const rec of records) store.put(rec);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}

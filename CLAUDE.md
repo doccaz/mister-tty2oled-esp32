@@ -526,6 +526,22 @@ Select a core, drop in an image, pan/zoom to fit the circular safe area,
 "Send to device" (or just edit — live preview streams automatically while
 connected), "Save to library" persists it locally (IndexedDB) for next time.
 
+### Library backup/restore (2026-10-13)
+
+`web/src/backup.ts` + the header's "Back up"/"Restore" buttons. The only
+persisted state is IndexedDB's `coreArt` store (`db.ts`), so the backup is
+one JSON file `{format:"tty2oled-gc9a01-library", version:1, items:[{coreId,
+updatedAt, type, data(base64)}]}`. Restore merges: a core is only
+overwritten when the backup's `updatedAt` is strictly newer, so restoring an
+old file can't clobber later work; `putCoreArtRecords()` keeps the original
+timestamps. **Saved blobs are not all JPEG** - the editor exports JPEG, but
+`autoSeedLibrary()` stores the fetched pack PNGs as-is, so restore sniffs
+magic bytes for JPEG *or* PNG and keeps each blob's type (a first version
+that only accepted JPEG rejected all 443 auto-seeded records; found by a
+real-browser round-trip test: delete everything, restore, compare - 444
+records byte-identical, second restore a no-op). Matters most on the hosted
+github.io copy, where the library lives only in that browser's storage.
+
 ### Command console
 
 The header's "Command console" button opens a modal (`openCommandConsole()`

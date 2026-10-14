@@ -7,6 +7,7 @@ import { WifiLink } from "./wifiLink";
 import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, type CoreArtRecord } from "./db";
+import { exportLibrary, restoreLibrary } from "./backup";
 import { loadImportIndex, entryUrl, findAutoMatch, type ImportEntry } from "./importLibrary";
 import { DISPLAY_PROFILES, DEFAULT_DISPLAY_PROFILE, findDisplayProfile, type DisplayProfile } from "./displays";
 import { DEFAULT_TRANSFORM_BY_SHAPE, type TransformMode } from "./transforms";
@@ -37,6 +38,9 @@ app.innerHTML = `
     <button id="review-matches-btn">Review core matches</button>
     <button id="command-console-btn">Command console</button>
     <button id="about-btn">About</button>
+    <button id="backup-btn" title="Download your saved art as a file">Back up</button>
+    <button id="restore-btn" title="Merge a backup file into your saved art">Restore</button>
+    <input id="restore-input" type="file" accept="application/json,.json" hidden>
     <label class="hint">transport
       <select id="transport-select">
         <option value="serial">USB (WebSerial)</option>
@@ -169,6 +173,60 @@ connectBtn.addEventListener("click", async () => {
 
 (document.getElementById("about-btn") as HTMLButtonElement).addEventListener("click", () => {
   openAboutModal();
+});
+
+// --- Library backup / restore ---------------------------------------------
+
+function showNotice(title: string, lines: string[]) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header"><h2>${title}</h2><button id="notice-close">Close</button></div>
+      <div class="modal-hint hint">${lines.map((l) => `<p>${l}</p>`).join("")}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector("#notice-close")!.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
+(document.getElementById("backup-btn") as HTMLButtonElement).addEventListener("click", async () => {
+  try {
+    const { blob, count } = await exportLibrary();
+    if (count === 0) {
+      showNotice("Nothing to back up", ["No art is saved yet. Use \"Save to library\" on a core first."]);
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `tty2oled-library-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  } catch (err) {
+    showNotice("Backup failed", [err instanceof Error ? err.message : String(err)]);
+  }
+});
+
+const restoreInput = document.getElementById("restore-input") as HTMLInputElement;
+(document.getElementById("restore-btn") as HTMLButtonElement).addEventListener("click", () => restoreInput.click());
+restoreInput.addEventListener("change", async () => {
+  const file = restoreInput.files?.[0];
+  restoreInput.value = ""; // so picking the same file again re-triggers
+  if (!file) return;
+  try {
+    const res = await restoreLibrary(file);
+    for (const rec of res.restored) artCache.set(rec.coreId, rec);
+    renderLibrary();
+    const lines = [`Restored ${res.restored.length} core${res.restored.length === 1 ? "" : "s"}.`];
+    if (res.skippedOlder) lines.push(`${res.skippedOlder} skipped: you already have the same or a newer version.`);
+    if (res.invalid) lines.push(`${res.invalid} entr${res.invalid === 1 ? "y was" : "ies were"} unusable and ignored.`);
+    showNotice("Library restored", lines);
+  } catch (err) {
+    showNotice("Restore failed", [err instanceof Error ? err.message : String(err)]);
+  }
 });
 
 // --- Library grid --------------------------------------------------------
