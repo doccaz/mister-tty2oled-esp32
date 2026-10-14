@@ -263,7 +263,7 @@ optionally blank after a further Y minutes; any command or the BOOT button
 brings the picture back), the status-OLED idle blank, **NTP** time with a
 timezone list (or a custom POSIX TZ string), an optional admin password
 (user `admin`) and **tint for monochrome pictures**: the MiSTer's black-and-white
-marquees can be coloured with a fixed colour, a gradient, or a random colour
+marquees (and grayscale pictures from the web app) can be coloured with a fixed colour, a gradient, or a random colour
 per picture. These are the defaults at power-up; a MiSTer's own
 `CMDCON`/`CMDROT`/`CMDSAVER` commands override them until the next reboot.
 

@@ -264,7 +264,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
 // The MiSTer's 1bpp/4bpp marquee packs are grayscale; a tint maps each pixel's
 // brightness onto a colour instead of white: a fixed colour, a gradient across
 // the picture, or a new random colour per picture. Applies only to those legacy
-// pictures (full-colour CMDCORC JPEGs are left alone). Off by default; set from
+// pictures and to grayscale JPEGs (CMDCORC from the web app, detected per picture); real colour JPEGs are left alone. Off by default; set from
 // the device's settings page (display_set_tint()).
 uint8_t g_tintMode = 0;     // TintMode in device_settings.h: 0 off, 1 fixed, 2 gradient, 3 random
 uint32_t g_tint1 = 0xFFB000;
@@ -514,7 +514,28 @@ void display_draw_legacy_gsc_small(const uint8_t *buf) {
   drawLegacyScaled(buf, 0, true, w, h, DISP_CX - w / 2, DISP_CY - h / 2);
 }
 
+// If the tint is on and the decoded picture is grayscale (every pixel has
+// R~=G~=B, which is what the marquee app's black-and-white library images are),
+// recolour it by brightness like the legacy pictures. Real colour art is left alone.
+static void tintGrayFrame() {
+  if (!g_tintMode) return;
+  for (int i = 0; i < DISP_W * DISP_H; i++) {
+    uint16_t c = swap16(g_frame[i]);
+    int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+    if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) return;
+  }
+  for (int y = 0; y < DISP_H; y++) {
+    for (int x = 0; x < DISP_W; x++) {
+      uint16_t c = swap16(g_frame[y * DISP_W + x]);
+      int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+      uint8_t gray = (uint8_t)((r * 30 + g * 59 + b * 11) / 100);
+      g_frame[y * DISP_W + x] = swap16(tintedColor(gray, x, y, DISP_W, DISP_H));
+    }
+  }
+}
+
 void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t durationMs) {
+  display_new_picture(); // random tint: a new colour per picture
   memset(g_frame, 0, sizeof(g_frame));
   if (!jpeg.openRAM(const_cast<uint8_t *>(buf), len, jpegDrawCallback)) {
     display_show_error("JPEG decode failed");
@@ -529,6 +550,7 @@ void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t 
   int offY = (DISP_H - imgH) / 2;
   jpeg.decode(offX, offY, 0);
   jpeg.close();
+  tintGrayFrame();
 
   transitionReveal(effect, durationMs);
 }

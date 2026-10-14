@@ -995,6 +995,9 @@ still override live until the next reboot.
 - **Tint** (`display.cpp`, `display_set_tint`/`display_new_picture`): colours the
   MiSTer's 4bpp/1bpp pictures by brightness - off / fixed / gradient (top-bottom or
   left-right) / random hue per new picture (replays keep their colour).
+  Also applied (0.5.1) to a CMDCORC JPEG when every pixel is grayscale (R~=G~=B within 20),
+  which is what the web app's black-and-white library images are; real colour art is
+  left alone. Done once at decode into `g_frame`, so replays don't re-tint.
   Checked by a host g++ test and by eye on the GC9A01.
 - `/status` also reports `ver, name, uptime, heap, heap_max, time, ntp, stage,
   mqtt, auth, crumb_prev, reset`.

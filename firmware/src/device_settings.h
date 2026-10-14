@@ -34,7 +34,7 @@ struct DeviceSettings {
 
   char adminPass[32];    // empty = the settings page is open on the LAN
 
-  uint8_t tintMode;      // TintMode, applies to the legacy 1bpp/4bpp pictures only
+  uint8_t tintMode;      // TintMode, applies to legacy 1bpp/4bpp pictures and grayscale JPEGs
   uint32_t tintColor1;   // 0xRRGGBB
   uint32_t tintColor2;   // 0xRRGGBB, gradient end
   uint8_t tintDir;       // gradient: 0 top-to-bottom, 1 left-to-right

@@ -234,9 +234,9 @@ void WebPortal::handleSettingsPart() {
   out(F(">Top to bottom</option><option value='1'"));
   out(c.tintDir ? " selected" : "");
   out(F(">Left to right</option></select>"
-                        "<p class='muted'>Colours the MiSTer's black-and-white marquee pictures "
-                        "(.gsc / .xbm) by their brightness. Random picks a new bright colour for every "
-                        "picture. Full-colour pictures from the web app are left alone.</p></div>"));
+                        "<p class='muted'>Colours black-and-white marquee pictures "
+                        "(the MiSTer's .gsc / .xbm, and grayscale pictures from the web app) by their brightness. Random picks a new bright colour for every "
+                        "picture. Full-colour pictures are left alone.</p></div>"));
 
       break;
     }
