@@ -490,6 +490,30 @@ status dashboard on the onboard OLED, `esp32c3_nooled` leaves it dark
 (and off entirely — `Wire.begin()`/`u8g2.begin()` are never called) while
 the GC9A01 behaves identically either way.
 
+## Web flasher + GitHub Pages (2026-10-13)
+
+`flasher/index.html` is a static [ESP Web Tools](https://esphome.github.io/esp-web-tools/)
+page (pinned `esp-web-tools@10.0.1` from unpkg) with a board picker that
+swaps the `manifest` attribute between three manifests, one per PlatformIO
+env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`). `tools/build_site.sh`
+assembles `site/` (gitignored): merged flash images
+(`esptool.py merge_bin`, bootloader 0x0 / partitions 0x8000 / boot_app0
+0xe000 / app 0x10000, dio, 80m, 4MB - the same layout `pio run -t upload`
+uses), the generated manifests (version read from `firmware/src/version.h`),
+the flasher at `/`, and the Vite-built web app at `/app/` (`--base=./`, so
+`importLibrary.ts` builds its fetch URLs from `import.meta.env.BASE_URL`
+instead of a hardcoded `/library/`). `.github/workflows/pages.yml` runs it
+on every `v*` tag or by hand, and deploys with the Pages actions.
+
+Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
+holds the gitignored third-party art pack, which a *local* Vite build copies
+in and must never be published. A tag pushed before the workflow existed
+(v0.4.1) doesn't trigger it; use "Run workflow" once Pages is enabled
+(Settings -> Pages -> Source: GitHub Actions). Release assets are still
+attached by hand (`gh release create`), the workflow only publishes Pages.
+Web Serial can't be exercised headlessly, so the page's flashing itself is
+verified only by serving `site/` locally and checking every URL resolves.
+
 ## Web app
 
 ```bash

@@ -1,0 +1,167 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     Copyright (C) 2026 Erico Mendonca -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tty2oled-gc9a01 web flasher</title>
+    <meta name="description" content="Flash tty2oled-gc9a01 firmware onto an ESP32-C3 round-display marquee from your browser." />
+    <script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #ffffff;
+        --text: #1b1f27;
+        --muted: #5b6372;
+        --line: #d9dde5;
+        --accent: #2f5fd0;
+        --accent-text: #ffffff;
+        --note: #fff7e0;
+        --note-line: #ecd48a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14161b;
+          --card: #1d2027;
+          --text: #e7e9ee;
+          --muted: #9aa3b2;
+          --line: #323744;
+          --accent: #6f95ff;
+          --accent-text: #0d1220;
+          --note: #2b2616;
+          --note-line: #5c4f22;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      .sub { color: var(--muted); margin: 0 0 24px; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      label { display: block; font-weight: 600; margin-bottom: 6px; }
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        font: inherit;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .desc { color: var(--muted); font-size: 0.92rem; margin: 8px 0 18px; min-height: 2.8em; }
+      button.install {
+        width: 100%;
+        padding: 12px 16px;
+        font: inherit;
+        font-weight: 600;
+        color: var(--accent-text);
+        background: var(--accent);
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      button.install:hover { filter: brightness(1.08); }
+      .version { color: var(--muted); font-size: 0.9rem; margin: 10px 0 0; text-align: center; }
+      .note {
+        background: var(--note);
+        border: 1px solid var(--note-line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.92rem;
+      }
+      h2 { font-size: 1.05rem; margin: 0 0 8px; }
+      ol, ul { margin: 0; padding-left: 1.2em; }
+      li { margin-bottom: 4px; }
+      a { color: var(--accent); }
+      footer { color: var(--muted); font-size: 0.88rem; text-align: center; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>tty2oled-gc9a01 web flasher</h1>
+      <p class="sub">Flash the firmware onto your round-display marquee straight from the browser. No tools to install.</p>
+
+      <div class="card">
+        <label for="board">Your board</label>
+        <select id="board">
+          <option value="esp32c3">ESP32-C3 Super Mini with onboard OLED + GC9A01</option>
+          <option value="esp32c3_nooled">ESP32-C3 Super Mini without OLED + GC9A01</option>
+          <option value="esp32c3_2424s012">Sunton ESP32-2424S012C all-in-one</option>
+        </select>
+        <p class="desc" id="desc"></p>
+
+        <esp-web-install-button id="installer" manifest="firmware/manifest-esp32c3.json">
+          <button slot="activate" class="install">Connect and install</button>
+          <span slot="unsupported" class="note">
+            This browser can't flash over USB. Use Chrome, Edge or Opera on a desktop
+            (WebSerial is required).
+          </span>
+          <span slot="not-allowed" class="note">
+            Serial access needs a secure page. Open this over https://.
+          </span>
+        </esp-web-install-button>
+        <p class="version">Firmware version __FW_VERSION__</p>
+      </div>
+
+      <div class="card">
+        <h2>How it works</h2>
+        <ol>
+          <li>Plug the board into this computer with a data-capable USB cable.</li>
+          <li>Pick your board above, press <b>Connect and install</b>, then choose the serial port
+              (it shows up as "USB JTAG/serial debug unit").</li>
+          <li>Wait for the flash to finish. The board restarts on its own.</li>
+        </ol>
+      </div>
+
+      <div class="note" style="margin-bottom:16px">
+        <b>Port not listed or the connection fails?</b> Hold the <b>BOOT</b> button while plugging
+        the USB cable in (or while pressing reset) to force download mode, then try again.
+        Close other programs that might be using the port (serial monitors, the marquee web app).
+      </div>
+
+      <div class="card">
+        <h2>After flashing</h2>
+        <ul>
+          <li>With no saved WiFi, the display starts an open <code>tty2oled-XXXX</code> network with a
+              setup page. Press the BOOT button to show a QR code that joins it.</li>
+          <li>Manage the marquee art from the <a href="app/">marquee web app</a> over USB or WiFi.</li>
+          <li>Flashing keeps your saved WiFi settings.</li>
+        </ul>
+      </div>
+
+      <footer>
+        <a href="https://github.com/doccaz/mister-tty2oled-gc9a01">Source and docs on GitHub</a> ·
+        <a href="https://github.com/doccaz/mister-tty2oled-gc9a01/releases">Releases</a> · GPL-3.0-or-later
+      </footer>
+    </main>
+
+    <script>
+      const descriptions = {
+        esp32c3: "The Super Mini variant with the built-in 0.42\" status OLED, wired to a separate GC9A01 module.",
+        esp32c3_nooled: "The same Super Mini board sold without the built-in OLED, wired to a GC9A01 module.",
+        esp32c3_2424s012: "The Sunton 1.28\" round display with the ESP32-C3 built onto the back. Nothing to wire.",
+      };
+      const select = document.getElementById("board");
+      const installer = document.getElementById("installer");
+      const desc = document.getElementById("desc");
+      function update() {
+        installer.setAttribute("manifest", `firmware/manifest-${select.value}.json`);
+        desc.textContent = descriptions[select.value];
+      }
+      select.addEventListener("change", update);
+      update();
+    </script>
+  </body>
+</html>

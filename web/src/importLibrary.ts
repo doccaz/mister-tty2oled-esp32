@@ -21,14 +21,14 @@ let cache: ImportEntry[] | null = null;
 
 export async function loadImportIndex(): Promise<ImportEntry[]> {
   if (cache) return cache;
-  const res = await fetch("/library/index.json");
-  if (!res.ok) throw new Error(`Failed to load /library/index.json: ${res.status}`);
+  const res = await fetch(`${import.meta.env.BASE_URL}library/index.json`);
+  if (!res.ok) throw new Error(`Failed to load library/index.json: ${res.status}`);
   cache = (await res.json()) as ImportEntry[];
   return cache;
 }
 
 export function entryUrl(entry: ImportEntry): string {
-  return `/library/${entry.png}`;
+  return `${import.meta.env.BASE_URL}library/${entry.png}`;
 }
 
 /**

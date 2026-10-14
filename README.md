@@ -159,6 +159,20 @@ Not yet tested on this board: sending art through the web app's WebSerial
 path (the `CMDCORC` check above used a script speaking the same protocol),
 and the WiFi/MQTT features.
 
+## Flash from your browser
+
+No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
+writes the latest release to the board over USB (Chrome, Edge or Opera on
+a desktop; it uses WebSerial and [ESP Web Tools](https://esphome.github.io/esp-web-tools/)).
+Pick your board, press "Connect and install", choose the serial port. If
+the port doesn't show up, hold BOOT while plugging the cable in. Flashing
+keeps your saved WiFi settings. The same site hosts the
+[marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)
+(the local art pack isn't included, it isn't redistributed). The merged
+`.bin` images are also attached to each
+[release](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) if you
+prefer `esptool.py write_flash 0x0 <file>.bin`.
+
 ## Build & flash the firmware
 
 ```bash
