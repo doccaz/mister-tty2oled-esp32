@@ -168,7 +168,14 @@ hardware (see `protocol.cpp`'s `dispatch()`):
   as `ttyack;`/`ttyrdy;`). Our hardware id is `HWGC9A01C` — a new value
   outside the reference's enum, confirmed safe because only its
   `installer.sh` (a separate setup tool) keys off this string;
-  `tty2oled.sh` itself never reads it.
+  `tty2oled.sh` itself never reads it. Upstream `installer.sh` now
+  recognizes `HWGC9A01C` (venice1200/MiSTer_tty2oled PR #43, merged
+  2026-10-13, commit `a6f4fff`): it prints a short notice pointing at
+  this project, restarts the daemon if it had stopped it, and exits,
+  instead of falling into the update flow, which showed "Updating
+  tty2oled" on the device and then reported "Flash progress completed"
+  without flashing anything. Only an `installer.sh` case branch changed;
+  no other upstream hardware/flash/version logic.
 - `CMDCLST,<transition>,<color 0-15>` — fill the screen with a solid
   4bpp-grayscale color and reveal it with a transition. Implemented by
   filling `legacyBuf` with the solid color and reusing the existing

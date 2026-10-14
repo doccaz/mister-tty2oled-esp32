@@ -335,6 +335,13 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
 - The daemon never reads anything back from the device in its main
   loop — it just writes commands with fixed sleeps between them, so this
   firmware's `ttyack;` replies are harmlessly ignored, not required.
+- **Upstream `installer.sh` knows this firmware.** `CMDHWINF` replies
+  with the new hardware id `HWGC9A01C`. The installer used to treat an
+  unrecognized `HW…` id as flashable and would claim "Flash progress
+  completed" without flashing anything; since
+  [venice1200/MiSTer_tty2oled#43](https://github.com/venice1200/MiSTer_tty2oled/pull/43)
+  (merged 2026-10-13) it prints a short notice pointing here and exits.
+  Update firmware with PlatformIO, not the MiSTer installer.
 - **Device path matters.** This firmware uses the ESP32-C3's native
   USB-CDC peripheral, which Linux enumerates as `/dev/ttyACM*` — the
   original hardware used a CP2102/FTDI-style chip, enumerating as
