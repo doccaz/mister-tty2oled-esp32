@@ -46,6 +46,9 @@ void wifi_manager_redraw_screen();
 // returns to the firmware default.
 void wifi_manager_set_tx_power(float dbm);
 float wifi_manager_tx_power();
+// Fragment for /status: join_ms (ms since boot at first IP, 0 = none yet),
+// disc_count and disc_reason (driver reason code of the last drop).
+String wifi_manager_diag_json();
 
 bool wifi_manager_test_connection(const String &ssid, const String &pass, String &errorOut);
 

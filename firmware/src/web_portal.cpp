@@ -360,6 +360,7 @@ void WebPortal::handleStatus() {
   json += "\"ip\":\"" + (_apMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString()) + "\"";
   if (!_apMode) json += ",\"rssi\":" + String(WiFi.RSSI()); // dBm: -50 great, -70 marginal, -80 poor
   json += ",\"txpower\":" + String(wifi_manager_tx_power(), 1); // dBm
+  json += "," + wifi_manager_diag_json();
   json += "}";
   _server.send(200, "application/json", json);
 }

@@ -9,6 +9,7 @@
 #include "mqtt_client.h"
 #include "display.h"
 #include <WiFi.h>
+#include <esp_wifi.h>
 #include <ESPmDNS.h>
 
 namespace {
@@ -37,6 +38,44 @@ constexpr uint8_t WIFI_CONNECT_ATTEMPTS = 3;
 constexpr unsigned long AP_RETRY_SAVED_MS = 120000;
 uint8_t connectAttempt = 0;
 
+// Fixed WiFi TX power in dBm, applied before every association (0 = leave the
+// driver's default of ~20 dBm). Set with -DWIFI_TX_POWER_DBM=<n> to experiment
+// without editing the source; see CLAUDE.md "WiFi link quality and joining".
+#ifndef WIFI_TX_POWER_DBM
+#define WIFI_TX_POWER_DBM 0
+#endif
+// -DWIFI_FORCE_HT20=1 limits the station to 20 MHz channel width (a router on a
+// 40 MHz 2.4 GHz channel is a known cause of auth/handshake timeouts). OFF by
+// default: on this board/network it did NOT reliably help - 15 reboots each,
+// boots with a failed first association: default 5/15, 20 MHz 2/15, then the
+// same 20 MHz build 6/10. The same setting giving 13% and 60% means the link's
+// own variation (RSSI -55..-74 dBm) swamps it.
+#ifndef WIFI_FORCE_HT20
+#define WIFI_FORCE_HT20 0
+#endif
+void applyRadioTuning() {
+  if (WIFI_FORCE_HT20) esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
+  if (WIFI_TX_POWER_DBM > 0) WiFi.setTxPower((wifi_power_t)(int)(WIFI_TX_POWER_DBM * 4));
+}
+
+// Join diagnostics, reported on GET /status: how many times the station was
+// dropped/refused since boot, the driver's last reason code (e.g. 201 = AP not
+// found, 15 = 4-way handshake timeout, 2 = auth expired, 205 = connection
+// fail, 8 = left by us), and when (ms since boot) the first IP was obtained.
+// Added to find out why the first attempt after a reset sometimes fails.
+volatile uint16_t discCount = 0;
+volatile uint8_t lastDiscReason = 0;
+volatile uint32_t gotIpMs = 0;
+
+void onWifiEvent(arduino_event_id_t event, arduino_event_info_t info) {
+  if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
+    discCount = discCount + 1;
+    lastDiscReason = info.wifi_sta_disconnected.reason;
+  } else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP && gotIpMs == 0) {
+    gotIpMs = millis();
+  }
+}
+
 String buildDeviceName() {
   uint8_t mac[6];
   WiFi.macAddress(mac);
@@ -50,6 +89,7 @@ void enterApMode() {
   // networks" button, see web_portal.cpp's handleScan()) needs the STA
   // interface active to scan at all - a pure AP-mode scan just fails.
   WiFi.mode(WIFI_AP_STA);
+  applyRadioTuning();
   WiFi.softAP(deviceName.c_str()); // open network, confirmed with user
   // Power-save is the radio's default and wrecks latency/loss (see
   // enterConnected()); the AP_STA interface used for scanning and for the
@@ -77,6 +117,7 @@ void startStaAttempt() {
 void enterConnecting() {
   display_show_connecting_wifi(configStore.cfg.wifiSsid);
   WiFi.mode(WIFI_STA);
+  applyRadioTuning();
   connectAttempt = 1;
   startStaAttempt();
   state = WifiState::CONNECTING;
@@ -129,6 +170,7 @@ void enterConnected() {
 } // namespace
 
 void wifi_manager_init() {
+  WiFi.onEvent(onWifiEvent);
   configStore.begin();
   deviceName = buildDeviceName();
 
@@ -182,6 +224,11 @@ void wifi_manager_set_tx_power(float dbm) {
   if (dbm < 2) dbm = 2;
   if (dbm > 20) dbm = 20;
   WiFi.setTxPower((wifi_power_t)(int)(dbm * 4)); // the driver counts quarter-dBm
+}
+
+String wifi_manager_diag_json() {
+  return "\"join_ms\":" + String((uint32_t)gotIpMs) + ",\"disc_count\":" + String((uint16_t)discCount) +
+         ",\"disc_reason\":" + String((uint8_t)lastDiscReason);
 }
 
 float wifi_manager_tx_power() {

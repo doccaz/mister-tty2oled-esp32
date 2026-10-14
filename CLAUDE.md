@@ -945,6 +945,25 @@ if nobody has joined the AP and the join QR isn't showing
 (`AP_RETRY_SAVED_MS`). Measured: 8/8 reboots joined (2.6 s x6, ~10 s x2), none
 fell to AP. Not proven gone from 8 samples.
 
+**Why the first join sometimes fails (measured 2026-10-14, with the new
+`/status` fields `join_ms`, `disc_count`, `disc_reason`):** 15 reboots on the
+owner's home network: every boot joined, but 5/15 had a failed association
+first (reason 204 = WPA 4-way handshake timeout, once 39), slowest join 31 s
+with six drops - which the old single 20 s attempt turned into AP mode (the
+"reset it 2-3 times" symptom) and the 3 x 15 s attempts now absorb. Not a
+signal-level problem as such (RSSI -55..-74 dBm, i.e. a marginal uplink).
+Experiments, boots with a failed first association: **11 dBm TX power 11/11**
+(auth expired, joins up to 49 s, one fell to AP - lowering power makes it
+*worse*, so the uplink is the limit, not self-interference; the default
+~20 dBm stays); **20 MHz channel width 2/15, then 6/10 for the same build**
+(`-DWIFI_FORCE_HT20=1`; no reliable effect, so off by default); default width
+5/15. The same setting giving 13% then 60% says the link's own variation
+dominates any knob, and what's left is physical/router side: board and case
+placement (antenna), a dedicated 2.4 GHz SSID, WPA2-only, fixed channel
+1/6/11. The retry logic (3 attempts, then AP mode that reboots to retry the
+saved network every 120 s while idle) is the fix that matters.
+`-DWIFI_TX_POWER_DBM=<n>` pins TX power before each join (testing only).
+
 `CMDWTX,<dBm 2-20>` (diagnostic, not in the original protocol) sets WiFi TX
 power live, because some ESP32-C3 Super Mini boards behave better below full
 power; it wasn't needed here (default 20 dBm is fine once power-save is off)
