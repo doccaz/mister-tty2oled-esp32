@@ -6,7 +6,7 @@ import { SerialLink, type ConnectionState } from "./serial";
 import { WifiLink } from "./wifiLink";
 import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
-import { loadAllCoreArt, saveCoreArt, type CoreArtRecord } from "./db";
+import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, type CoreArtRecord } from "./db";
 import { exportLibrary, restoreLibrary } from "./backup";
 import { importFolder } from "./packImport";
 import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, markPackLibraryAvailable, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry } from "./importLibrary";
@@ -59,7 +59,10 @@ app.innerHTML = `
     <button id="connect-btn">Connect device</button>
   </header>
   <main>
-    <div id="library"></div>
+    <div id="library-pane">
+      <input id="library-filter" type="search" placeholder="Filter cores…" autocomplete="off">
+      <div id="library"></div>
+    </div>
     <div id="editor-panel"></div>
   </main>
 `;
@@ -183,6 +186,11 @@ connectBtn.addEventListener("click", async () => {
 
 // --- Library backup / restore ---------------------------------------------
 
+/** Names come from a user-picked folder now, so never trust them inside innerHTML. */
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
 function showNotice(title: string, lines: string[]) {
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -288,18 +296,29 @@ function thumbUrl(coreId: string): string | null {
   return match ? entryUrl(match) : null;
 }
 
+// Importing a whole pack folder makes ~1900 cores. Drawing every card (each
+// with its own thumbnail) at once froze the page, so each category shows a
+// page of cards at a time ("Show more") and the filter box narrows the list.
+const LIBRARY_PAGE = 300;
+const libraryShown = new Map<string, number>(); // category -> how many cards are drawn
+let libraryFilter = "";
+
 function renderLibrary() {
-  const categories = Array.from(new Set(allCores.map((c) => c.category)));
+  const q = libraryFilter.trim().toLowerCase();
+  const visible = q ? allCores.filter((c) => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : allCores;
+  const categories = Array.from(new Set(visible.map((c) => c.category)));
   libraryEl.innerHTML = "";
   for (const category of categories) {
+    const inCategory = visible.filter((c) => c.category === category);
+    const limit = libraryShown.get(category) ?? LIBRARY_PAGE;
     const label = document.createElement("div");
     label.className = "category-label";
-    label.textContent = `${category} (${allCores.filter((c) => c.category === category).length})`;
+    label.textContent = `${category} (${inCategory.length})`;
     libraryEl.appendChild(label);
 
     const grid = document.createElement("div");
     grid.className = "core-grid";
-    for (const core of allCores.filter((c) => c.category === category)) {
+    for (const core of inCategory.slice(0, limit)) {
       const card = document.createElement("div");
       card.className = "core-card" + (core.id === selectedCore?.id ? " selected" : "");
       const thumb = document.createElement("div");
@@ -322,9 +341,25 @@ function renderLibrary() {
       card.addEventListener("click", () => selectCore(core));
       grid.appendChild(card);
     }
+    if (inCategory.length > limit) {
+      const more = document.createElement("button");
+      more.className = "core-more";
+      more.textContent = `Show more (${inCategory.length - limit} more)`;
+      more.addEventListener("click", () => {
+        libraryShown.set(category, limit + LIBRARY_PAGE);
+        renderLibrary();
+      });
+      grid.appendChild(more);
+    }
     libraryEl.appendChild(grid);
   }
 }
+
+(document.getElementById("library-filter") as HTMLInputElement).addEventListener("input", (e) => {
+  libraryFilter = (e.target as HTMLInputElement).value;
+  libraryShown.clear();
+  renderLibrary();
+});
 
 // --- Editor panel ----------------------------------------------------------
 
@@ -332,7 +367,7 @@ const editorPanel = document.getElementById("editor-panel")!;
 
 function renderEditorPanel(core: CoreDef) {
   editorPanel.innerHTML = `
-    <div class="core-title">${core.label} <span class="hint">(${core.id})</span></div>
+    <div class="core-title">${escapeHtml(core.label)} <span class="hint">(${escapeHtml(core.id)})</span></div>
     <canvas id="editor-canvas"></canvas>
     <div class="controls-row">
       <input type="file" id="file-input" accept="image/*" />
@@ -488,7 +523,7 @@ async function openImportModal(core: CoreDef) {
         <input type="text" id="import-search" placeholder="Search packs/games..." />
         <button id="import-close">Close</button>
       </div>
-      <div class="modal-hint hint">Imported from the reference project's community marquee packs (256x64 grayscale, originals live in ../library/converted). Selecting one loads it into the editor for ${core.label}.</div>
+      <div class="modal-hint hint">Imported from the reference project's community marquee packs (256x64 grayscale, originals live in ../library/converted). Selecting one loads it into the editor for ${escapeHtml(core.label)}.</div>
       <div class="modal-grid" id="import-grid">Loading...</div>
     </div>
   `;
@@ -525,7 +560,7 @@ async function openImportModal(core: CoreDef) {
     for (const entry of items.slice(0, 400)) {
       const card = document.createElement("div");
       card.className = "import-card";
-      card.innerHTML = `<img src="${entryUrl(entry)}" loading="lazy" /><div class="import-name">${entry.name}</div>`;
+      card.innerHTML = `<img src="${entryUrl(entry)}" loading="lazy" /><div class="import-name">${escapeHtml(entry.name)}</div>`;
       card.addEventListener("click", async () => {
         const res = await fetch(entryUrl(entry));
         const blob = await res.blob();
@@ -596,39 +631,68 @@ async function openMatchReviewModal(summary: string[] = []) {
     alreadySaved: artCache.has(core.id),
   }));
 
-  const checkboxes: { row: MatchRow; checkbox: HTMLInputElement }[] = [];
+  // Importing a whole pack folder can match ~1900 cores. Rendering every row
+  // at once locked the page up (see CLAUDE.md "Import folder"), so rows are
+  // added a page at a time; the checked state lives in `checked`, not in the
+  // DOM, so "Save" still covers rows that haven't been rendered yet.
+  const REVIEW_PAGE = 400;
+  const matched = rows.filter((r) => r.match); // nothing to guess for the rest
+  const checked = new Map<MatchRow, boolean>(matched.map((r) => [r, !r.alreadySaved]));
   list.innerHTML = "";
-  for (const row of rows) {
-    if (!row.match) continue; // nothing to guess for this core
-    const item = document.createElement("label");
-    item.className = "review-row";
-    item.innerHTML = `
-      <input type="checkbox" ${row.alreadySaved ? "" : "checked"} />
-      <img src="${entryUrl(row.match)}" loading="lazy" />
-      <span class="review-core">${row.core.label} <span class="hint">(${row.core.id})</span></span>
-      <span class="hint">←</span>
-      <span class="review-match hint">${row.match.name}${row.alreadySaved ? " · already saved" : ""}</span>
-    `;
-    checkboxes.push({ row, checkbox: item.querySelector("input") as HTMLInputElement });
-    list.appendChild(item);
+  let shown = 0;
+
+  const moreBtn = document.createElement("button");
+  moreBtn.className = "review-more";
+  function renderMore() {
+    const upto = Math.min(shown + REVIEW_PAGE, matched.length);
+    const frag = document.createDocumentFragment();
+    for (; shown < upto; shown++) {
+      const row = matched[shown];
+      const item = document.createElement("label");
+      item.className = "review-row";
+      item.innerHTML = `
+        <input type="checkbox" ${checked.get(row) ? "checked" : ""} />
+        <img src="${entryUrl(row.match!)}" loading="lazy" />
+        <span class="review-core">${escapeHtml(row.core.label)} <span class="hint">(${escapeHtml(row.core.id)})</span></span>
+        <span class="hint">←</span>
+        <span class="review-match hint">${escapeHtml(row.match!.name)}${row.alreadySaved ? " · already saved" : ""}</span>
+      `;
+      (item.querySelector("input") as HTMLInputElement).addEventListener("change", (e) => {
+        checked.set(row, (e.target as HTMLInputElement).checked);
+      });
+      frag.appendChild(item);
+    }
+    list.insertBefore(frag, moreBtn.isConnected ? moreBtn : null);
+    if (shown < matched.length) {
+      moreBtn.textContent = `Show more (${matched.length - shown} more matches)`;
+      if (!moreBtn.isConnected) list.appendChild(moreBtn);
+    } else {
+      moreBtn.remove();
+    }
   }
-  if (checkboxes.length === 0) {
+  moreBtn.addEventListener("click", renderMore);
+  if (matched.length === 0) {
     list.innerHTML = `<div class="hint">No guessable matches beyond what's already assigned.</div>`;
+  } else {
+    renderMore();
   }
 
   const saveAllBtn = overlay.querySelector("#review-save-all") as HTMLButtonElement;
   saveAllBtn.addEventListener("click", async () => {
     saveAllBtn.disabled = true;
     saveAllBtn.textContent = "Saving...";
-    let count = 0;
-    for (const { row, checkbox } of checkboxes) {
-      if (!checkbox.checked || !row.match) continue;
+    // Gather everything first, then write it in one transaction: saving a
+    // whole imported pack is ~1900 cores, far too many for one round trip each.
+    const toSave: CoreArtRecord[] = [];
+    for (const row of matched) {
+      if (!checked.get(row) || !row.match) continue;
       const res = await fetch(entryUrl(row.match));
-      const blob = await res.blob();
-      await saveCoreArt(row.core.id, blob);
-      artCache.set(row.core.id, { coreId: row.core.id, jpegBlob: blob, updatedAt: Date.now() });
-      count++;
+      toSave.push({ coreId: row.core.id, jpegBlob: await res.blob(), updatedAt: Date.now() });
+      if (toSave.length % 100 === 0) saveAllBtn.textContent = `Saving... ${toSave.length}`;
     }
+    await putCoreArtRecords(toSave);
+    for (const rec of toSave) artCache.set(rec.coreId, rec);
+    const count = toSave.length;
     renderLibrary();
     close();
     statusText.textContent = `Saved ${count} matched core${count === 1 ? "" : "s"}.`;
@@ -898,6 +962,21 @@ async function sendPreview(core: CoreDef, force: boolean) {
   }
 }
 
+/**
+ * Saved art can belong to cores that aren't in the built-in list (arcade
+ * titles or anything imported from a folder). Without the pack index - the
+ * hosted copy never has one - nothing else would list them after a reload,
+ * so any saved core that's missing from the catalog is added to it.
+ */
+function withSavedCores(cores: CoreDef[]): CoreDef[] {
+  const known = new Set(cores.map((c) => c.id));
+  const extra = [...artCache.keys()]
+    .filter((id) => !known.has(id))
+    .sort((x, y) => x.localeCompare(y))
+    .map((id) => ({ id, label: id, category: "Arcade" as const }));
+  return extra.length ? [...cores, ...extra] : cores;
+}
+
 // Builds allCores = SEED_CORES + one CoreDef per local pack entry not
 // already claimed by a console/computer match (see the `allCores` comment
 // above). Returns the per-core guessed match too, so the caller doesn't
@@ -924,7 +1003,7 @@ function buildAllCores(entries: ImportEntry[]): { cores: CoreDef[]; guesses: Map
     const m = entries.find((e) => e.name === core.id)!;
     guesses.set(core.id, m);
   }
-  return { cores: [...SEED_CORES, ...arcadeCores], guesses };
+  return { cores: withSavedCores([...SEED_CORES, ...arcadeCores]), guesses };
 }
 
 // Assigns the complete local library by default: every core (console,
@@ -955,6 +1034,7 @@ async function autoSeedLibrary(guesses: Map<string, ImportEntry>) {
 (async () => {
   const all = await loadAllCoreArt();
   for (const [id, rec] of all) artCache.set(id, rec);
+  allCores = withSavedCores(SEED_CORES); // saved cores outside the built-in list must show up even without a pack index
   renderLibrary(); // first paint with saved art only, so the UI isn't empty while the pack index loads
 
   try {

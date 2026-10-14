@@ -126,10 +126,31 @@ main {
   overflow: hidden;
 }
 
+#library-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+}
+
+#library-filter {
+  margin: 0.6rem 0.75rem 0;
+  padding: 0.4rem 0.6rem;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
 #library {
   overflow-y: auto;
-  border-right: 1px solid var(--border);
   padding: 0.75rem;
+  flex: 1;
+}
+
+.core-more {
+  grid-column: 1 / -1;
 }
 
 .category-label {
@@ -310,10 +331,15 @@ main {
 }
 
 .review-list {
+  /* A block list on purpose: this used to be a column flexbox, and with
+     ~1900 rows (importing a whole pack folder) Chrome's flex layout locked
+     the page up solid. Bisected on the real import: same rows, same CSS,
+     display:block alone made it responsive. */
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+}
+
+.review-row + .review-row {
+  margin-top: 0.3rem;
 }
 
 .review-row {

@@ -573,7 +573,32 @@ the hosted-style build (no library): MENU.gsc (the `_bits[8198]` variant),
 two `.xbm` and TGFX16.gsc decoded to pixels identical to the Python
 converter's PNGs (SHA-256 of the grayscale bytes), a 3-byte `.xbm` was
 skipped with a reason, a README ignored. Only the first 5000 files are read;
-`.zip`/`.rar` archives are not opened (extract first). Also fixed here:
+`.zip`/`.rar` archives are not opened (extract first). **Large folders (found by importing the real 1890-file `GSC` folder):** the
+first version crashed the page - everything rendered at once: ~1900 library
+cards plus a ~1900-row review modal. Reproduced in a (background) Chrome tab
+and narrowed with a heartbeat beacon (`navigator.sendBeacon` keeps working
+when the page's main thread is blocked): decoding is fine (~6 s, linear),
+the freeze comes from the rendering, and was *not* in my JS (heap 16 MB, no
+long-animation-frame ever finished). What fixed it: `renderLibrary()` draws
+at most 300 cards per category with a "Show more" button plus a filter box
+(`LIBRARY_PAGE`), and the review modal adds rows 400 at a time with its
+checked state in a `Map` (so Save covers un-rendered rows). Also changed on
+the way, each independently sensible: `.review-list` is no longer a column
+flexbox (a synthetic 1894-row flex list froze the page; the same rows in a
+block container didn't), `db.ts` shares one IndexedDB connection (it used to
+open and never close one per save) and the review Save writes everything in
+one transaction (`putCoreArtRecords`), and `withSavedCores()` adds any saved
+core missing from the catalog so cores saved from an imported folder still
+show after a reload on the hosted copy (no pack index there). Names from the
+folder are HTML-escaped before going into `innerHTML`. Verified: full import
++ Save of 1889 cores, page responsive throughout (heartbeat max gap 1 s),
+all 1889 records persisted and listed after a reload. NOT verified: the exact
+browser-internal cause (I never isolated a minimal case; paging fixed it) and
+any of this in a visible, focused tab (the test tab was backgrounded, where
+Chrome throttles `canvas.toBlob` to ~1 s per call - the test harness
+overrides it).
+
+Also fixed here:
 `buildAllCores()` produced duplicate core ids when one name existed as both
 `.gsc` and `.xbm`, and the pack browser's card click never called
 `updateActionButtons()`, leaving Save/Preview/Send disabled for a core with

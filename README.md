@@ -265,6 +265,9 @@ GIF, matches names to cores (exact name, then the alternate spellings in
 `web/src/aliases.ts`), and opens the "Review core matches" table so you can
 check and save them. That's the way to use a pack you already have on the
 hosted copy, which ships without the community art packs.
+Big folders are fine (a full 1890-file pack imports in a few seconds): the
+library shows 300 cores per category at a time with a **Show more** button,
+and the filter box above it finds a core by name.
 
 **Back up** and **Restore** in the header save your library (every core's
 saved art) to a single JSON file and merge it back in. Browser storage is

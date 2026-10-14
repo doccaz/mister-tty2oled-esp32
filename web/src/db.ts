@@ -16,8 +16,13 @@ export interface CoreArtRecord {
   updatedAt: number;
 }
 
+// One shared connection: every call used to open (and never close) its own,
+// which adds up to thousands of connections when saving a whole imported pack.
+let dbPromise: Promise<IDBDatabase> | null = null;
+
 function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
@@ -25,9 +30,21 @@ function openDb(): Promise<IDBDatabase> {
         db.createObjectStore(STORE, { keyPath: "coreId" });
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onclose = () => (dbPromise = null); // browser dropped it; reopen next time
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    req.onerror = () => {
+      dbPromise = null;
+      reject(req.error);
+    };
   });
+  return dbPromise;
 }
 
 export async function saveCoreArt(coreId: string, jpegBlob: Blob): Promise<void> {
