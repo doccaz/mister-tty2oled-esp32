@@ -188,12 +188,27 @@ First hold BOOT while plugging the board in (the browser can't reset the
 C3's native USB into download mode on its own; without this the page says
 "Failed to initialize"), then pick your board, press "Connect and install"
 and choose the serial port ("USB JTAG/serial debug unit"). Flashing
-keeps your saved WiFi settings. The same site hosts the
+keeps your saved WiFi and MQTT settings (the page writes the firmware's four
+parts separately and never touches the settings area). The same site hosts the
 [marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)
-(the local art pack isn't included, it isn't redistributed). The merged
-`.bin` images are also attached to each
-[release](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) if you
-prefer `esptool.py write_flash 0x0 <file>.bin`.
+(the local art pack isn't included, it isn't redistributed).
+
+With `esptool`, take the parts from the latest
+[release](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) and write
+them at their own offsets, which also keeps your settings:
+
+```bash
+esptool.py --chip esp32c3 --port /dev/ttyACM0 write_flash \
+  0x0     tty2oled-gc9a01-<ver>-bootloader.bin \
+  0x8000  tty2oled-gc9a01-<ver>-partitions.bin \
+  0xe000  tty2oled-gc9a01-<ver>-boot_app0.bin \
+  0x10000 tty2oled-gc9a01-<ver>-<board>-app.bin   # board: esp32c3, esp32c3_nooled or esp32c3_2424s012
+```
+
+The release also has one full-chip image per board (`…-<board>-full.bin` from
+0.4.3 on, `…-<board>.bin` before). Those are for a brand-new device only:
+they fill the space between partitions, so **writing one erases the saved
+WiFi and MQTT settings** and the device returns to access-point setup.
 
 ## Build & flash the firmware
 

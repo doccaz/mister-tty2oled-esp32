@@ -510,8 +510,9 @@ the GC9A01 behaves identically either way.
 page (pinned `esp-web-tools@10.0.1` from unpkg) with a board picker that
 swaps the `manifest` attribute between three manifests, one per PlatformIO
 env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`). `tools/build_site.sh`
-assembles `site/` (gitignored): the merged flash images, the generated
-manifests, the flasher at `/`, and the Vite-built web app at `/app/`
+assembles `site/` (gitignored): the flash parts (bootloader, partition
+table, boot_app0, one app image per board), the generated manifests (each
+writes the four parts at 0x0/0x8000/0xe000/0x10000), the flasher at `/`, and the Vite-built web app at `/app/`
 (`--base=./`, so `importLibrary.ts` builds its fetch URLs from
 `import.meta.env.BASE_URL` instead of a hardcoded `/library/`).
 `.github/workflows/pages.yml` is `workflow_dispatch` only ("Run workflow",
@@ -553,6 +554,21 @@ auto-reset the C3's native USB while the firmware's HWCDC is running. The
 page now puts "hold BOOT while plugging in" as step 1. If newer ESP Web
 Tools handles the USB-JTAG reset, try bumping the pinned version and drop
 the requirement.
+
+**A merged flash image erases saved settings (found 2026-10-14, the hard
+way).** The first versions served one `esptool merge_bin` image per board
+written at 0x0. merge_bin fills the gaps between partitions with 0xFF, and the
+NVS partition (0x9000, 0x5000) sits in one - verified: 20,480 bytes of 0xFF
+there - so flashing it wiped the saved WiFi/MQTT config and the device came up
+in AP setup mode. It showed up as "booted in AP mode" right after flashing the
+released image, and it made the README/flasher claim "flashing keeps your
+saved WiFi settings" false. Now the flasher manifests list four parts and the
+release carries them (`*-bootloader.bin`, `*-partitions.bin`,
+`*-boot_app0.bin`, `*-<env>-app.bin`; bootloader/partitions/boot_app0 are
+identical across boards, `release.sh` checks that and that the parts
+reproduce each full image). Full images remain as release assets for fresh
+devices only (`*-<env>-full.bin`, 0.4.3+; v0.4.2 has them without `-full`).
+`pio run -t upload` was always fine: it writes the parts separately.
 
 Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
 holds the gitignored third-party art pack, which a *local* Vite build copies

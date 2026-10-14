@@ -82,20 +82,48 @@ for env in "${ENVS[@]}"; do
   log="$( cd firmware && pio run -e "${env}" 2>&1 )" || { echo "${log}" | tail -20; die "build failed: ${env}"; }
   echo "${log}" | grep -E "^PLATFORM:|^ - framework-arduinoespressif32|^RAM:|^Flash:" | sed 's/^/     /'
   b="firmware/.pio/build/${env}"
-  python3 "${ESPTOOL}" --chip esp32c3 merge_bin -o "${OUT}/tty2oled-gc9a01-${VERSION}-${env}.bin" \
+  # Full-chip image, for FRESH devices only: the gaps between partitions are
+  # filled with 0xFF, so writing it erases the NVS partition (saved WiFi/MQTT).
+  python3 "${ESPTOOL}" --chip esp32c3 merge_bin -o "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-full.bin" \
     --flash_mode dio --flash_freq 80m --flash_size 4MB \
     0x0 "${b}/bootloader.bin" 0x8000 "${b}/partitions.bin" \
     0xe000 "${BOOT_APP0}" 0x10000 "${b}/firmware.bin" >/dev/null
 done
 
+# The separate parts, written at their own offsets by the web flasher and by
+# `esptool write_flash` so the NVS partition (saved settings) is left alone.
+# Bootloader, partition table and boot_app0 are the same for every board.
+sha() { sha256sum "$1" | cut -d' ' -f1; }
+for part in bootloader partitions; do
+  for env in "${ENVS[@]}"; do
+    [ "$(sha firmware/.pio/build/${env}/${part}.bin)" = "$(sha firmware/.pio/build/${ENVS[0]}/${part}.bin)" ] \
+      || die "${part}.bin differs between ${env} and ${ENVS[0]}; the shared-parts layout assumes they match"
+  done
+  cp "firmware/.pio/build/${ENVS[0]}/${part}.bin" "${OUT}/tty2oled-gc9a01-${VERSION}-${part}.bin"
+done
+cp "${BOOT_APP0}" "${OUT}/tty2oled-gc9a01-${VERSION}-boot_app0.bin"
+for env in "${ENVS[@]}"; do
+  cp "firmware/.pio/build/${env}/firmware.bin" "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-app.bin"
+done
+
 echo "-- 4. Verify images"
 for env in "${ENVS[@]}"; do
-  f="${OUT}/tty2oled-gc9a01-${VERSION}-${env}.bin"
+  f="${OUT}/tty2oled-gc9a01-${VERSION}-${env}-full.bin"
   size="$(stat -c %s "${f}")"
   [ "${size}" -gt 500000 ] && [ "${size}" -lt 1500000 ] || die "${f}: implausible size ${size}"
   [ "$(strings -a "${f}" | grep -c -x "${VERSION}")" -ge 1 ] || die "${f}: version string ${VERSION} not found inside"
   echo "   ok: $(basename "${f}") (${size} bytes)"
 done
+# The parts must be exactly what the full image was built from.
+for env in "${ENVS[@]}"; do
+  tmp="$(mktemp)"
+  python3 "${ESPTOOL}" --chip esp32c3 merge_bin -o "${tmp}" --flash_mode dio --flash_freq 80m --flash_size 4MB \
+    0x0 "${OUT}/tty2oled-gc9a01-${VERSION}-bootloader.bin" 0x8000 "${OUT}/tty2oled-gc9a01-${VERSION}-partitions.bin" \
+    0xe000 "${OUT}/tty2oled-gc9a01-${VERSION}-boot_app0.bin" 0x10000 "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-app.bin" >/dev/null
+  cmp -s "${tmp}" "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-full.bin" || { rm -f "${tmp}"; die "parts don't reproduce the ${env} full image"; }
+  rm -f "${tmp}"
+done
+echo "   ok: parts reproduce each full image"
 ( cd "${OUT}" && sha256sum ./*.bin | sed 's# \./# #' > SHA256SUMS )
 echo "   toolchain lines above should be: Espressif 32 (2024.6.0), framework 2.0.18 - if not, this isn't the tested build"
 

@@ -4,16 +4,24 @@
 #
 # Assembles the GitHub Pages site into ./site:
 #   /              web flasher (flasher/index.html, ESP Web Tools)
-#   /firmware/     one merged flash image per board + a manifest for each
+#   /firmware/     the flash parts (bootloader, partition table, boot_app0, one
+#                  app image per board) + a manifest per board that writes them
+#                  at their own offsets
 #   /app/          the marquee web app (web/, Vite build)
 #
-# Needs `npm ci` done in web/. Firmware images come from one of two places:
-#   FIRMWARE_DIR=<dir>   merged images named *-<env>.bin, e.g. the assets of a
-#                        GitHub release (what CI does, so the flasher ships the
-#                        exact binaries that were tested), version taken from
-#                        FIRMWARE_VERSION (default: FW_VERSION in version.h)
-#   (unset)              merge them from the local PlatformIO builds
+# Needs `npm ci` done in web/. Firmware parts come from one of two places:
+#   FIRMWARE_DIR=<dir>   the release assets (what CI does, so the flasher ships
+#                        the exact binaries that were tested): *-bootloader.bin,
+#                        *-partitions.bin, *-boot_app0.bin and *-<env>-app.bin;
+#                        version from FIRMWARE_VERSION (default: FW_VERSION in
+#                        version.h)
+#   (unset)              the local PlatformIO builds
 #                        (pio run -e esp32c3 / esp32c3_nooled / esp32c3_2424s012)
+#
+# Why separate parts and not one merged image: a merged image fills the gaps
+# between partitions with 0xFF, which overwrites the NVS partition (0x9000) and
+# so erases the saved WiFi/MQTT settings. Writing the four parts separately
+# never touches it.
 # Run from anywhere:  tools/build_site.sh
 set -euo pipefail
 
@@ -21,13 +29,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SITE="${ROOT}/site"
 VERSION="${FIRMWARE_VERSION:-$(sed -n 's/^#define FW_VERSION "\(.*\)"/\1/p' "${ROOT}/firmware/src/version.h")}"
 [ -n "${VERSION}" ] || { echo "could not read FW_VERSION" >&2; exit 1; }
-
-if [ -z "${FIRMWARE_DIR:-}" ]; then
-  PKGS="${HOME}/.platformio/packages"
-  ESPTOOL="$(find "${PKGS}" -path '*tool-esptoolpy*' -name esptool.py | head -1)"
-  BOOT_APP0="$(find "${PKGS}" -path '*framework-arduinoespressif32*' -name boot_app0.bin | head -1)"
-  [ -f "${ESPTOOL}" ] && [ -f "${BOOT_APP0}" ] || { echo "PlatformIO esptool/boot_app0 not found" >&2; exit 1; }
-fi
 
 rm -rf "${SITE}"
 mkdir -p "${SITE}/firmware"
@@ -39,20 +40,34 @@ BOARDS=(
   "esp32c3_2424s012|Sunton ESP32-2424S012C all-in-one"
 )
 
+# find <glob> in FIRMWARE_DIR, or fail loudly
+pick() {
+  local f; f="$(ls "${FIRMWARE_DIR}"/$1 2>/dev/null | head -1)"
+  [ -f "${f}" ] || { echo "no $1 in ${FIRMWARE_DIR}" >&2; exit 1; }
+  echo "${f}"
+}
+
+# The three shared parts (identical for every board).
+if [ -n "${FIRMWARE_DIR:-}" ]; then
+  cp "$(pick '*-bootloader.bin')" "${SITE}/firmware/bootloader.bin"
+  cp "$(pick '*-partitions.bin')" "${SITE}/firmware/partitions.bin"
+  cp "$(pick '*-boot_app0.bin')" "${SITE}/firmware/boot_app0.bin"
+else
+  B0="${ROOT}/firmware/.pio/build/esp32c3"
+  BOOT_APP0="$(find "${HOME}/.platformio/packages" -path '*framework-arduinoespressif32*' -name boot_app0.bin | head -1)"
+  [ -f "${B0}/bootloader.bin" ] && [ -f "${BOOT_APP0}" ] || { echo "build esp32c3 first (pio run -e esp32c3)" >&2; exit 1; }
+  cp "${B0}/bootloader.bin" "${SITE}/firmware/bootloader.bin"
+  cp "${B0}/partitions.bin" "${SITE}/firmware/partitions.bin"
+  cp "${BOOT_APP0}" "${SITE}/firmware/boot_app0.bin"
+fi
+
 for entry in "${BOARDS[@]}"; do
   env="${entry%%|*}"; label="${entry#*|}"
-  out="tty2oled-gc9a01-${env}.bin"
+  app="app-${env}.bin"
   if [ -n "${FIRMWARE_DIR:-}" ]; then
-    # exact suffix match so "esp32c3" doesn't also catch "esp32c3_nooled"
-    src="$(ls "${FIRMWARE_DIR}"/*-"${env}".bin 2>/dev/null | head -1)"
-    [ -f "${src}" ] || { echo "no *-${env}.bin in ${FIRMWARE_DIR}" >&2; exit 1; }
-    cp "${src}" "${SITE}/firmware/${out}"
+    cp "$(pick "*-${env}-app.bin")" "${SITE}/firmware/${app}"
   else
-    b="${ROOT}/firmware/.pio/build/${env}"
-    python3 "${ESPTOOL}" --chip esp32c3 merge_bin -o "${SITE}/firmware/${out}" \
-      --flash_mode dio --flash_freq 80m --flash_size 4MB \
-      0x0 "${b}/bootloader.bin" 0x8000 "${b}/partitions.bin" \
-      0xe000 "${BOOT_APP0}" 0x10000 "${b}/firmware.bin" >/dev/null
+    cp "${ROOT}/firmware/.pio/build/${env}/firmware.bin" "${SITE}/firmware/${app}"
   fi
   cat > "${SITE}/firmware/manifest-${env}.json" <<EOF
 {
@@ -60,7 +75,15 @@ for entry in "${BOARDS[@]}"; do
   "version": "${VERSION}",
   "new_install_prompt_erase": false,
   "builds": [
-    { "chipFamily": "ESP32-C3", "parts": [ { "path": "${out}", "offset": 0 } ] }
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "bootloader.bin", "offset": 0 },
+        { "path": "partitions.bin", "offset": 32768 },
+        { "path": "boot_app0.bin", "offset": 57344 },
+        { "path": "${app}", "offset": 65536 }
+      ]
+    }
   ]
 }
 EOF
