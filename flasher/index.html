@@ -42,7 +42,18 @@
       }
       main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
       h1 { font-size: 1.6rem; margin: 0 0 4px; }
-      .sub { color: var(--muted); margin: 0 0 24px; }
+      .sub { color: var(--muted); margin: 0 0 16px; }
+      .topnav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+      .topnav a, .topnav .current {
+        padding: 8px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 0.92rem;
+        text-decoration: none;
+      }
+      .topnav .current { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+      .topnav a { background: var(--card); }
+      .topnav a:hover { border-color: var(--accent); }
       .card {
         background: var(--card);
         border: 1px solid var(--line);
@@ -92,6 +103,11 @@
     <main>
       <h1>tty2oled-gc9a01 web flasher</h1>
       <p class="sub">Flash the firmware onto your round-display marquee straight from the browser. No tools to install.</p>
+      <nav class="topnav" aria-label="Sections">
+        <span class="current">Flash firmware</span>
+        <a href="app/">Marquee web app →</a>
+        <a href="https://github.com/doccaz/mister-tty2oled-gc9a01">GitHub</a>
+      </nav>
 
       <div class="card">
         <label for="board">Your board</label>
@@ -139,7 +155,7 @@
         <ul>
           <li>With no saved WiFi, the display starts an open <code>tty2oled-XXXX</code> network with a
               setup page. Press the BOOT button to show a QR code that joins it.</li>
-          <li>Manage the marquee art from the <a href="app/">marquee web app</a> over USB or WiFi.</li>
+          <li>Manage the marquee art from the <a href="app/">marquee web app</a> over USB (WiFi works when you run the app locally, see the README).</li>
           <li>Flashing keeps your saved WiFi settings.</li>
         </ul>
       </div>

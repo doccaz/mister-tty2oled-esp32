@@ -15,8 +15,10 @@ import { EFFECTS, SPEED_PRESETS, DEFAULT_SPEED } from "./effects";
 import { COMMANDS, COMMAND_CATEGORIES, type CommandDef } from "./commands";
 
 const REPO_URL = "https://github.com/doccaz/mister-tty2oled-gc9a01";
+const FLASHER_URL = "https://doccaz.github.io/mister-tty2oled-gc9a01/";
 
 const ABOUT_LINKS = [
+  { title: "Web flasher", desc: "install or update the firmware from your browser", url: FLASHER_URL },
   { title: "This project's source", desc: "GitHub", url: REPO_URL },
   { title: "Original tty2oled", desc: "firmware/scripts this protocol is based on", url: "https://github.com/venice1200/MiSTer_tty2oled" },
   { title: "WLED OLED usermod", desc: "onboard status OLED support was ported from this", url: "https://github.com/wled/WLED/pull/5475" },
@@ -37,6 +39,7 @@ app.innerHTML = `
     </label>
     <button id="review-matches-btn">Review core matches</button>
     <button id="command-console-btn">Command console</button>
+    <a class="header-link" href="${FLASHER_URL}" target="_blank" rel="noopener" title="Install or update the firmware from your browser">Flash firmware ↗</a>
     <button id="about-btn">About</button>
     <button id="backup-btn" title="Download your saved art as a file">Back up</button>
     <button id="restore-btn" title="Merge a backup file into your saved art">Restore</button>

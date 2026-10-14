@@ -505,7 +505,11 @@ hand ("Run workflow", optional tag, default latest release) and deploys with
 the Pages actions. Setup is Settings -> Pages -> Source: GitHub Actions.
 
 **The workflow publishes a release's attached `.bin` files; it does not
-build firmware.** Releases are made by hand: build the three envs locally,
+build firmware.** Releases are cut with `tools/release.sh` (checklist prompts,
+builds the three envs, merges, verifies the version string and sizes,
+tags, `gh release create`; `--dry-run` rehearses without publishing - a
+fresh local rebuild reproduces the released images byte-for-byte). By hand
+it's: build the three envs locally,
 `esptool.py merge_bin` each (`0x0` bootloader, `0x8000` partitions, `0xe000`
 boot_app0, `0x10000` app; dio, 80m, 4MB - the layout `pio run -t upload`
 uses), `gh release create` with the files named `*-<env>.bin`. Why not

@@ -1,5 +1,10 @@
 # tty2oled-gc9a01
 
+**[⚡ Flash the firmware](https://doccaz.github.io/mister-tty2oled-gc9a01/)** ·
+**[🎨 Open the marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)** ·
+[Releases](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) ·
+[Build from source](#build--flash-the-firmware)
+
 An ESP32-C3 + GC9A01 (240×240 round SPI display) reimplementation of
 [venice1200/MiSTer_tty2oled](https://github.com/venice1200/MiSTer_tty2oled) —
 a physical marquee/status display for a [MiSTer FPGA](https://github.com/MiSTer-devel/Main_MiSTer/wiki)
@@ -16,6 +21,21 @@ setup portal, no cable required to get it onto your network), the same
 command protocol reachable over WiFi via WebSocket, and MQTT
 notifications so things like Home Assistant can push text/image alerts
 to the display.
+
+## Get started
+
+Everything runs in the browser (Chrome, Edge or Opera on a desktop, since
+both use WebSerial):
+
+| | What it does |
+|---|---|
+| **[⚡ Web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)** | Installs the latest release on your board over USB. No toolchain. Hold BOOT while plugging the board in. |
+| **[🎨 Marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)** | Build and manage the per-core art, preview it live on the display over USB. Back up your library from the header. |
+| [Build from source](#build--flash-the-firmware) | PlatformIO, if you want to change the firmware. |
+
+The two link to each other, so you can start with either. Details are in
+[Flash from your browser](#flash-from-your-browser) and
+[Run the web app](#run-the-web-app).
 
 ## In action
 
@@ -190,6 +210,10 @@ extension). All dependencies (`JPEGDEC`, `Adafruit GFX Library`,
 `ricmoo/QRCode`, `links2004/WebSockets`, `knolleary/PubSubClient`, plus
 `U8g2` in the OLED variant) are pulled automatically via `platformio.ini`.
 
+Maintainers: `tools/release.sh` builds the three variants, verifies them, tags
+the commit and publishes the GitHub release; publishing it also updates the
+web flasher (see `CLAUDE.md`).
+
 ## First boot: WiFi setup
 
 With no WiFi configured, the device starts its own open access point,
@@ -240,6 +264,10 @@ per browser and per site, so it's worth backing up before clearing site
 data or switching machines (this matters most on the hosted
 `github.io` copy). Restoring never overwrites a core you've since edited:
 a saved core is only replaced when the backup's copy is newer.
+
+The hosted copy at `github.io` talks to the device over **USB only**: the
+WiFi transport uses plain `ws://`, which browsers block from an `https://`
+page. For WiFi, run the app locally (`npm run dev`).
 
 ### Building the local marquee library
 

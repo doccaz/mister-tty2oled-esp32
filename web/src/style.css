@@ -74,6 +74,22 @@ button:hover {
   background: var(--accent);
 }
 
+/* Same look as a button, for header links that open another page. */
+.header-link {
+  background: var(--accent-dim);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.header-link:hover {
+  background: var(--accent);
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
