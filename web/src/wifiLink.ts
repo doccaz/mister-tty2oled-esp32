@@ -54,6 +54,7 @@ export class MixedContentError extends Error {
 export class WifiLink extends EventTarget implements DeviceLink {
   private ws: WebSocket | null = null;
   private pendingAck: (() => void) | null = null;
+  private pendingFail: ((err: Error) => void) | null = null;
   private _state: ConnectionState = "disconnected";
 
   // Same reasoning as SerialLink's queue: sendCommand()/sendColorArt()
@@ -124,6 +125,7 @@ export class WifiLink extends EventTarget implements DeviceLink {
         // not make the UI look stuck for up to 6s before recovering.
         this.pendingAck?.();
         this.pendingAck = null;
+        this.pendingFail = null;
       };
       ws.onerror = () => {
         clearTimeout(timer);
@@ -144,6 +146,17 @@ export class WifiLink extends EventTarget implements DeviceLink {
   private onMessage(ev: MessageEvent) {
     if (typeof ev.data !== "string") return; // no binary replies expected from the firmware
     const token = ev.data.endsWith(";") ? ev.data.slice(0, -1) : ev.data;
+    if (token.startsWith("ERR")) {
+      // The firmware refused the request (e.g. "ERR CMDCORC" for a picture over
+      // its buffer limit). Fail the pending send now instead of letting it
+      // look fine until the ack timeout, and tell the UI why.
+      const fail = this.pendingFail;
+      this.pendingAck = null;
+      this.pendingFail = null;
+      fail?.(new Error(`The device refused it (${token}). For a picture this usually means it is too large for the device's buffer.`));
+      this.dispatchEvent(new CustomEvent("message", { detail: token }));
+      return;
+    }
     if (token.endsWith("ttyack")) {
       this.pendingAck?.();
       this.pendingAck = null;
@@ -155,16 +168,19 @@ export class WifiLink extends EventTarget implements DeviceLink {
   }
 
   private waitForAck(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.pendingAck = resolve;
+      this.pendingFail = reject;
       setTimeout(() => {
         if (this.pendingAck === resolve) {
           this.pendingAck = null;
+          this.pendingFail = null;
           resolve(); // don't hang the UI forever if the ack is somehow lost
         }
       }, ACK_TIMEOUT_MS);
     });
   }
+
 
   private send(data: string | Uint8Array) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) throw new Error("Not connected");

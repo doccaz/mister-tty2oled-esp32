@@ -953,12 +953,14 @@ async function sendPreview(core: CoreDef, force: boolean) {
     // device" clicks only, not the debounced live pan/zoom preview, which
     // would otherwise flash on every drag) makes effect changes always
     // visible when evaluating them here.
+    // Encode first, so a picture that can't be sent (too detailed for the
+    // device's 20 KB buffer) fails before the screen is cleared.
+    const colorBytes = currentProfile.colorArt ? await editor.exportJpegFit() : undefined;
     if (force && blankFirstEnabled()) {
       await link.sendCommand("CMDCLS");
     }
-    if (currentProfile.colorArt) {
-      const bytes = await editor.exportJpeg();
-      await link.sendColorArt(core.id, currentEffect(), currentSpeedMs(), bytes);
+    if (colorBytes) {
+      await link.sendColorArt(core.id, currentEffect(), currentSpeedMs(), colorBytes);
     } else if (currentProfile.legacyMono) {
       const bytes = editor.exportGsc();
       await link.sendLegacyPicture(core.id, currentEffect(), bytes);

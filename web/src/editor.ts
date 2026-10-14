@@ -269,6 +269,24 @@ export class MarqueeEditor {
     );
   }
 
+  /**
+   * JPEG bytes guaranteed to fit the device's picture buffer. The firmware
+   * keeps CMDCORC pictures in a fixed 20,000-byte static buffer (a bigger one
+   * doesn't fit alongside the WiFi stack's RAM) and refuses anything larger
+   * with "ERR CMDCORC;", so detailed images are re-encoded at lower quality
+   * until they fit, with a little margin. Throws if even the lowest quality
+   * is too big, before anything has been sent to the device.
+   */
+  async exportJpegFit(maxBytes = 19000): Promise<Uint8Array> {
+    let last = 0;
+    for (const quality of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.27, 0.2]) {
+      const bytes = await this.exportJpeg(quality);
+      if (bytes.length <= maxBytes) return bytes;
+      last = bytes.length;
+    }
+    throw new Error(`This image is too detailed for the device (${Math.round(last / 1000)} KB even at the lowest JPEG quality; the limit is ${Math.round(maxBytes / 1000)} KB). Try zooming out or a simpler picture.`);
+  }
+
   /** Same render, returned as raw bytes ready for the wire protocol. */
   async exportJpeg(quality = 0.85): Promise<Uint8Array> {
     const blob = await this.exportJpegBlob(quality);
