@@ -365,6 +365,20 @@ init/offset/font conventions, not the WLED-specific dashboard content
 (effect name/brightness graph) or its config/button/LED-heartbeat layer,
 none of which apply here.
 
+### OLED idle blank and live command line (2026-10-14)
+
+An always-on dashboard burns in, so `oled_status.cpp` blanks the glass (by
+content, never `setPowerSave()`) after `kIdleBlankMs` = 60 s with no command
+from any transport and no GPIO9 press, counted from boot so the IP/version stay
+readable after power-up; any activity wakes it. This is independent of
+`CMDSAVER` (which can still blank it sooner via `oled_status_off()`). Line 3
+now shows the last command received (`> CMDCOR`, plus `*` for 2 s when fresh),
+fed by `protocol_note_command()` (called from `protocol_dispatch_line()`, the
+WebSocket CMDCORC/CMDHWINF handlers and MQTT notifications), and uptime moved
+onto the version line. `protocol_last_wake_ms()` exposes the shared
+wake timestamp. Compile-verified for all three envs; the visual behaviour is
+for the owner to confirm on the real OLED.
+
 ### Firmware version and repo URL
 
 `firmware/src/version.h` defines `FW_VERSION` and `REPO_URL` as the
@@ -888,6 +902,41 @@ Both exactly the kind of thing this project's CLAUDE.md keeps emphasizing
   dashboard) but isn't wired in yet - the onboard OLED's 72x40 dashboard
   is already at 4 lines filling all ~40px of usable height, and adding a
   5th would mean redesigning the layout, not just appending a line.
+
+## WiFi link quality and joining (2026-10-14)
+
+**The ESP32's default WiFi power-save ("modem sleep") wrecked this device's
+network behaviour.** Measured on a home network (Super Mini + OLED, -55 dBm)
+before the fix: `ping` 47% loss and 91-407 ms round trips (avg 233 ms),
+`GET /status` 0.4-3.9 s, WebSocket picture acks 1-10 s with some never
+arriving - the web app showed that as a black screen between images (its
+"blank first" had already cleared the display while the next picture sat
+queued behind slow acks). After `WiFi.setSleep(false)` (in `enterConnected()`
+and `startStaAttempt()`): 0% loss, 4-78 ms (avg 22 ms), `/status` ~30 ms, and
+acks equal the effect duration plus ~0.4 s decode (instant picture: 0.15 s).
+The board is USB-powered, so power-save buys nothing. `GET /status` now also
+reports `rssi` (dBm) and `txpower` (dBm).
+
+**Joining the saved network** used to be one 20 s attempt, then AP mode with
+no way back until a human reset it ("I have to reset it 2-3 times"). Now
+`wifi_manager.cpp` makes 3 attempts of 15 s each (`WiFi.disconnect()` between,
+fresh association), and in AP mode with a saved config it reboots after 120 s
+if nobody has joined the AP and the join QR isn't showing
+(`AP_RETRY_SAVED_MS`). Measured: 8/8 reboots joined (2.6 s x6, ~10 s x2), none
+fell to AP. Not proven gone from 8 samples.
+
+`CMDWTX,<dBm 2-20>` (diagnostic, not in the original protocol) sets WiFi TX
+power live, because some ESP32-C3 Super Mini boards behave better below full
+power; it wasn't needed here (default 20 dBm is fine once power-save is off)
+and isn't persisted.
+
+**Picture size limit over WiFi**: the device accepts a CMDCORC picture only up
+to `COLOR_BUF_MAX` = 20,000 bytes and answers `ERR CMDCORC;` otherwise (a
+44 KB JPEG, tested). The web app now fits its JPEG (`exportJpegFit()`,
+quality stepped down until <= 19,000 bytes; worst-case full-screen random
+noise came out at 17.7 KB), encodes before clearing the screen, and fails the
+pending send on any `ERR` reply instead of waiting out the ack timeout. The
+buffer is deliberately not raised: WiFi leaves ~30 KB of free heap.
 
 ## Wire protocol over WiFi (WebSocket transport, 2026-08-13)
 

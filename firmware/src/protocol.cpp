@@ -288,6 +288,7 @@ void handleColorPicture(const String &cmd) {
 // The shared command grammar - see protocol.h's declaration for why
 // CMDHWINF and the picture-transfer commands aren't part of this.
 void protocol_dispatch_line(const String &cmd) {
+  protocol_note_command(cmd);
   if (cmd == "CMDNULL") {
     // no-op test command
   } else if (cmd == "cls" || cmd == "CMDCLS") {
@@ -431,6 +432,12 @@ void protocol_dispatch_line(const String &cmd) {
     if (iv > 600) iv = 600;
     saverIntervalMs = (unsigned long)iv * 1000UL;
     saverEnabled = (m > 0);
+  } else if (cmd.startsWith("CMDWTX,")) {
+    // Diagnostic, not part of the original protocol: WiFi TX power in dBm
+    // (2-20), applied live. Some ESP32-C3 Super Mini boards join and hold a
+    // link much better below full power; this lets that be tested over the
+    // wire. Shown as "txpower" on GET /status.
+    wifi_manager_set_tx_power(splitField(cmd, 1).toFloat());
   } else if (cmd == "CMDRESET") {
     ESP.restart();
   } else if (cmd == "QWERTZ") {
@@ -584,6 +591,23 @@ const String &protocol_get_corename() {
 
 unsigned long protocol_last_activity_ms() {
   return lastActivityMs;
+}
+
+unsigned long protocol_last_wake_ms() {
+  return lastWakeMs;
+}
+
+static String lastCommand;
+
+void protocol_note_command(const String &line) {
+  int comma = line.indexOf(',');
+  String verb = comma > 0 ? line.substring(0, comma) : line;
+  verb.trim();
+  lastCommand = verb.substring(0, 12); // the OLED line is ~17 chars of 4px font, minus the "> " prefix
+}
+
+const String &protocol_last_command() {
+  return lastCommand;
 }
 
 void protocol_note_activity() {

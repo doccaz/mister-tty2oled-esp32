@@ -36,6 +36,8 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
   if (line.length() == 0) return;
 
   if (line.startsWith("CMDCORC")) {
+    protocol_note_command(line);
+    protocol_note_activity(); // a long picture transfer must keep the displays awake, not just its final ack
     String name = field(line, 1);
     int effect = field(line, 2).toInt();
     long durationMs = field(line, 3).toInt();
@@ -51,6 +53,7 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
   }
 
   if (line == "CMDHWINF") {
+    protocol_note_command(line);
     // The only command that replies - special-cased here instead of
     // going through protocol_dispatch_line(), which would write the
     // reply to Serial (the wrong transport for a WS client). Same

@@ -26,7 +26,16 @@ WifiState state = WifiState::INIT;
 String deviceName; // "tty2oled-XXXX"
 unsigned long stateEnteredMs = 0;
 bool portalStarted = false;
-constexpr unsigned long WIFI_CONNECT_TIMEOUT_MS = 20000; // same as chromecast-esp32's reference
+// Real-hardware finding (2026-10-14): on this board the first join attempt
+// after power-up fails often enough that the device landed in AP mode and
+// needed a reset or two to reach the saved network. One 20 s try then AP is
+// too brittle, so a few shorter tries (each starts a fresh association), and
+// from AP mode a saved network is retried by rebooting when nobody is using
+// the AP.
+constexpr unsigned long WIFI_ATTEMPT_TIMEOUT_MS = 15000;
+constexpr uint8_t WIFI_CONNECT_ATTEMPTS = 3;
+constexpr unsigned long AP_RETRY_SAVED_MS = 120000;
+uint8_t connectAttempt = 0;
 
 String buildDeviceName() {
   uint8_t mac[6];
@@ -55,15 +64,29 @@ void enterApMode() {
   stateEnteredMs = millis();
 }
 
-void enterConnecting() {
-  display_show_connecting_wifi(configStore.cfg.wifiSsid);
-  WiFi.mode(WIFI_STA);
+void startStaAttempt() {
+  WiFi.setSleep(false); // see enterConnected(): power-save wrecks latency and loss on this radio
   WiFi.begin(configStore.cfg.wifiSsid, configStore.cfg.wifiPass);
-  state = WifiState::CONNECTING;
   stateEnteredMs = millis();
 }
 
+void enterConnecting() {
+  display_show_connecting_wifi(configStore.cfg.wifiSsid);
+  WiFi.mode(WIFI_STA);
+  connectAttempt = 1;
+  startStaAttempt();
+  state = WifiState::CONNECTING;
+}
+
 void enterConnected() {
+  // Real-hardware finding (2026-10-14): the ESP32's default WiFi power-save
+  // ("modem sleep") buffers inbound traffic until the router's next wake
+  // interval. Measured against this device on a home network: ping showed
+  // 47% packet loss and 91-407 ms round trips (avg 233 ms), `GET /status`
+  // took 0.4-3.9 s, and WebSocket picture acks took 1-10 s (some never
+  // arrived), which the web app showed as a black screen between images.
+  // The board is USB-powered, so power-save buys nothing - keep the radio on.
+  WiFi.setSleep(false);
   MDNS.begin(deviceName.c_str());
   MDNS.addService("http", "tcp", 80);
   // Advertised separately from "http" so the web app's WiFi transport
@@ -121,13 +144,27 @@ void wifi_manager_loop() {
 
     case WifiState::AP_MODE:
       if (portalStarted) portal.loop();
+      // A saved network that failed at boot (router still starting, a bad
+      // moment on the radio) shouldn't strand the device in AP mode until a
+      // human resets it. If nobody has joined the AP and it isn't showing the
+      // join QR, reboot to try the saved network again.
+      if (configStore.cfg.configured && millis() - stateEnteredMs > AP_RETRY_SAVED_MS &&
+          WiFi.softAPgetStationNum() == 0 && !display_wifi_qr_shown()) {
+        ESP.restart();
+      }
       break;
 
     case WifiState::CONNECTING:
       if (WiFi.status() == WL_CONNECTED) {
         enterConnected();
-      } else if (millis() - stateEnteredMs > WIFI_CONNECT_TIMEOUT_MS) {
-        enterApMode();
+      } else if (millis() - stateEnteredMs > WIFI_ATTEMPT_TIMEOUT_MS) {
+        if (connectAttempt < WIFI_CONNECT_ATTEMPTS) {
+          connectAttempt++;
+          WiFi.disconnect(false, false); // drop the half-open association before trying again
+          startStaAttempt();
+        } else {
+          enterApMode();
+        }
       }
       break;
 
@@ -135,6 +172,16 @@ void wifi_manager_loop() {
       if (portalStarted) portal.loop();
       break;
   }
+}
+
+void wifi_manager_set_tx_power(float dbm) {
+  if (dbm < 2) dbm = 2;
+  if (dbm > 20) dbm = 20;
+  WiFi.setTxPower((wifi_power_t)(int)(dbm * 4)); // the driver counts quarter-dBm
+}
+
+float wifi_manager_tx_power() {
+  return WiFi.getTxPower() / 4.0f;
 }
 
 bool wifi_manager_is_ap_mode() {

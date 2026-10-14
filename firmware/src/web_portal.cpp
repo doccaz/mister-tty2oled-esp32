@@ -358,6 +358,8 @@ void WebPortal::handleStatus() {
   json += "\"apMode\":" + String(_apMode ? "true" : "false") + ",";
   json += "\"ssid\":\"" + htmlEscape(_apMode ? WiFi.softAPSSID() : String(_config->cfg.wifiSsid)) + "\",";
   json += "\"ip\":\"" + (_apMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString()) + "\"";
+  if (!_apMode) json += ",\"rssi\":" + String(WiFi.RSSI()); // dBm: -50 great, -70 marginal, -80 poor
+  json += ",\"txpower\":" + String(wifi_manager_tx_power(), 1); // dBm
   json += "}";
   _server.send(200, "application/json", json);
 }

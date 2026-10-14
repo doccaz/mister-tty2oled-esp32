@@ -32,6 +32,7 @@ unsigned long lastReconnectAttempt = 0;
 void wakeForNotification() {
   display_on();
   protocol_note_activity();
+  protocol_note_command("MQTT");
 }
 
 void handleTextMessage(const uint8_t *payload, unsigned int length) {

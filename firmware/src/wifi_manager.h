@@ -41,6 +41,12 @@ void wifi_manager_redraw_screen();
 // disconnects STA again afterward either way, since this is only a
 // probe - the real, persistent connect happens post-/save-and-restart.
 // On failure, errorOut gets a short reason.
+// Runtime WiFi TX power in dBm (clamped 2-20), for diagnosing a marginal radio
+// without reflashing - see CMDWTX in protocol.cpp. Not persisted: a reboot
+// returns to the firmware default.
+void wifi_manager_set_tx_power(float dbm);
+float wifi_manager_tx_power();
+
 bool wifi_manager_test_connection(const String &ssid, const String &pass, String &errorOut);
 
 // "tty2oled-XXXX", built from the last 2 MAC bytes - used as both the AP

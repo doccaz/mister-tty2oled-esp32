@@ -74,6 +74,15 @@ void protocol_redisplay_current(uint8_t effect);
 // path (see oled_status.cpp).
 const String &protocol_get_corename();
 unsigned long protocol_last_activity_ms(); // millis() timestamp of last dispatched line
+unsigned long protocol_last_wake_ms();     // last command from ANY transport or GPIO9 press - what wakes/blanks displays
+
+// Records the short name of a command as it arrives ("CMDCOR", "CMDCON", or a
+// bare corename) so oled_status.cpp can show what's being received. Called by
+// protocol_dispatch_line() itself; transports that handle a command before it
+// reaches there (ws_protocol.cpp's CMDCORC/CMDHWINF, MQTT notifications) call
+// it directly.
+void protocol_note_command(const String &line);
+const String &protocol_last_command();
 
 // CMDSAVER/CMDSWSAVER idle-blank check - call every loop() iteration,
 // after protocol_process(), never from inside a transfer path. No-op

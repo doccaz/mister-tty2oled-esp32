@@ -740,6 +740,8 @@ void display_show_factory_reset_done() {
   gfx.print(msg);
 }
 
+bool display_wifi_qr_shown() { return g_qrShown; }
+
 void display_toggle_wifi_qr() {
   g_qrShown = !g_qrShown;
   if (g_qrShown) {

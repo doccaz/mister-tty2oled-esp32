@@ -35,6 +35,7 @@ void display_show_ap_mode(const String &ssid, const String &ip);
 void display_show_connecting_wifi(const String &ssid);
 void display_show_wifi_connected(const String &ssid, const String &ip, const String &hostname);
 void display_toggle_wifi_qr();
+bool display_wifi_qr_shown(); // true while the AP-mode join QR is on screen
 
 // Boot-time factory reset (hold GPIO9 for 10s at power-on, see
 // wifi_manager.cpp's checkFactoryResetHold()). secondsLeft counts down

@@ -233,6 +233,12 @@ a browser shows a small status page with a "Forget WiFi" button (which
 restarts the device back into AP mode) and, once configured, MQTT broker
 settings (see [MQTT notifications](#mqtt-notifications) below).
 
+If the saved network isn't available at power-up, the device tries it three
+times before falling back to its own access point, and from the access point
+it retries the saved network by itself every couple of minutes while nobody is
+connected to it. `http://<device>/status` shows the signal strength
+(`rssi`, in dBm; around -55 is good, below -75 is marginal).
+
 ## Run the web app
 
 ```bash
