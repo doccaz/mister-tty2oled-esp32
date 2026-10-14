@@ -439,6 +439,16 @@ void protocol_dispatch_line(const String &cmd) {
     // Bare line, no CMD prefix: legacy text-only corename fallback.
     // This is what makes an unmodified tty2oled.sh usable with zero
     // MiSTer-side changes.
+    //
+    // A real corename is plain printable text. Anything with control or
+    // non-ASCII bytes is some other program probing the port - found on a
+    // real MiSTer: Zaparoo's PN532 auto-detect opens every /dev/ttyACM*
+    // after each core change and writes 0x55 0x55 0x00... (a PN532 wake-up
+    // preamble), which was drawn on the display as a garbage corename.
+    for (size_t i = 0; i < cmd.length(); i++) {
+      uint8_t c = cmd[i];
+      if (c < 0x20 || c > 0x7E) return;
+    }
     actCorename = cmd;
     display_show_corename(actCorename);
   }

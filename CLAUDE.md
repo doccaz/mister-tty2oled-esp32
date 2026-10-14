@@ -176,6 +176,23 @@ hardware (see `protocol.cpp`'s `dispatch()`):
   tty2oled" on the device and then reported "Flash progress completed"
   without flashing anything. Only an `installer.sh` case branch changed;
   no other upstream hardware/flash/version logic.
+- **Bare lines with control/non-ASCII bytes are ignored** (2026-10-13,
+  `protocol_dispatch_line()`'s bare-corename branch). Found on a real
+  MiSTer: after every core change a garbage "corename" appeared a second
+  or so after the (correctly received) logo. Root-caused with a temporary
+  ring buffer of raw parsed lines (since removed): each picture arrived
+  intact (`n=8192`), then a ~75-byte line starting `U\0\0\0...` was
+  parsed. That is Zaparoo's PN532 auto-detect (`[readers] auto_detect =
+  true` + a `pn532` entry in `/media/fat/zaparoo/config.toml`) probing
+  `/dev/ttyACM0` with a PN532 wake-up preamble after each core change -
+  Zaparoo's own log showed `PN532 auto-detect ... probed uart:/dev/ttyACM0`
+  seconds after each `CORENAME` write. A real corename is plain printable
+  text, so the firmware drops any bare line containing bytes outside
+  0x20-0x7E. Verified clean on real hardware (MENU/TGFX16/MENU through the
+  unmodified daemon). Two wrong theories came first and were reverted:
+  unread `ttyack;` replies, and `readFixed()`'s `readBytes()` busy-spin
+  (rewrote it with a yield loop; no effect). Paced vs burst sends looked
+  like a cause only because the probe timing shifted.
 - `CMDCLST,<transition>,<color 0-15>` — fill the screen with a solid
   4bpp-grayscale color and reveal it with a transition. Implemented by
   filling `legacyBuf` with the solid color and reusing the existing

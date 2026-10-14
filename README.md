@@ -342,6 +342,14 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
   [venice1200/MiSTer_tty2oled#43](https://github.com/venice1200/MiSTer_tty2oled/pull/43)
   (merged 2026-10-13) it prints a short notice pointing here and exits.
   Update firmware with PlatformIO, not the MiSTer installer.
+- **Zaparoo's NFC reader probe.** Zaparoo's PN532 auto-detect opens every
+  `/dev/ttyACM*` (including this display) after each core change and
+  writes a PN532 wake-up preamble (`0x55 0x55 0x00 …`). An older build drew
+  those bytes as a garbage corename right after each logo. The firmware now
+  ignores any bare line containing control or non-ASCII bytes, so nothing
+  needs changing on the MiSTer. If you'd rather stop the probing at the
+  source, give the `pn532` entry in `/media/fat/zaparoo/config.toml` an
+  explicit reader path instead of relying on `auto_detect`.
 - **Device path matters.** This firmware uses the ESP32-C3's native
   USB-CDC peripheral, which Linux enumerates as `/dev/ttyACM*` — the
   original hardware used a CP2102/FTDI-style chip, enumerating as
