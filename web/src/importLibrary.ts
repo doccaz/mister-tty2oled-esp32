@@ -14,7 +14,8 @@ export interface ImportEntry {
   pack: string;
   name: string;
   kind: "gsc" | "xbm" | "color";
-  png: string; // relative path under /library/
+  png: string; // relative path under /library/ (empty for entries imported from a user folder)
+  url?: string; // object URL for entries imported in-browser from a user folder (see packImport.ts)
 }
 
 let cache: ImportEntry[] | null = null;
@@ -22,7 +23,13 @@ let packLibraryMissing = false;
 
 export const PACK_LIBRARY_MISSING_MESSAGE =
   "The community art pack isn't included in this copy of the app (those fan-made packs aren't redistributed). " +
-  "You can still import your own images; to browse the packs, run the app locally with the library built (see the README).";
+  "Use \"Import folder\" to load a folder of your own (.gsc, .xbm, PNG or JPEG), or import a single image per core; " +
+  "to browse the bundled packs, run the app locally with the library built (see the README).";
+
+/** Called once the user has imported their own folder: there is a pack to browse after all. */
+export function markPackLibraryAvailable(): void {
+  packLibraryMissing = false;
+}
 
 /** True once a load found no pack index at all (e.g. the hosted copy), as opposed to a transient failure. */
 export function isPackLibraryMissing(): boolean {
@@ -42,6 +49,7 @@ export async function loadImportIndex(): Promise<ImportEntry[]> {
 }
 
 export function entryUrl(entry: ImportEntry): string {
+  if (entry.url) return entry.url;
   return `${import.meta.env.BASE_URL}library/${entry.png}`;
 }
 

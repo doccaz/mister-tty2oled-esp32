@@ -557,6 +557,28 @@ Select a core, drop in an image, pan/zoom to fit the circular safe area,
 "Send to device" (or just edit — live preview streams automatically while
 connected), "Save to library" persists it locally (IndexedDB) for next time.
 
+### Import folder (2026-10-13)
+
+Header "Import folder" (`web/src/packImport.ts`): `<input type=file
+webkitdirectory>` -> `.gsc`/`.xbm` decoded in the browser (a port of
+`tools/convert_library.py`: strip `/* */` comments, collect `0x..` literals,
+drop 6 leading metadata bytes when the count is 8198/2054, 8192 = 4bpp GSC,
+2048 = 1bpp XBM, 256x64) plus PNG/JPEG/WebP/GIF, into `ImportEntry` rows with
+an in-memory object `url` (`entryUrl()` prefers it). They're appended to
+`importIndex`, the core catalog is rebuilt (`buildAllCores()`), and the
+Review-matches modal opens with a summary. Nothing is uploaded or hosted, so
+it doesn't conflict with the art packs not being redistributed; it's how a
+user brings their own pack to the hosted app. Verified in a real browser on
+the hosted-style build (no library): MENU.gsc (the `_bits[8198]` variant),
+two `.xbm` and TGFX16.gsc decoded to pixels identical to the Python
+converter's PNGs (SHA-256 of the grayscale bytes), a 3-byte `.xbm` was
+skipped with a reason, a README ignored. Only the first 5000 files are read;
+`.zip`/`.rar` archives are not opened (extract first). Also fixed here:
+`buildAllCores()` produced duplicate core ids when one name existed as both
+`.gsc` and `.xbm`, and the pack browser's card click never called
+`updateActionButtons()`, leaving Save/Preview/Send disabled for a core with
+no saved art.
+
 ### Library backup/restore (2026-10-13)
 
 `web/src/backup.ts` + the header's "Back up"/"Restore" buttons. The only

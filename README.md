@@ -258,6 +258,14 @@ a **Command console** (documents and lets you exercise every command the
 firmware understands) and an **About** panel with links back to this
 project and the ones it's built on.
 
+**Import folder** in the header loads art from a folder on your computer
+and runs entirely in the browser (nothing is uploaded). It reads the
+original tty2oled `.gsc` and `.xbm` files as well as PNG, JPEG, WebP and
+GIF, matches names to cores (exact name, then the alternate spellings in
+`web/src/aliases.ts`), and opens the "Review core matches" table so you can
+check and save them. That's the way to use a pack you already have on the
+hosted copy, which ships without the community art packs.
+
 **Back up** and **Restore** in the header save your library (every core's
 saved art) to a single JSON file and merge it back in. Browser storage is
 per browser and per site, so it's worth backing up before clearing site

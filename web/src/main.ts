@@ -8,7 +8,8 @@ import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, type CoreArtRecord } from "./db";
 import { exportLibrary, restoreLibrary } from "./backup";
-import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry } from "./importLibrary";
+import { importFolder } from "./packImport";
+import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, markPackLibraryAvailable, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry } from "./importLibrary";
 import { DISPLAY_PROFILES, DEFAULT_DISPLAY_PROFILE, findDisplayProfile, type DisplayProfile } from "./displays";
 import { DEFAULT_TRANSFORM_BY_SHAPE, type TransformMode } from "./transforms";
 import { EFFECTS, SPEED_PRESETS, DEFAULT_SPEED } from "./effects";
@@ -44,6 +45,8 @@ app.innerHTML = `
     <button id="backup-btn" title="Download your saved art as a file">Back up</button>
     <button id="restore-btn" title="Merge a backup file into your saved art">Restore</button>
     <input id="restore-input" type="file" accept="application/json,.json" hidden>
+    <button id="import-folder-btn" title="Load marquee art from a folder on your computer (.gsc, .xbm, PNG, JPEG)">Import folder</button>
+    <input id="import-folder-input" type="file" webkitdirectory multiple hidden>
     <label class="hint">transport
       <select id="transport-select">
         <option value="serial">USB (WebSerial)</option>
@@ -229,6 +232,48 @@ restoreInput.addEventListener("change", async () => {
     showNotice("Library restored", lines);
   } catch (err) {
     showNotice("Restore failed", [err instanceof Error ? err.message : String(err)]);
+  }
+});
+
+// --- Import folder ---------------------------------------------------------
+
+const importFolderInput = document.getElementById("import-folder-input") as HTMLInputElement;
+const importFolderBtn = document.getElementById("import-folder-btn") as HTMLButtonElement;
+importFolderBtn.addEventListener("click", () => importFolderInput.click());
+importFolderInput.addEventListener("change", async () => {
+  const files = [...(importFolderInput.files ?? [])];
+  importFolderInput.value = ""; // so choosing the same folder again re-triggers
+  if (files.length === 0) return;
+  importFolderBtn.disabled = true;
+  try {
+    const res = await importFolder(files, (done, total) => {
+      importFolderBtn.textContent = `Importing ${done}/${total}…`;
+    });
+    if (res.entries.length === 0) {
+      const why = res.skipped.slice(0, 5).map((s) => `${s.name}: ${s.reason}`);
+      showNotice("Nothing to import", [
+        "No .gsc, .xbm, PNG, JPEG, WebP or GIF files were found in that folder.",
+        ...(why.length ? ["Skipped:", ...why] : []),
+      ]);
+      return;
+    }
+    // Merge into the pack index so Review matches / Browse / auto-match all see it, then rebuild the catalog.
+    importIndex = importIndex.concat(res.entries);
+    markPackLibraryAvailable();
+    const built = buildAllCores(importIndex);
+    allCores = built.cores;
+    (document.getElementById("review-matches-btn") as HTMLButtonElement).style.display = "";
+    const browse = document.getElementById("browse-local-btn") as HTMLButtonElement | null;
+    if (browse) browse.style.display = "";
+    renderLibrary();
+    const summary = [`Loaded ${res.entries.length} images from the folder (${res.gscXbm} .gsc/.xbm, ${res.images} other images).`];
+    if (res.skipped.length) summary.push(`${res.skipped.length} file${res.skipped.length === 1 ? "" : "s"} skipped (e.g. ${res.skipped[0].name}: ${res.skipped[0].reason}).`);
+    await openMatchReviewModal(summary);
+  } catch (err) {
+    showNotice("Import failed", [err instanceof Error ? err.message : String(err)]);
+  } finally {
+    importFolderBtn.disabled = false;
+    importFolderBtn.textContent = "Import folder";
   }
 });
 
@@ -485,6 +530,8 @@ async function openImportModal(core: CoreDef) {
         const res = await fetch(entryUrl(entry));
         const blob = await res.blob();
         await editor!.loadFile(blob);
+        syncFitControls();
+        updateActionButtons(); // a core with no saved art starts with Save/Preview/Send disabled
         close();
       });
       grid.appendChild(card);
@@ -509,13 +556,13 @@ interface MatchRow {
   alreadySaved: boolean;
 }
 
-async function openMatchReviewModal() {
+async function openMatchReviewModal(summary: string[] = []) {
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-header">
-        <div class="hint">Guessed matches (exact + alias filename matching against the local packs). Uncheck any you don't want, then save.</div>
+        <div class="hint">${summary.map((l) => `${l}<br>`).join("")}Guessed matches (exact + alias filename matching against the local packs). Uncheck any you don't want, then save.</div>
         <button id="review-close">Close</button>
       </div>
       <div class="review-list" id="review-list">Loading...</div>
@@ -865,8 +912,13 @@ function buildAllCores(entries: ImportEntry[]): { cores: CoreDef[]; guesses: Map
       claimed.add(m.name);
     }
   }
+  const seenIds = new Set<string>(); // the same name can appear twice (e.g. NES.gsc + NES.xbm); one core each
   const arcadeCores: CoreDef[] = entries
-    .filter((e) => !claimed.has(e.name))
+    .filter((e) => {
+      if (claimed.has(e.name) || seenIds.has(e.name)) return false;
+      seenIds.add(e.name);
+      return true;
+    })
     .map((e) => ({ id: e.name, label: e.name, category: "Arcade" as const }));
   for (const core of arcadeCores) {
     const m = entries.find((e) => e.name === core.id)!;
