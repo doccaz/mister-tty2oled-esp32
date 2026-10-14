@@ -1,17 +1,29 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Erico Mendonca
 #
-# Builds the firmware (all three board variants) and the web app, then
-# publishes the web flasher + marquee app to GitHub Pages. Runs on every
-# version tag, or by hand from the Actions tab.
+# Publishes the web flasher + marquee web app to GitHub Pages.
+#
+# The firmware images are NOT built here: they're the merged .bin files
+# attached to a GitHub release (built and hardware-tested locally), so the
+# flasher always ships exactly the binaries that were verified. A clean
+# `pio run` resolves to a different (official, consistent) Arduino toolchain
+# than the tested local one - see CLAUDE.md "Web flasher + GitHub Pages".
+#
+# Runs when a release is published, or by hand (Actions -> Pages -> Run
+# workflow, optionally naming a tag; default is the latest release).
 #
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions".
 name: Pages
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag whose firmware to publish (default: latest release)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -25,12 +37,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
+      # Always the tooling from main, even when triggered by an older tag.
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
@@ -38,21 +51,27 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Install PlatformIO
-        run: pip install platformio
-
-      - name: Build firmware
-        working-directory: firmware
+      - name: Download release firmware
+        id: fw
         run: |
-          pio run -e esp32c3
-          pio run -e esp32c3_nooled
-          pio run -e esp32c3_2424s012
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="$(gh release view --json tagName -q .tagName)"
+          fi
+          echo "Publishing firmware from release $TAG"
+          mkdir -p fw
+          gh release download "$TAG" --pattern '*.bin' --dir fw
+          ls -l fw
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
       - name: Install web dependencies
         working-directory: web
         run: npm ci
 
       - name: Assemble site
+        env:
+          FIRMWARE_DIR: ${{ github.workspace }}/fw
+          FIRMWARE_VERSION: ${{ steps.fw.outputs.version }}
         run: tools/build_site.sh
 
       - uses: actions/configure-pages@v5

@@ -496,23 +496,41 @@ the GC9A01 behaves identically either way.
 page (pinned `esp-web-tools@10.0.1` from unpkg) with a board picker that
 swaps the `manifest` attribute between three manifests, one per PlatformIO
 env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`). `tools/build_site.sh`
-assembles `site/` (gitignored): merged flash images
-(`esptool.py merge_bin`, bootloader 0x0 / partitions 0x8000 / boot_app0
-0xe000 / app 0x10000, dio, 80m, 4MB - the same layout `pio run -t upload`
-uses), the generated manifests (version read from `firmware/src/version.h`),
-the flasher at `/`, and the Vite-built web app at `/app/` (`--base=./`, so
-`importLibrary.ts` builds its fetch URLs from `import.meta.env.BASE_URL`
-instead of a hardcoded `/library/`). `.github/workflows/pages.yml` runs it
-on every `v*` tag or by hand, and deploys with the Pages actions.
+assembles `site/` (gitignored): the merged flash images, the generated
+manifests, the flasher at `/`, and the Vite-built web app at `/app/`
+(`--base=./`, so `importLibrary.ts` builds its fetch URLs from
+`import.meta.env.BASE_URL` instead of a hardcoded `/library/`).
+`.github/workflows/pages.yml` runs it when a release is published, or by
+hand ("Run workflow", optional tag, default latest release) and deploys with
+the Pages actions. Setup is Settings -> Pages -> Source: GitHub Actions.
+
+**The workflow publishes a release's attached `.bin` files; it does not
+build firmware.** Releases are made by hand: build the three envs locally,
+`esptool.py merge_bin` each (`0x0` bootloader, `0x8000` partitions, `0xe000`
+boot_app0, `0x10000` app; dio, 80m, 4MB - the layout `pio run -t upload`
+uses), `gh release create` with the files named `*-<env>.bin`. Why not
+build in CI (tried first, failed review): the firmware tested on real
+hardware is a **hybrid toolchain** that a clean machine can't reproduce.
+`platform = espressif32` resolves to whichever matching platform is already
+installed; locally that's Tasmota's `2024.06.00` (Arduino-ESP32 2.0.18, no
+`WiFiClientSecure`), and the `lib_extra_dirs` line in `platformio.ini`
+points at a *separate* official `framework-arduinoespressif32` 2.0.17
+package that supplies `WiFiClientSecure.h` (and the WiFi/WebServer libs).
+A clean CI checkout instead resolves to the registry's `espressif32@7.1.3` +
+official Arduino 2.0.17: builds fine, but is a 1.0 MB image instead of 0.73
+MB, a different core, and was never run on hardware. Pinning to the Tasmota
+platform (tried, reverted) makes clean machines fail with `WiFiClientSecure.h
+not found`. If the firmware is ever moved to a reproducible toolchain,
+re-verify everything in this file on hardware first, then CI can build it.
 
 Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
 holds the gitignored third-party art pack, which a *local* Vite build copies
-in and must never be published. A tag pushed before the workflow existed
-(v0.4.1) doesn't trigger it; use "Run workflow" once Pages is enabled
-(Settings -> Pages -> Source: GitHub Actions). Release assets are still
-attached by hand (`gh release create`), the workflow only publishes Pages.
-Web Serial can't be exercised headlessly, so the page's flashing itself is
-verified only by serving `site/` locally and checking every URL resolves.
+in and must never be published. Web Serial can't be exercised headlessly, so
+the page's flashing itself is verified only by serving `site/` and checking
+every URL resolves; the published images are byte-identical to the release
+assets (checked with `cmp`). The marquee app's IndexedDB lives at the shared
+`doccaz.github.io` origin and WiFi transport doesn't work from the https page
+(browsers block `ws://` from https); USB works.
 
 ## Web app
 
