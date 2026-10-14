@@ -51,6 +51,10 @@ void enterApMode() {
   // interface active to scan at all - a pure AP-mode scan just fails.
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(deviceName.c_str()); // open network, confirmed with user
+  // Power-save is the radio's default and wrecks latency/loss (see
+  // enterConnected()); the AP_STA interface used for scanning and for the
+  // setup page's "Test connection" shouldn't run with it either.
+  WiFi.setSleep(false);
   delay(100);
   IPAddress apIp = WiFi.softAPIP();
 
@@ -223,10 +227,28 @@ bool wifi_manager_test_connection(const String &ssid, const String &pass, String
     return false;
   }
 
+  // Real-hardware finding (2026-10-14): this used to wait 10 s and report
+  // "Timed out connecting" for a network the device joins fine at boot -
+  // joins here take 3-10 s, and the AP_STA radio is slower than plain STA.
+  // So: a clean start, up to 20 s with one fresh attempt halfway (like the
+  // boot-time retries), and an immediate answer when the password is rejected.
+  constexpr unsigned long kTotalMs = 20000;
+  constexpr unsigned long kRetryAtMs = 10000;
+  WiFi.setSleep(false);
+  WiFi.disconnect(false, false);
   WiFi.begin(ssid.c_str(), pass.c_str());
   unsigned long start = millis();
+  bool retried = false;
   wl_status_t status;
-  while ((status = WiFi.status()) != WL_CONNECTED && millis() - start < 10000) {
+  while ((status = WiFi.status()) != WL_CONNECTED && millis() - start < kTotalMs) {
+    // Wrong password / auth rejected - waiting won't help. Ignored for the first
+    // 1.5 s: begin() can leave the previous attempt's status in place briefly.
+    if (status == WL_CONNECT_FAILED && millis() - start > 1500) break;
+    if (!retried && millis() - start >= kRetryAtMs) {
+      retried = true;
+      WiFi.disconnect(false, false);
+      WiFi.begin(ssid.c_str(), pass.c_str());
+    }
     delay(100);
   }
   bool ok = (status == WL_CONNECTED);
@@ -234,7 +256,7 @@ bool wifi_manager_test_connection(const String &ssid, const String &pass, String
     switch (status) {
       case WL_NO_SSID_AVAIL: errorOut = "Network not found"; break;
       case WL_CONNECT_FAILED: errorOut = "Wrong password or auth rejected"; break;
-      default: errorOut = "Timed out connecting"; break;
+      default: errorOut = "Timed out connecting (20 s)"; break;
     }
   }
   WiFi.disconnect(false, false); // drop the test association; AP/captive portal stays up either way
