@@ -578,7 +578,7 @@ the flag is falsy and only shows the "Erase device" checkbox (default off) when 
 `true`. Manifests had `false` since the flasher was added, so every browser flash wiped
 NVS (the earlier "merged image erases NVS" finding was real too, but this masked it;
 the separate-parts layout is still right). Now `true` in `tools/build_site.sh`; the
-Pages workflow was re-dispatched, no new firmware release needed. Verify the dialog
+Pages workflow was re-dispatched, no new firmware release needed. Verified by the owner (browser flash of 0.5.1 kept WiFi and settings). Verify the dialog
 shows the unticked checkbox after any ESP Web Tools bump.
 
 Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
