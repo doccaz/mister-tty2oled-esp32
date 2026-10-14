@@ -277,8 +277,11 @@ data or switching machines (this matters most on the hosted
 a saved core is only replaced when the backup's copy is newer.
 
 The hosted copy at `github.io` talks to the device over **USB only**: the
-WiFi transport uses plain `ws://`, which browsers block from an `https://`
-page. For WiFi, run the app locally (`npm run dev`).
+WiFi transport uses plain `ws://` (the ESP32 has no RAM to spare for TLS),
+which browsers block from an `https://` page. Choosing WiFi there tells you
+so instead of failing quietly. For WiFi, open the app over `http`: run it
+locally (`npm run dev`, then `http://localhost:5173`) or serve a built copy
+with any static server (e.g. `python3 -m http.server` in the app folder).
 
 ### Building the local marquee library
 

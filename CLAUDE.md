@@ -557,6 +557,17 @@ Select a core, drop in an image, pan/zoom to fit the circular safe area,
 "Send to device" (or just edit — live preview streams automatically while
 connected), "Save to library" persists it locally (IndexedDB) for next time.
 
+### WiFi transport from the https copy (2026-10-14)
+
+`WifiLink` opens `ws://<host>:81`. From the github.io (https) page that
+throws a synchronous `SecurityError` (mixed content) from `new WebSocket()`,
+which used to leave the state stuck on "connecting" with the Connect button
+disabled and a cryptic message. `connect()` now catches it, resets to
+"disconnected" and rejects with `MixedContentError`; `main.ts` shows a notice
+(use USB, or open the app over http: `npm run dev` / any static server on
+localhost). `ws.onerror` also resets the state. Real fix would be wss on the
+device, which doesn't fit in RAM (see the WiFi feasibility numbers above).
+
 ### Import folder (2026-10-13)
 
 Header "Import folder" (`web/src/packImport.ts`): `<input type=file

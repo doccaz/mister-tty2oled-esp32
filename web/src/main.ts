@@ -3,7 +3,7 @@
 
 import { SEED_CORES, type CoreDef } from "./cores";
 import { SerialLink, type ConnectionState } from "./serial";
-import { WifiLink } from "./wifiLink";
+import { WifiLink, MixedContentError, isSecurePage } from "./wifiLink";
 import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, type CoreArtRecord } from "./db";
@@ -140,7 +140,7 @@ function updateTransportUI() {
   const isWifi = transportSelect.value === "wifi";
   wifiHostInput.style.display = isWifi ? "" : "none";
   if (isWifi) {
-    statusText.textContent = link.state;
+    statusText.textContent = isSecurePage() ? "WiFi is blocked on https pages - click Connect for details" : link.state;
   } else if (!SerialLink.isSupported()) {
     statusText.textContent = "Web Serial not supported - use Chrome or Edge";
   }
@@ -169,6 +169,13 @@ connectBtn.addEventListener("click", async () => {
     }
   } catch (err) {
     statusText.textContent = err instanceof Error ? err.message : String(err);
+    if (err instanceof MixedContentError) {
+      showNotice("WiFi isn't available from this page", [
+        "This copy of the app is served over <b>https</b>, and browsers don't let an https page open the device's plain <code>ws://</code> connection. Connecting over <b>USB (cable)</b> works from here.",
+        "To use WiFi, open the app over <b>http</b> instead: run it locally with <code>npm run dev</code> (then use <code>http://localhost:5173</code>), or serve the built app folder with any static server, for example <code>python3 -m http.server</code>, and open <code>http://localhost:8000</code>.",
+        "Chrome only, not guaranteed: lock icon in the address bar, Site settings, Insecure content, Allow, then reload this page.",
+      ]);
+    }
   }
 });
 

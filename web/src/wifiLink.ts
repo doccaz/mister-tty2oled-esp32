@@ -24,6 +24,22 @@ const ACK_TIMEOUT_MS = 6000; // same rationale as serial.ts's ACK_TIMEOUT_MS
 // allocation to reassemble one frame (see CLAUDE.md's RAM discussion).
 const CHUNK_BYTES = 2048;
 
+/** True when the page was loaded over https (e.g. the github.io copy). */
+export function isSecurePage(): boolean {
+  return typeof location !== "undefined" && location.protocol === "https:";
+}
+
+/**
+ * The device speaks plain ws:// (no TLS on the ESP32), and browsers block that
+ * from an https:// page. Carries the explanation the UI shows.
+ */
+export class MixedContentError extends Error {
+  constructor() {
+    super("The browser blocks WiFi connections from this https:// page (the device speaks plain ws://).");
+    this.name = "MixedContentError";
+  }
+}
+
 export class WifiLink extends EventTarget implements DeviceLink {
   private ws: WebSocket | null = null;
   private pendingAck: (() => void) | null = null;
@@ -57,7 +73,17 @@ export class WifiLink extends EventTarget implements DeviceLink {
     if (!host) throw new Error("Device host/IP required for WiFi connection");
     this.setState("connecting");
     await new Promise<void>((resolve, reject) => {
-      const ws = new WebSocket(`ws://${host}:${PORT}/`);
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(`ws://${host}:${PORT}/`);
+      } catch (err) {
+        // From an https:// page the browser refuses a plain ws:// socket (mixed
+        // content) and throws here, synchronously - without this the state
+        // would stay "connecting" forever with the Connect button disabled.
+        this.setState("disconnected");
+        reject(isSecurePage() && err instanceof DOMException && err.name === "SecurityError" ? new MixedContentError() : err);
+        return;
+      }
       this.ws = ws;
       ws.onopen = () => {
         // No literal "ttyrdy;" over this transport - the socket's own
@@ -77,7 +103,10 @@ export class WifiLink extends EventTarget implements DeviceLink {
         this.pendingAck = null;
       };
       ws.onerror = () => {
-        if (this._state === "connecting") reject(new Error("WiFi connection failed"));
+        if (this._state === "connecting") {
+          this.setState("disconnected");
+          reject(new Error(`Couldn't reach ${host} - check the address, and that the device is on WiFi and not in access-point mode`));
+        }
       };
     });
   }
