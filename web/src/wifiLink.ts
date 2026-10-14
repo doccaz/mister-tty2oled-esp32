@@ -16,6 +16,9 @@ import type { DeviceLink, ConnectionState } from "./deviceLink";
 export type { ConnectionState } from "./deviceLink";
 
 const PORT = 81;
+// A browser may hold a connection forever (unreachable address, or a
+// local-network permission prompt nobody answered); give up and say so.
+const CONNECT_TIMEOUT_MS = 8000;
 const ACK_TIMEOUT_MS = 6000; // same rationale as serial.ts's ACK_TIMEOUT_MS
 
 // Matches ws_protocol.cpp's WStype_BIN handler, which appends each frame
@@ -33,6 +36,14 @@ export function isSecurePage(): boolean {
  * The device speaks plain ws:// (no TLS on the ESP32), and browsers block that
  * from an https:// page. Carries the explanation the UI shows.
  */
+/** The socket never opened (and never errored) within CONNECT_TIMEOUT_MS. */
+export class WifiTimeoutError extends Error {
+  constructor(host: string) {
+    super(`No answer from ${host} within ${CONNECT_TIMEOUT_MS / 1000} seconds`);
+    this.name = "WifiTimeoutError";
+  }
+}
+
 export class MixedContentError extends Error {
   constructor() {
     super("The browser blocks WiFi connections from this https:// page (the device speaks plain ws://).");
@@ -85,7 +96,19 @@ export class WifiLink extends EventTarget implements DeviceLink {
         return;
       }
       this.ws = ws;
+      const timer = setTimeout(() => {
+        if (this._state !== "connecting") return;
+        try {
+          ws.close();
+        } catch {
+          /* already closing */
+        }
+        this.ws = null;
+        this.setState("disconnected");
+        reject(new WifiTimeoutError(host));
+      }, CONNECT_TIMEOUT_MS);
       ws.onopen = () => {
+        clearTimeout(timer);
         // No literal "ttyrdy;" over this transport - the socket's own
         // open event is an unambiguous ready signal (see ws_protocol.cpp).
         this.setState("connected");
@@ -103,6 +126,7 @@ export class WifiLink extends EventTarget implements DeviceLink {
         this.pendingAck = null;
       };
       ws.onerror = () => {
+        clearTimeout(timer);
         if (this._state === "connecting") {
           this.setState("disconnected");
           reject(new Error(`Couldn't reach ${host} - check the address, and that the device is on WiFi and not in access-point mode`));

@@ -3,7 +3,7 @@
 
 import { SEED_CORES, type CoreDef } from "./cores";
 import { SerialLink, type ConnectionState } from "./serial";
-import { WifiLink, MixedContentError, isSecurePage } from "./wifiLink";
+import { WifiLink, MixedContentError, WifiTimeoutError, isSecurePage } from "./wifiLink";
 import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, type CoreArtRecord } from "./db";
@@ -169,11 +169,12 @@ connectBtn.addEventListener("click", async () => {
     }
   } catch (err) {
     statusText.textContent = err instanceof Error ? err.message : String(err);
-    if (err instanceof MixedContentError) {
-      showNotice("WiFi isn't available from this page", [
-        "This copy of the app is served over <b>https</b>, and browsers don't let an https page open the device's plain <code>ws://</code> connection. Connecting over <b>USB (cable)</b> works from here.",
-        "To use WiFi, open the app over <b>http</b> instead: run it locally with <code>npm run dev</code> (then use <code>http://localhost:5173</code>), or serve the built app folder with any static server, for example <code>python3 -m http.server</code>, and open <code>http://localhost:8000</code>.",
-        "Chrome only, not guaranteed: lock icon in the address bar, Site settings, Insecure content, Allow, then reload this page.",
+    if (err instanceof MixedContentError || (err instanceof WifiTimeoutError && isSecurePage())) {
+      showNotice("Couldn't connect over WiFi from this https page", [
+        "Either the browser blocked the connection or nothing answered. From an <b>https</b> page a browser can block or hold a connection to a device on your local network, and the device itself speaks plain <code>ws://</code>. Connecting over <b>USB (cable)</b> works from here.",
+        "First check the basics: the address is right (use the IP shown on the display's Connected screen), the device is on your WiFi and not on its own <code>tty2oled-XXXX</code> access point, and this computer is on the same network.",
+        "In Chrome, allow this site to reach your local network: lock icon in the address bar, Site settings, <b>Local network access</b> (or <b>Insecure content</b>), Allow, then reload. If a permission prompt appeared, choose Allow.",
+        "Or open the app over <b>http</b>: run it locally with <code>npm run dev</code> (then use <code>http://localhost:5173</code>), or serve the built app folder with any static server, for example <code>python3 -m http.server</code>, and open <code>http://localhost:8000</code>.",
       ]);
     }
   }
