@@ -8,7 +8,7 @@ import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, type CoreArtRecord } from "./db";
 import { exportLibrary, restoreLibrary } from "./backup";
-import { loadImportIndex, entryUrl, findAutoMatch, type ImportEntry } from "./importLibrary";
+import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry } from "./importLibrary";
 import { DISPLAY_PROFILES, DEFAULT_DISPLAY_PROFILE, findDisplayProfile, type DisplayProfile } from "./displays";
 import { DEFAULT_TRANSFORM_BY_SHAPE, type TransformMode } from "./transforms";
 import { EFFECTS, SPEED_PRESETS, DEFAULT_SPEED } from "./effects";
@@ -377,6 +377,7 @@ function renderEditorPanel(core: CoreDef) {
 
   const browseBtn = editorPanel.querySelector("#browse-local-btn") as HTMLButtonElement;
   browseBtn.addEventListener("click", () => openImportModal(core));
+  if (isPackLibraryMissing()) browseBtn.style.display = "none"; // no pack in this copy, see PACK_LIBRARY_MISSING_MESSAGE
 
   const previewBtn = editorPanel.querySelector("#preview-effect-btn") as HTMLButtonElement;
   previewBtn.addEventListener("click", async () => {
@@ -912,7 +913,13 @@ async function autoSeedLibrary(guesses: Map<string, ImportEntry>) {
     await autoSeedLibrary(built.guesses);
   } catch (err) {
     console.error("Failed to load local pack index:", err);
+    if (isPackLibraryMissing()) {
+      // Hosted copy: no art pack to browse or auto-match, so hide the controls that need it.
+      (document.getElementById("review-matches-btn") as HTMLButtonElement).style.display = "none";
+    }
   }
 
-  editorPanel.innerHTML = `<div class="empty-state">Select a core on the left to assign or preview its marquee.</div>`;
+  editorPanel.innerHTML = `<div class="empty-state">Select a core on the left to assign or preview its marquee.${
+    isPackLibraryMissing() ? `<p class="hint">${PACK_LIBRARY_MISSING_MESSAGE}</p>` : ""
+  }</div>`;
 })();

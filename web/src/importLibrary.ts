@@ -18,10 +18,24 @@ export interface ImportEntry {
 }
 
 let cache: ImportEntry[] | null = null;
+let packLibraryMissing = false;
+
+export const PACK_LIBRARY_MISSING_MESSAGE =
+  "The community art pack isn't included in this copy of the app (those fan-made packs aren't redistributed). " +
+  "You can still import your own images; to browse the packs, run the app locally with the library built (see the README).";
+
+/** True once a load found no pack index at all (e.g. the hosted copy), as opposed to a transient failure. */
+export function isPackLibraryMissing(): boolean {
+  return packLibraryMissing;
+}
 
 export async function loadImportIndex(): Promise<ImportEntry[]> {
   if (cache) return cache;
   const res = await fetch(`${import.meta.env.BASE_URL}library/index.json`);
+  if (res.status === 404) {
+    packLibraryMissing = true;
+    throw new Error(PACK_LIBRARY_MISSING_MESSAGE);
+  }
   if (!res.ok) throw new Error(`Failed to load library/index.json: ${res.status}`);
   cache = (await res.json()) as ImportEntry[];
   return cache;
