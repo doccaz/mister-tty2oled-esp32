@@ -570,6 +570,17 @@ reproduce each full image). Full images remain as release assets for fresh
 devices only (`*-<env>-full.bin`, 0.4.3+; v0.4.2 has them without `-full`).
 `pio run -t upload` was always fine: it writes the parts separately.
 
+**ESP Web Tools erases the whole flash unless told to ask (found 2026-10-14, v0.5.1
+report: "flashed 0.5.1 but didn't keep the settings", device came up in AP mode).**
+The manifest flag is `new_install_prompt_erase`, and `false` does NOT mean "don't
+erase": in `install-dialog` the Install button calls `_startInstall(true)` (erase) when
+the flag is falsy and only shows the "Erase device" checkbox (default off) when it is
+`true`. Manifests had `false` since the flasher was added, so every browser flash wiped
+NVS (the earlier "merged image erases NVS" finding was real too, but this masked it;
+the separate-parts layout is still right). Now `true` in `tools/build_site.sh`; the
+Pages workflow was re-dispatched, no new firmware release needed. Verify the dialog
+shows the unticked checkbox after any ESP Web Tools bump.
+
 Gotchas: the script deletes `site/app/library` on purpose - `web/public/library`
 holds the gitignored third-party art pack, which a *local* Vite build copies
 in and must never be published. Web Serial can't be exercised headlessly, so

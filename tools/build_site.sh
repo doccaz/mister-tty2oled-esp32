@@ -73,7 +73,7 @@ for entry in "${BOARDS[@]}"; do
 {
   "name": "tty2oled-gc9a01 - ${label}",
   "version": "${VERSION}",
-  "new_install_prompt_erase": false,
+  "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C3",
