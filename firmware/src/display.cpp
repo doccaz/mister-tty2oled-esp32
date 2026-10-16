@@ -337,6 +337,11 @@ void display_flush() {
   // Draws happen immediately; nothing to flush. Present for CMDDUPD compat.
 }
 
+void display_set_orientation(uint8_t quarterTurns) {
+  g_rotation = quarterTurns & 3;
+  gfx.setRotation(g_rotation);
+}
+
 void display_set_rotation(uint8_t rot) {
   g_rotation = rot ? 1 : 0;
   gfx.setRotation(g_rotation ? 2 : 0); // 180 degree flip, matches CMDROT semantics

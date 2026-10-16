@@ -672,7 +672,7 @@ const char *protocol_idle_stage() {
 void protocol_apply_settings() {
   const DeviceSettings &c = settingsStore.cfg;
   display_set_contrast(c.contrast);
-  display_set_rotation(c.rotation);
+  display_set_orientation(c.rotation);
   display_set_tint(c.tintMode, c.tintColor1, c.tintColor2, c.tintDir);
   oled_status_set_idle_sec(c.oledIdleSec);
   clockIdleMs = (unsigned long)c.clockIdleMin * 60000UL;

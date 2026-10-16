@@ -191,10 +191,14 @@ void WebPortal::handleSettingsPart() {
   out(String(c.contrast));
   out(F("' oninput=\"cv.textContent=this.value\">"
                         "<label>Orientation</label><select name='rotation'><option value='0'"));
-  out(c.rotation ? "" : " selected");
+  out(c.rotation == 0 ? " selected" : "");
   out(F(">Normal</option><option value='1'"));
-  out(c.rotation ? " selected" : "");
-  out(F(">Rotated 180&deg;</option></select>"
+  out(c.rotation == 1 ? " selected" : "");
+  out(F(">Rotated 90&deg;</option><option value='2'"));
+  out(c.rotation == 2 ? " selected" : "");
+  out(F(">Rotated 180&deg;</option><option value='3'"));
+  out(c.rotation == 3 ? " selected" : "");
+  out(F(">Rotated 270&deg;</option></select>"
                         "<p class='muted'>Saved values are the defaults at power-up. A MiSTer running "
                         "tty2oled.sh sends its own brightness/rotation and those win until the next reboot.</p></div>"));
 
@@ -307,7 +311,7 @@ void WebPortal::handleSettingsSave() {
   DeviceSettings &c = settingsStore.cfg;
 
   c.contrast = (uint8_t)clampArg(_server.arg("contrast"), 0, 255, c.contrast);
-  c.rotation = _server.arg("rotation") == "1" ? 1 : 0;
+  c.rotation = (uint8_t)clampArg(_server.arg("rotation"), 0, 3, c.rotation);
   c.clockIdleMin = clampArg(_server.arg("clockMin"), 0, 1440, c.clockIdleMin);
   c.blankMin = clampArg(_server.arg("blankMin"), 0, 1440, c.blankMin);
   c.oledIdleSec = clampArg(_server.arg("oledSec"), 0, 3600, c.oledIdleSec);

@@ -14,6 +14,7 @@ void display_init();
 
 void display_clear();
 void display_flush();                      // no-op placeholder (GFX draws immediately); kept for CMDDUPD compat
+void display_set_orientation(uint8_t quarterTurns); // 0-3 = 0/90/180/270 degrees (settings page)
 void display_set_rotation(uint8_t rot);     // 0 = normal, 1 = 180 degrees (mirrors CMDROT semantics)
 void display_set_contrast(uint8_t level);   // 0..255 -> backlight PWM
 // Tint for the legacy monochrome pictures (see display.cpp). mode: 0 off,

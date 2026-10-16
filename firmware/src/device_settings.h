@@ -22,7 +22,7 @@ enum TintMode : uint8_t {
 
 struct DeviceSettings {
   uint8_t contrast;      // 0-255 backlight
-  uint8_t rotation;      // 0 normal, 1 rotated 180 degrees
+  uint8_t rotation;      // quarter turns: 0 normal, 1 = 90, 2 = 180, 3 = 270 degrees
 
   uint16_t clockIdleMin; // minutes idle before the clock replaces the picture (0 = never)
   uint16_t blankMin;     // further minutes before the screen goes dark (0 = never); counted from idle start when the clock is off
@@ -68,7 +68,10 @@ class DeviceSettingsStore {
 
   void load() {
     cfg.contrast = _prefs.getUChar("s_contrast", cfg.contrast);
-    cfg.rotation = _prefs.getUChar("s_rot", cfg.rotation) ? 1 : 0;
+    // "s_rot4" holds quarter turns 0-3. Older firmware stored only "s_rot" (0/1,
+    // where 1 meant 180 degrees), so fall back to that and map 1 -> 2.
+    if (_prefs.isKey("s_rot4")) cfg.rotation = _prefs.getUChar("s_rot4", 0) & 3;
+    else cfg.rotation = _prefs.getUChar("s_rot", 0) ? 2 : 0;
     cfg.clockIdleMin = _prefs.getUShort("s_clockMin", cfg.clockIdleMin);
     cfg.blankMin = _prefs.getUShort("s_blankMin", cfg.blankMin);
     cfg.oledIdleSec = _prefs.getUShort("s_oledSec", cfg.oledIdleSec);
@@ -84,7 +87,7 @@ class DeviceSettingsStore {
 
   void save() {
     _prefs.putUChar("s_contrast", cfg.contrast);
-    _prefs.putUChar("s_rot", cfg.rotation);
+    _prefs.putUChar("s_rot4", cfg.rotation);
     _prefs.putUShort("s_clockMin", cfg.clockIdleMin);
     _prefs.putUShort("s_blankMin", cfg.blankMin);
     _prefs.putUShort("s_oledSec", cfg.oledIdleSec);
