@@ -66,6 +66,8 @@ Full-color art (the extended `CMDCORC` command, sent by hand):
 - **`tools/`** — a small Python conversion pipeline that turns the
   community's legacy `.gsc`/`.xbm` marquee packs into PNGs for the web
   app's library browser.
+- **`case/`** — a 3D-printable case for the Sunton ESP32-2424S012C (see
+  [Case](#case-sunton-esp32-2424s012c)).
 - **`reference/`** — the upstream `MiSTer_tty2oled` project, included as a
   git submodule. It's the protocol/format reference this firmware was
   built to be compatible with; nothing in it is built or copied into this
@@ -178,6 +180,35 @@ Verified on real hardware with this board:
 Not yet tested on this board: sending art through the web app's WebSerial
 path (the `CMDCORC` check above used a script speaking the same protocol),
 and the WiFi/MQTT features.
+
+### Case (Sunton ESP32-2424S012C)
+
+`case/` has a small two-part screw-together case for the all-in-one board:
+`sunton_2424s012_case.scad` (parametric OpenSCAD) and the exported
+`sunton_2424s012_front.stl` / `sunton_2424s012_back.stl`.
+
+- **Front (cup):** the bezel with a round window, six small pads that centre
+  the glass, a pocket for the PCB, an internal thread, a USB-C opening and a
+  slot for the display's flex tail. Print it **face-down**.
+- **Back (plug):** a flat disc the same diameter as the cup, with a hollow
+  threaded skirt that screws in from behind (right-hand thread, 2 turns) and a
+  coin slot underneath. Print it **flat, thread up**.
+- Outer diameter about 45.9 mm, height about 13.7 mm. The USB-C window is sized
+  for a molded cable plug (about 11.5 x 6.5 mm) with a little play.
+- Print-tested on a real board; it fits and the glass has only slight play. The
+  display can still float a little in depth, so a small foam pad behind the PCB
+  helps.
+
+Tolerances depend on your printer. The ones you're most likely to tune are at
+the top of the `.scad` file: `glass_clr` (side play around the glass, 0.35 mm
+now; don't go much below 0.2), `thr_clr` (thread clearance), and
+`usb_plug_w` / `usb_plug_h` (USB window). Set `tail_angle` and `usb_angle` to
+match which side your flex tail and cable leave from. To regenerate the STLs:
+
+```bash
+openscad -o case/sunton_2424s012_front.stl -D 'part="front"' case/sunton_2424s012_case.scad
+openscad -o case/sunton_2424s012_back.stl  -D 'part="back"'  case/sunton_2424s012_case.scad
+```
 
 ## Flash from your browser
 
