@@ -15,6 +15,9 @@
 // Dimensions: display glass, FPC tail from the vendor drawing; the USB plug size from
 // your photos; thickness/back height are still estimates - check with calipers.
 //
+// Optional: with back_pedestal = true the plug has a flat disc under the board's tallest
+// parts, so the board can only sag back by ped_gap (a thin foam pad then holds it forward).
+//
 // part = "front" | "back" | "both" (side by side) | "assembly" (cutaway preview)
 
 part = "both";
@@ -53,6 +56,10 @@ float_gap  = 1.4;     // free space between the PCB's rear parts and the plug fl
 glass_gap  = 0.3;     // free space between the glass and the bezel lip
 flange_t   = 1.8;     // plug disc thickness
 $fn        = 96;
+
+/* ---- Optional pedestal on the plug (limits how far the board can sag back) ---- */
+back_pedestal = true; // flat disc on the plug floor, just below the board's tallest parts
+ped_gap       = 0.5;  // clearance left between the disc and the tallest part (back_h)
 
 /* ---- Thread ---- */
 pitch      = 2.0;     // axial advance per turn
@@ -131,7 +138,16 @@ module cup() {
   }
 }
 
+// A full disc (not posts): the plug turns about 2 turns while it rises, so anything
+// narrower would sweep across the board's parts. A disc below the tallest part (back_h)
+// can't touch anything, and the board can then only drop back by ped_gap before the
+// tallest parts rest on it - so the foam only has to take up that small gap.
+module pedestal() {
+  translate([0, 0, flange_t - 0.01]) cylinder(r = R_in - 0.6, h = z_p - back_h - ped_gap - flange_t + 0.01);
+}
+
 module plug() {
+  union() {
   difference() {
     union() {
       // flange: same diameter as the cup, rounded underneath, chamfered where it meets it
@@ -155,6 +171,8 @@ module plug() {
     }
     // coin slot on the underside
     translate([0, 0, -0.01]) linear_extrude(1.0) square([R_out*1.2, 2.0], center = true);
+  }
+  if (back_pedestal) pedestal();
   }
 }
 

@@ -199,7 +199,10 @@ and the WiFi/MQTT features.
   for a molded cable plug (about 11.5 x 6.5 mm) with a little play.
 - Print-tested on a real board; it fits and the glass has only slight play. The
   display can still float a little in depth, so a small foam pad behind the PCB
-  helps.
+  helps. The back has an optional flat pedestal (`back_pedestal`, `ped_gap`) just
+  below the board's tallest parts, so the board can only sag back about 0.5 mm and
+  the foam pad can be thin. The pedestal is not print-tested yet; if the plug
+  won't seat, raise `ped_gap` or set `back_pedestal = false`.
 
 Tolerances depend on your printer. The ones you're most likely to tune are at
 the top of the `.scad` file: `glass_clr` (side play around the glass, 0.35 mm

@@ -347,6 +347,11 @@ Re-export both STLs after changing the `.scad`, and check each is a single valid
   notch open to the rim instead. The window is sized for a molded cable plug
   (`usb_plug_w/h` = 12 x 7 mm, plug ~11.5 x 6.5).
 - The display still floats in depth; a foam pad behind the PCB is the owner's fix.
+- `back_pedestal`: a full disc on the plug floor, `ped_gap` (0.5) below the tallest part
+  (`back_h`), so the board can only sag back that far; not print-tested. Posts were tried
+  and dropped: the plug turns ~2 turns while rising, so any post at a radius sweeps the whole
+  circle over the board's parts (module corners, buttons, switch and connectors reach the PCB
+  edge) and would jam; the stop angle isn't fixed either. Only a disc below every part is safe.
 - Unconfirmed: the real FPC tail angle relative to the USB-C receptacle (both default
   270 deg in `tail_angle`/`usb_angle`; photos suggest ~90-130 deg apart).
 
