@@ -57,6 +57,8 @@ app.innerHTML = `
     <span class="status-dot" id="status-dot"></span>
     <span id="status-text" class="hint">disconnected</span>
     <button id="connect-btn">Connect device</button>
+    <a id="device-status-link" class="header-link" href="#" target="_blank" rel="noopener" style="display:none" title="Open the device's status page (new tab)">Status</a>
+    <a id="device-settings-link" class="header-link" href="#" target="_blank" rel="noopener" style="display:none" title="Open the device's settings page (new tab)">Settings</a>
   </header>
   <main>
     <div id="library-pane">
@@ -112,6 +114,9 @@ const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const transportSelect = document.getElementById("transport-select") as HTMLSelectElement;
 const wifiHostInput = document.getElementById("wifi-host-input") as HTMLInputElement;
 
+const deviceStatusLink = document.getElementById("device-status-link") as HTMLAnchorElement;
+const deviceSettingsLink = document.getElementById("device-settings-link") as HTMLAnchorElement;
+
 const WIFI_HOST_STORAGE_KEY = "tty2oled-wifi-host";
 wifiHostInput.value = localStorage.getItem(WIFI_HOST_STORAGE_KEY) ?? "";
 
@@ -119,6 +124,14 @@ function renderConnectionState(state: ConnectionState) {
   statusDot.className = "status-dot " + state;
   statusText.textContent = state;
   connectBtn.textContent = state === "connected" ? "Disconnect" : "Connect device";
+  // The device's own web pages (plain http) are only reachable by host when on WiFi.
+  const host = wifiHostInput.value.trim();
+  const showPages = state === "connected" && transportSelect.value === "wifi" && host !== "";
+  deviceStatusLink.style.display = deviceSettingsLink.style.display = showPages ? "" : "none";
+  if (showPages) {
+    deviceStatusLink.href = `http://${host}/`;
+    deviceSettingsLink.href = `http://${host}/settings`;
+  }
   connectBtn.disabled = state === "connecting" || (transportSelect.value === "serial" && !SerialLink.isSupported());
 }
 
