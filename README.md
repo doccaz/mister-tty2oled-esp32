@@ -183,6 +183,8 @@ and the WiFi/MQTT features.
 
 ### Case (Sunton ESP32-2424S012C)
 
+![The printed case with a USB-C cable, showing the connected screen](docs/case-photo.jpg)
+
 `case/` has a small two-part screw-together case for the all-in-one board:
 `sunton_2424s012_case.scad` (parametric OpenSCAD) and the exported
 `sunton_2424s012_front.stl` / `sunton_2424s012_back.stl`.
