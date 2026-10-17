@@ -5,6 +5,14 @@
 [Releases](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) ·
 [Build from source](#build--flash-the-firmware)
 
+<p align="center">
+  <img src="docs/hw-gc9a01-connected.jpg" alt="The round display showing Connected and its network name" width="280" />
+</p>
+
+**Turn an ESP32-C3 and a round GC9A01 screen into a full-colour MiSTer marquee.**
+Flash it straight from the browser, no tools to install. USB or WiFi, full-colour
+art, and it works with the stock tty2oled.
+
 An ESP32-C3 + GC9A01 (240×240 round SPI display) reimplementation of
 [venice1200/MiSTer_tty2oled](https://github.com/venice1200/MiSTer_tty2oled) —
 a physical marquee/status display for a [MiSTer FPGA](https://github.com/MiSTer-devel/Main_MiSTer/wiki)
