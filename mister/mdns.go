@@ -8,8 +8,11 @@ package main
 // from port 5353 on each interface and reads the (multicast) answer.
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"io"
 	"net"
 	"sort"
 	"strings"
@@ -392,6 +395,52 @@ func findDisplays() ([]DisplayInfo, error) {
 			}
 		}
 	}
+	fillVersions(list)
 	sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
 	return list, nil
+}
+
+// fillVersions asks displays whose mDNS record carried no version (firmware from before the
+// _tty2oled._tcp service) for it over HTTP: GET /status is a small JSON reply and needs no
+// WebSocket slot, so it can't disturb a daemon already connected to the display.
+func fillVersions(list []DisplayInfo) {
+	var wg sync.WaitGroup
+	for i := range list {
+		if list[i].Ver != "" || list[i].IP == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(d *DisplayInfo) {
+			defer wg.Done()
+			d.Ver = statusVersion(d.IP.String())
+		}(&list[i])
+	}
+	wg.Wait()
+}
+
+func statusVersion(ip string) string {
+	// a bare HTTP/1.0 GET over TCP: net/http would double the binary for one small request
+	c, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "80"), 2*time.Second)
+	if err != nil {
+		return ""
+	}
+	defer c.Close()
+	c.SetDeadline(time.Now().Add(2 * time.Second))
+	if _, err := c.Write([]byte("GET /status HTTP/1.0\r\nHost: " + ip + "\r\n\r\n")); err != nil {
+		return ""
+	}
+	body, _ := io.ReadAll(io.LimitReader(c, 4096))
+	var st struct {
+		Ver string `json:"ver"`
+	}
+	if i := bytes.IndexByte(body, '{'); i >= 0 && json.Unmarshal(body[i:], &st) != nil {
+		// the reply can be cut off at the read limit: pull the field out by hand
+		if j := bytes.Index(body, []byte(`"ver":"`)); j >= 0 {
+			rest := body[j+7:]
+			if k := bytes.IndexByte(rest, '"'); k >= 0 {
+				return string(rest[:k])
+			}
+		}
+	}
+	return st.Ver
 }
