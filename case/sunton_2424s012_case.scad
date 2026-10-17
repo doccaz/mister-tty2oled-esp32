@@ -24,7 +24,7 @@ part = "both";
 
 /* ---- Board ---- */
 disp_d       = 37.0;  // display glass diameter (vendor drawing)
-pcb_d        = 38.6;  // room for the PCB and its back-side parts (any part past the glass?)
+pcb_d        = 38.2;  // room for the PCB and its back-side parts (any part past the glass?)
 tail_w       = 20.0;  // FPC tail slot width (vendor 14.23, but it is wider where it leaves the glass and the fold bulges)
 tail_fold    = 1.4;   // extra radial room for the fold behind the PCB
 tail_len     = 1.5;   // tail sticks out past the glass (38.50 - 37.00)
@@ -59,7 +59,7 @@ $fn        = 96;
 
 /* ---- Optional pedestal on the plug (limits how far the board can sag back) ---- */
 back_pedestal = true; // flat disc on the plug floor, just below the board's tallest parts
-ped_gap       = 0.5;  // clearance left between the disc and the tallest part (back_h)
+ped_gap       = 0.3;  // clearance left between the disc and the tallest part (back_h)
 
 /* ---- Thread ---- */
 pitch      = 2.0;     // axial advance per turn
