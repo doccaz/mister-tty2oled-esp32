@@ -9,6 +9,7 @@
 #include "mqtt_client.h"
 #include "display.h"
 #include "time_manager.h"
+#include "version.h"
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <ESPmDNS.h>
@@ -142,6 +143,12 @@ void enterConnected() {
   // service name, but is the common convention other WebSocket-based IoT
   // devices already use for exactly this purpose.
   MDNS.addService("ws", "tcp", 81);
+  // Project-specific type so clients (the MiSTer daemon's "-list") can find every display
+  // on the network and pick one; the instance name is the device name, TXT has what a
+  // picker wants to show. Same port as "ws".
+  MDNS.addService("tty2oled", "tcp", 81);
+  MDNS.addServiceTxt("tty2oled", "tcp", "ver", FW_VERSION);
+  MDNS.addServiceTxt("tty2oled", "tcp", "hw", "HWGC9A01C");
 
   portal.begin(&configStore, false);
   mqttConfigStore.begin();
