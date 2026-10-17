@@ -5,6 +5,7 @@ package main
 
 import (
 	"bufio"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,4 +100,62 @@ func setIniValue(path, key, value string) error {
 		lines = append(lines, key+"=\""+value+"\"")
 	}
 	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+}
+
+// maxDisplays is how many displays one daemon drives: each is a connection and a picture
+// upload per core change, which is kept small on purpose for the MiSTer.
+const maxDisplays = 3
+
+// hostList splits HOST (comma, semicolon or space separated) into at most maxDisplays
+// distinct addresses; extra is how many were left out.
+func hostList(s string) (hosts []string, extra int) {
+	seen := map[string]bool{}
+	for _, h := range strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == ';' || r == ' ' || r == '\t' }) {
+		if seen[strings.ToLower(h)] {
+			continue
+		}
+		seen[strings.ToLower(h)] = true
+		if len(hosts) == maxDisplays {
+			extra++
+			continue
+		}
+		hosts = append(hosts, h)
+	}
+	return hosts, extra
+}
+
+// hostKey is the prefix of a display's own settings in t2o-wifi.ini: the host name without
+// ":port", ".local" and the "tty2oled-" prefix, upper case, other characters as "_".
+// "tty2oled-CD20.local" gives "CD20" (CD20_CONTRAST="80"); 192.168.86.27 gives "192_168_86_27".
+func hostKey(host string) string {
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	host = strings.TrimSuffix(strings.ToLower(host), ".local")
+	host = strings.TrimPrefix(host, "tty2oled-")
+	return strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z':
+			return r - 32
+		case r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			return r
+		}
+		return '_'
+	}, host)
+}
+
+// forHost returns the settings for one display: every "<KEY>_NAME" entry overrides "NAME".
+// The art (shared by all displays) is not affected, only what is sent to this display.
+func (c Config) forHost(host string) Config {
+	out := Config{}
+	for k, v := range c {
+		out[k] = v
+	}
+	p := hostKey(host) + "_"
+	for k, v := range c {
+		if strings.HasPrefix(k, p) && len(k) > len(p) {
+			out[k[len(p):]] = v
+		}
+	}
+	return out
 }

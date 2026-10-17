@@ -7,17 +7,21 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var version = "dev"
 
+// daemon drives one display. With several displays there is one per display: they share the
+// art finder, the core file and the sleep file, and each has its own settings (cfg).
 type daemon struct {
 	cfg       Config
 	finder    *ArtFinder
@@ -25,6 +29,15 @@ type daemon struct {
 	coreFile  string
 	sleepFile string
 	settings  bool
+	delay     time.Duration // stagger between displays, so uploads don't all start at once
+	multi     bool          // more than one display: prefix log lines with the display name
+}
+
+func (d *daemon) logf(format string, a ...any) {
+	if d.multi {
+		format = "[" + hostKey(d.host) + "] " + format
+	}
+	log.Printf(format, a...)
 }
 
 func (d *daemon) readCore() string {
@@ -45,15 +58,15 @@ func (d *daemon) asleep() bool {
 
 // sendCore shows the picture for core, or just its name when there is none.
 func (d *daemon) sendCore(dev *Device, core string) error {
-	art, err := d.finder.Find(core)
+	art, err := d.finder.FindShared(core)
 	if err != nil {
-		log.Printf("art for %q: %v (sending the name only)", core, err)
+		d.logf("art for %q: %v (sending the name only)", core, err)
 	}
 	if art == nil {
-		log.Printf("core %q: no picture, sending the name", core)
+		d.logf("core %q: no picture, sending the name", core)
 		return dev.Cmd(core)
 	}
-	log.Printf("core %q: %s (%d bytes)", core, filepath.Base(art.Path), len(art.JPEG))
+	d.logf("core %q: %s (%d bytes)", core, filepath.Base(art.Path), len(art.JPEG))
 	return dev.SendJPEG(core, effect(d.cfg.num("TRANSITION", -1)), art.JPEG)
 }
 
@@ -98,6 +111,7 @@ func saverCommand(c Config) string {
 // session runs until the link breaks. It always re-sends the current core on entry, so
 // a display that rebooted or dropped off WiFi comes back showing the right picture.
 func (d *daemon) session(dev *Device, events <-chan string) error {
+	time.Sleep(d.delay)
 	if err := d.startup(dev); err != nil {
 		return err
 	}
@@ -115,7 +129,7 @@ func (d *daemon) session(dev *Device, events <-chan string) error {
 		}
 		select {
 		case <-events:
-			time.Sleep(150 * time.Millisecond) // let a burst of writes settle
+			time.Sleep(150*time.Millisecond + d.delay) // let a burst of writes settle
 		drain:
 			for {
 				select {
@@ -136,7 +150,7 @@ func (d *daemon) session(dev *Device, events <-chan string) error {
 func main() {
 	base := flag.String("base", "/media/fat/t2o-wifi", "this daemon's folder (t2o-wifi.ini, art/)")
 	stock := flag.String("stock", stockDir, "the stock tty2oled folder (its ini files and pics/), read only")
-	host := flag.String("host", "", "display address, host or host:port (default: HOST in t2o-wifi.ini)")
+	host := flag.String("host", "", "display address, host or host:port; up to 3 separated by commas (default: HOST in t2o-wifi.ini)")
 	coreFile := flag.String("corefile", "/tmp/CORENAME", "file holding the current core name")
 	once := flag.String("once", "", "send this core name once and exit (testing)")
 	menu := flag.Bool("menu", false, "open the configuration menu")
@@ -169,42 +183,79 @@ func main() {
 	if strings.EqualFold(*host, "auto") {
 		*host = autoHost()
 	}
-	d := &daemon{
-		cfg:       cfg,
-		finder:    &ArtFinder{base: *base, stock: stockDir, cfg: cfg},
-		host:      *host,
-		coreFile:  *coreFile,
-		sleepFile: "/tmp/tty2oled_sleep",
-		settings:  cfg.yes("WIFI_SEND_SETTINGS", false),
+	hosts, extra := hostList(*host)
+	if extra > 0 {
+		log.Printf("HOST lists more than %d displays: ignoring the last %d", maxDisplays, extra)
+	}
+	finder := &ArtFinder{base: *base, stock: stockDir, cfg: cfg}
+	var ds []*daemon
+	for i, h := range hosts {
+		hc := cfg.forHost(h)
+		ds = append(ds, &daemon{
+			cfg:       hc,
+			finder:    finder,
+			host:      h,
+			coreFile:  *coreFile,
+			sleepFile: "/tmp/tty2oled_sleep",
+			settings:  hc.yes("WIFI_SEND_SETTINGS", false),
+			delay:     time.Duration(i) * 400 * time.Millisecond,
+			multi:     len(hosts) > 1,
+		})
 	}
 
 	if *once != "" {
-		dev, err := dialDevice(d.host)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer dev.Close()
-		if err := d.sendCore(dev, *once); err != nil {
-			log.Fatal(err)
+		for _, d := range ds {
+			dev, err := dialDevice(d.host)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = d.sendCore(dev, *once)
+			dev.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		return
 	}
 
-	events, err := watchDir(filepath.Dir(d.coreFile), filepath.Base(d.coreFile), filepath.Base(d.sleepFile))
+	events, err := watchDir(filepath.Dir(ds[0].coreFile), filepath.Base(ds[0].coreFile), filepath.Base(ds[0].sleepFile))
 	if err != nil {
-		log.Fatalf("can't watch %s: %v", d.coreFile, err)
+		log.Fatalf("can't watch %s: %v", ds[0].coreFile, err)
 	}
-	log.Printf("t2o-wifi %s: watching %s, display at %s", version, d.coreFile, d.host)
+	log.Printf("t2o-wifi %s: watching %s, display(s) at %s", version, ds[0].coreFile, strings.Join(hosts, ", "))
+	// one inotify watcher, one event channel per display
+	chans := make([]chan string, len(ds))
+	for i := range ds {
+		chans[i] = make(chan string, 1)
+	}
+	go func() {
+		for ev := range events {
+			for _, c := range chans {
+				select {
+				case c <- ev:
+				default: // an event is already waiting for that display
+				}
+			}
+		}
+	}()
+	for i := 1; i < len(ds); i++ {
+		go ds[i].run(chans[i])
+	}
+	ds[0].run(chans[0])
+}
+
+// run keeps one display connected for ever, re-trying with a growing pause.
+func (d *daemon) run(events <-chan string) {
 	backoff := 2 * time.Second
 	for {
 		dev, err := dialDevice(d.host)
 		if err == nil {
-			log.Printf("connected to %s", d.host)
+			d.logf("connected to %s", d.host)
 			backoff = 2 * time.Second
 			err = d.session(dev, events)
 			dev.Close()
 		}
-		log.Printf("link down: %v; retrying in %s", err, backoff)
+		d.logf("link down: %v; retrying in %s", err, backoff)
 		time.Sleep(backoff)
 		if backoff < 30*time.Second {
 			backoff *= 2
@@ -252,14 +303,23 @@ func listDisplays(base string, choose, plain bool) {
 	if !choose {
 		return
 	}
-	fmt.Print("Use which display? ")
-	var n int
-	if _, err := fmt.Scan(&n); err != nil || n < 1 || n > len(list) {
-		log.Fatal("no such display")
+	fmt.Printf("Use which display (up to %d, e.g. \"1 2\")? ", maxDisplays)
+	line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	var picked []string
+	for _, f := range strings.FieldsFunc(line, func(r rune) bool { return r == ',' || r == ' ' }) {
+		n, err := strconv.Atoi(f)
+		if err != nil || n < 1 || n > len(list) {
+			log.Fatal("no such display: " + f)
+		}
+		picked = append(picked, list[n-1].Host())
 	}
+	if len(picked) == 0 {
+		log.Fatal("no display chosen")
+	}
+	picked, _ = hostList(strings.Join(picked, ","))
 	path := filepath.Join(base, wifiIni)
-	if err := setIniValue(path, "HOST", list[n-1].Host()); err != nil {
+	if err := setIniValue(path, "HOST", strings.Join(picked, ",")); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("HOST=%q saved in %s\n", list[n-1].Host(), path)
+	fmt.Printf("HOST=%q saved in %s\n", strings.Join(picked, ","), path)
 }

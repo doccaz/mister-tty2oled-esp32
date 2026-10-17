@@ -292,3 +292,84 @@ func TestBrowseParse(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+func TestHostList(t *testing.T) {
+	h, extra := hostList("a.local, b.local;c.local  d.local a.local")
+	if strings.Join(h, "|") != "a.local|b.local|c.local" || extra != 1 {
+		t.Fatalf("got %v extra %d", h, extra)
+	}
+	if h, _ := hostList(""); len(h) != 0 {
+		t.Fatalf("empty gave %v", h)
+	}
+}
+
+func TestPerDisplaySettings(t *testing.T) {
+	for host, want := range map[string]string{
+		"tty2oled-CD20.local":    "CD20",
+		"tty2oled-b610.local:81": "B610",
+		"192.168.86.27":          "192_168_86_27",
+		"192.168.86.27:81":       "192_168_86_27",
+		"Tty2oled-CD20.LOCAL":    "CD20",
+	} {
+		if got := hostKey(host); got != want {
+			t.Errorf("hostKey(%q) = %q, want %q", host, got, want)
+		}
+	}
+	c := Config{"CONTRAST": "100", "ROTATE": "no", "CD20_CONTRAST": "40", "B610_ROTATE": "yes", "CD20_": "x"}
+	cd := c.forHost("tty2oled-CD20.local")
+	if cd.num("CONTRAST", 0) != 40 || cd.yes("ROTATE", true) {
+		t.Errorf("CD20 settings wrong: %v", cd)
+	}
+	b := c.forHost("tty2oled-B610.local")
+	if b.num("CONTRAST", 0) != 100 || !b.yes("ROTATE", false) {
+		t.Errorf("B610 settings wrong: %v", b)
+	}
+}
+
+// Two displays: one core change reaches both, and each gets its own contrast.
+func TestTwoDisplays(t *testing.T) {
+	a, b := newFakeDisplay(t), newFakeDisplay(t)
+	defer a.ln.Close()
+	defer b.ln.Close()
+	base := t.TempDir()
+	os.MkdirAll(filepath.Join(base, "pics", "GSC"), 0o755)
+	os.WriteFile(filepath.Join(base, "pics", "GSC", "C64.gsc"), testGSC(), 0o644)
+	core := filepath.Join(base, "CORENAME")
+	os.WriteFile(core, []byte("C64\n"), 0o644)
+	fin := &ArtFinder{base: base, cfg: Config{}}
+	cfg := Config{"TRANSITION": "0", "WIFI_SEND_SETTINGS": "yes"}
+	events := make(chan string, 1)
+	for i, addr := range []string{a.ln.Addr().String(), b.ln.Addr().String()} {
+		// (both fakes are on 127.0.0.1, so the per-host prefix can't tell them apart here;
+		// forHost is covered by TestPerDisplaySettings)
+		hc := Config{}
+		for k, v := range cfg {
+			hc[k] = v
+		}
+		hc["CONTRAST"] = []string{"40", "200"}[i]
+		d := &daemon{cfg: hc, finder: fin, host: addr, coreFile: core, sleepFile: filepath.Join(base, "sleep"),
+			settings: true, delay: time.Duration(i) * 50 * time.Millisecond, multi: true}
+		go d.run(events)
+	}
+	for name, f := range map[string]*fakeDisplay{"A": a, "B": b} {
+		sawCorc, contrast := false, ""
+		deadline := time.After(5 * time.Second)
+		for !sawCorc {
+			select {
+			case s := <-f.texts:
+				if strings.HasPrefix(s, "CMDCON,") {
+					contrast = s
+				}
+				if strings.HasPrefix(s, "CMDCORC,C64,") {
+					sawCorc = true
+				}
+			case <-deadline:
+				t.Fatalf("display %s never got the picture", name)
+			}
+		}
+		want := map[string]string{"A": "CMDCON,40", "B": "CMDCON,200"}[name]
+		if contrast != want {
+			t.Errorf("display %s got %q, want %q", name, contrast, want)
+		}
+	}
+}

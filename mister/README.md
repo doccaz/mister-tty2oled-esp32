@@ -62,7 +62,7 @@ the MiSTer's Scripts menu (the d-pad, A and B buttons act as the arrow keys, Ent
 It shows the display, whether it is reachable, whether the daemon runs, and the current core,
 and lets you:
 
-- find a display on the network and pick it, or type an address;
+- find displays on the network and tick up to three, or type an address;
 - start, stop and restart the daemon;
 - turn "start at boot" on or off (only the WiFi daemon's own line; the stock tty2oled daemon's
   line is never touched);
@@ -81,20 +81,46 @@ remembers the last good address in case one answer is lost. The display's respon
 answers queries sent from port 5353, which is why a plain unicast query doesn't work. Tested
 against the real display from a Linux PC; a plain IP in `HOST` still works.
 
-## Several displays: finding and picking one
+## Finding displays
 
-The display advertises itself as an mDNS service `_tty2oled._tcp` (port 81, TXT `ver`, `hw`; the
-instance name is the device name, `tty2oled-XXXX`). Firmware from before that change is still
-found through its `_ws._tcp` service.
+A display advertises itself as an mDNS service `_tty2oled._tcp` (port 81, TXT `ver`, `hw`; the
+instance name is the device name, `tty2oled-XXXX`). Firmware from before 0.5.3 is still found
+through its `_ws._tcp` service, and a display whose record carries no version is asked over
+HTTP (`GET /status`).
 
 ```bash
 t2o-wifi -list      # print every display on the network (name, IP, firmware)
-t2o-wifi -select    # list them, ask which one, and save it as HOST in t2o-wifi.ini
+t2o-wifi -select    # list them, ask which (1 to 3, e.g. "1 2"), and save HOST in t2o-wifi.ini
 ```
 
 `HOST="auto"` uses the display on the network if there is exactly one; with several it refuses
-to guess and tells you to run `-select`. The daemon talks to one display; to drive several,
-run one daemon per display (not set up yet).
+to guess and tells you to run `-select`.
+
+## Several displays (up to 3)
+
+One daemon drives up to three displays at once: list them in `HOST`, separated by commas
+(`HOST="tty2oled-CD20.local,tty2oled-B610.local"`), or tick them in the menu's display picker.
+More than three are ignored (the limit keeps the MiSTer's load small). Each display has its own
+connection, reconnect and keepalive, so one being off does not hold up the others, and uploads
+are staggered 0.4 s apart. The art is looked up and converted once per core change and sent to
+every display, so they all show the same picture.
+
+Settings are per display. A key prefixed with the display's name overrides the plain one for
+that display only: the name is the host without `tty2oled-` and `.local`, in capitals, so
+`tty2oled-CD20.local` gives `CD20_`, and an IP gives `192_168_86_27_`:
+
+```
+WIFI_SEND_SETTINGS="yes"
+CONTRAST="100"
+CD20_CONTRAST="60"      # only CD20 gets 60
+B610_ROTATE="yes"       # only B610 is rotated
+```
+
+This covers `WIFI_SEND_SETTINGS`, `CONTRAST`, `ROTATE`, `SCREENSAVER*` and `TRANSITION`. The menu's
+Options screen has a "Settings for" line (shown when there are several displays) that picks
+"all displays" or one of them and writes the prefixed keys. `USE_RANDOM_ALT` and the stock
+picture switches apply to all displays, since the art is shared. Log lines carry the display name
+(`[CD20] core "NES": ...`).
 
 ## Resource use
 
@@ -104,6 +130,7 @@ and sends under 20 KB. A ping every 20 s detects a dead link. The stock bash dae
 
 ## Status
 
-Unit-tested against a fake display (handshake, chunked transfer, acks, ping, art lookup, ini
-parsing, inotify) and converting a real pack file. Not yet run on a real MiSTer or against the
-real display over WiFi.
+Unit-tested against fake displays (handshake, chunked transfer, acks, ping, art lookup, ini
+parsing, inotify, two displays at once). Run on a real MiSTer next to the stock daemon, driving
+real displays over WiFi: pictures, the menu with the d-pad, start at boot, and discovery. The
+three-display limit and the per-display settings were tried with two displays; a third was not.

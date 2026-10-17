@@ -59,6 +59,11 @@ type box struct{ tl, tr, bl, br, h, v string }
 var uniBox = box{"┌", "┐", "└", "┘", "─", "│"}
 var ascBox = box{"+", "+", "+", "+", "-", "|"}
 
+// linkState is the last reachability check of one display.
+type linkState struct {
+	host, state, ip string // state: "", "online", "offline"
+}
+
 type tui struct {
 	base, startup, initPath, logPath, pidPath string
 	version                                   string
@@ -67,8 +72,7 @@ type tui struct {
 	dot                                       string
 	keys                                      chan keyEvent
 	mu                                        sync.Mutex
-	online                                    string // "", "online", "offline"
-	onlineIP                                  string
+	links                                     []linkState // one per display, "" state = not checked yet
 	notice                                    string
 	out                                       *strings.Builder
 }
@@ -181,18 +185,39 @@ func (t *tui) end(footer string) {
 
 func (t *tui) status(w, left int) {
 	c := loadConfig(t.base)
-	host := c.str("HOST", "(not set)")
+	hostStr := c.str("HOST", "(not set)")
 	run := t.running()
 	t.frame(3, left, w, 7, "Status")
-	t.at(4, left+2, bold+"Display "+reset+host)
-	on := t.getOnline()
-	switch on {
-	case "online":
-		t.at(5, left+2, bold+"Link    "+reset+fgGr+t.dot+" reachable"+reset+dim+"  "+t.onlineIP+reset)
-	case "offline":
+	t.at(4, left+2, bold+"Display "+reset+truncate(hostStr, w-14))
+	links := t.getLinks()
+	hosts, _ := hostList(c.str("HOST", ""))
+	var parts []string
+	for _, h := range hosts {
+		st := ""
+		for _, l := range links {
+			if l.host == h {
+				st = l.state
+			}
+		}
+		name := hostKey(h)
+		switch st {
+		case "online":
+			parts = append(parts, fgGr+t.dot+reset+" "+name)
+		case "offline":
+			parts = append(parts, fgRd+t.dot+reset+" "+name)
+		default:
+			parts = append(parts, dim+t.dot+" "+name+reset)
+		}
+	}
+	switch {
+	case len(hosts) == 0 || strings.EqualFold(hostStr, "auto"):
+		t.at(5, left+2, bold+"Link    "+reset+dim+"no display chosen"+reset)
+	case len(hosts) == 1 && len(links) == 1 && links[0].state == "online":
+		t.at(5, left+2, bold+"Link    "+reset+fgGr+t.dot+" reachable"+reset+dim+"  "+links[0].ip+reset)
+	case len(hosts) == 1 && len(links) == 1 && links[0].state == "offline":
 		t.at(5, left+2, bold+"Link    "+reset+fgRd+t.dot+" not reachable"+reset)
 	default:
-		t.at(5, left+2, bold+"Link    "+reset+dim+"checking..."+reset)
+		t.at(5, left+2, bold+"Link    "+reset+strings.Join(parts, "  "))
 	}
 	if run {
 		t.at(6, left+2, bold+"Daemon  "+reset+fgGr+t.dot+" running"+reset)
@@ -234,7 +259,11 @@ func (t *tui) menuBox(r, left, w int, title string, items []string, sel int) {
 
 // ---- state -----------------------------------------------------------------------------
 
-func (t *tui) getOnline() string { t.mu.Lock(); defer t.mu.Unlock(); return t.online }
+func (t *tui) getLinks() []linkState {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return append([]linkState(nil), t.links...)
+}
 
 func (t *tui) running() bool {
 	b, err := os.ReadFile(t.pidPath)
@@ -271,9 +300,13 @@ func (t *tui) atBoot() bool {
 // probe checks the display every few seconds: a TCP connect to its WebSocket port.
 func (t *tui) probe(stop <-chan struct{}) {
 	for {
-		host := loadConfig(t.base).str("HOST", "")
-		state, ip := "offline", ""
-		if host != "" && !strings.EqualFold(host, "auto") {
+		hosts, _ := hostList(loadConfig(t.base).str("HOST", ""))
+		var links []linkState
+		for _, host := range hosts {
+			if strings.EqualFold(host, "auto") {
+				continue
+			}
+			state, ip := "offline", ""
 			hp := host
 			if !strings.Contains(hp, ":") {
 				hp += ":81"
@@ -300,9 +333,10 @@ func (t *tui) probe(stop <-chan struct{}) {
 					}
 				}
 			}
+			links = append(links, linkState{host, state, ip})
 		}
 		t.mu.Lock()
-		t.online, t.onlineIP = state, ip
+		t.links = links
 		t.mu.Unlock()
 		select {
 		case <-stop:
@@ -436,48 +470,95 @@ func (t *tui) pickDisplay() {
 		return
 	}
 	cur := loadConfig(t.base).str("HOST", "")
+	curHosts, _ := hostList(cur)
+	chosen := map[string]bool{} // display Host() -> ticked
+	for _, d := range res.list {
+		for _, h := range curHosts {
+			if strings.EqualFold(d.Host(), h) {
+				chosen[d.Host()] = true
+			}
+		}
+	}
+	msg := ""
 	sel := 0
+	count := func() (n int) {
+		for _, v := range chosen {
+			if v {
+				n++
+			}
+		}
+		return
+	}
+	save := func(hosts []string) {
+		list, _ := hostList(strings.Join(hosts, ","))
+		setIniValue(filepath.Join(t.base, wifiIni), "HOST", strings.Join(list, ","))
+		t.notice = "Display(s): " + strings.Join(list, ", ") + ". Restart the daemon to use them."
+	}
 	for {
 		w, left := t.begin()
 		var items []string
-		for i, d := range res.list {
-			mark := "  "
-			if strings.EqualFold(d.Host(), cur) {
-				mark = fgGr + t.dot + reset + " "
+		for _, d := range res.list {
+			mark := dim + "[ ]" + reset
+			if chosen[d.Host()] {
+				mark = fgGr + "[x]" + reset
 			}
 			ver := d.Ver
 			if ver == "" {
 				ver = "?"
 			}
-			items = append(items, fmt.Sprintf("%s%-15s %-15s fw %s", mark, d.Name, d.IP, ver))
-			_ = i
+			items = append(items, fmt.Sprintf("%s %-15s %-15s fw %s", mark, d.Name, d.IP, ver))
 		}
-		items = append(items, "Type an address by hand...")
+		items = append(items, fmt.Sprintf("Save selection (%d of %d)", count(), maxDisplays), "Type an address by hand...")
 		if len(res.list) == 0 {
 			t.at(4, left+1, fgYl+"No display answered. Is it powered and on this WiFi?"+reset)
 			t.menuBox(6, left, w, "Displays", items, sel)
 		} else {
 			t.menuBox(4, left, w, "Displays found", items, sel)
 		}
-		t.end("Up/Down move   Enter/A choose   Esc/B back")
+		if msg != "" {
+			t.at(4+len(items)+3, left+1, fgYl+msg+reset)
+		}
+		t.end("Up/Down move   Enter/A/Space tick   Esc/B back")
 		ev, ok := t.wait(time.Hour)
 		if !ok {
 			return
 		}
-		switch ev.k {
-		case kUp:
+		msg = ""
+		toggle := func() {
+			h := res.list[sel].Host()
+			if !chosen[h] && count() >= maxDisplays {
+				msg = fmt.Sprintf("At most %d displays.", maxDisplays)
+				return
+			}
+			chosen[h] = !chosen[h]
+		}
+		switch {
+		case ev.k == kUp:
 			sel = (sel + len(items) - 1) % len(items)
-		case kDown:
+		case ev.k == kDown:
 			sel = (sel + 1) % len(items)
-		case kEsc:
+		case ev.k == kEsc:
 			return
-		case kEnter:
-			if sel < len(res.list) {
-				setIniValue(filepath.Join(t.base, wifiIni), "HOST", res.list[sel].Host())
-				t.notice = "Display set to " + res.list[sel].Host() + ". Restart the daemon to use it."
-			} else if v, ok := t.input("Display address", "Host name (tty2oled-XXXX.local), IP address, or auto", cur); ok && v != "" {
-				setIniValue(filepath.Join(t.base, wifiIni), "HOST", v)
-				t.notice = "Display set to " + v + ". Restart the daemon to use it."
+		case ev.k == kRune && ev.r == ' ' && sel < len(res.list):
+			toggle()
+		case ev.k == kEnter && sel < len(res.list):
+			toggle()
+		case ev.k == kEnter && sel == len(res.list): // save
+			var hosts []string
+			for _, d := range res.list {
+				if chosen[d.Host()] {
+					hosts = append(hosts, d.Host())
+				}
+			}
+			if len(hosts) == 0 {
+				msg = "Tick at least one display."
+				continue
+			}
+			save(hosts)
+			return
+		case ev.k == kEnter:
+			if v, ok := t.input("Display address", "Name or IP; commas for several; or auto", cur); ok && v != "" {
+				save([]string{v})
 			}
 			return
 		}
@@ -519,36 +600,62 @@ func (t *tui) options() {
 	trans := []string{"-1", "0", "1", "2", "3", "4", "5"}
 	transName := map[string]string{"-1": "random", "0": "none", "1": "wipe left to right", "2": "wipe right to left", "3": "wipe top to bottom", "4": "iris", "5": "fade"}
 	sel := 0
+	scope := 0 // 0 = all displays, 1.. = one display of HOST
 	for {
-		c := loadConfig(t.base)
+		all := loadConfig(t.base)
+		hosts, _ := hostList(all.str("HOST", ""))
+		if scope > len(hosts) {
+			scope = 0
+		}
+		c, prefix, scopeName := all, "", "all displays"
+		if scope > 0 {
+			c, prefix, scopeName = all.forHost(hosts[scope-1]), hostKey(hosts[scope-1])+"_", hostKey(hosts[scope-1])
+		}
 		yn := func(k string, def bool) string {
 			if c.yes(k, def) {
 				return fgGr + "[x] yes" + reset
 			}
 			return dim + "[ ] no" + reset
 		}
-		items := []string{
+		items := []string{}
+		first := 0
+		if len(hosts) > 1 {
+			items = append(items, fmt.Sprintf("%-34s %s", "Settings for", bold+scopeName+reset))
+			first = 1
+		}
+		items = append(items,
 			fmt.Sprintf("%-34s %s", "Send contrast and rotation", yn("WIFI_SEND_SETTINGS", false)),
 			fmt.Sprintf("%-34s %s", "Contrast (0-255)", bold+strconv.Itoa(c.num("CONTRAST", 100))+reset),
 			fmt.Sprintf("%-34s %s", "Rotate 180 degrees", yn("ROTATE", false)),
 			fmt.Sprintf("%-34s %s", "Transition", bold+transName[c.str("TRANSITION", "-1")]+reset),
-			fmt.Sprintf("%-34s %s", "Random _alt pictures", yn("USE_RANDOM_ALT", true)),
+			fmt.Sprintf("%-34s %s", "Random _alt pictures (all)", yn("USE_RANDOM_ALT", true)),
 			"Back",
-		}
+		)
 		w, left := t.begin()
 		t.menuBox(3, left, w, "Options", items, sel)
-		t.at(3+len(items)+3, left+1, dim+"Saved in t2o-wifi.ini. Restart the daemon to apply."+reset)
+		note := "Saved in t2o-wifi.ini. Restart the daemon to apply."
+		if first == 1 {
+			note = "Left/Right on the first line picks a display. " + note
+		}
+		t.at(3+len(items)+3, left+1, dim+truncate(note, w-2)+reset)
 		t.end("Up/Down move   Left/Right/Enter change   Esc/B back")
 		ev, ok := t.wait(time.Hour)
 		if !ok {
 			return
+		}
+		// keys are written with the display's prefix when one display is selected
+		pk := func(k string) string {
+			if k == "USE_RANDOM_ALT" { // the art is shared by every display
+				return k
+			}
+			return prefix + k
 		}
 		flip := func(k string, def bool) {
 			v := "yes"
 			if c.yes(k, def) {
 				v = "no"
 			}
-			setIniValue(ini, k, v)
+			setIniValue(ini, pk(k), v)
 		}
 		switch ev.k {
 		case kUp:
@@ -562,14 +669,18 @@ func (t *tui) options() {
 			if ev.k == kLeft {
 				step = -1
 			}
-			switch sel {
+			if first == 1 && sel == 0 {
+				scope = (scope + step + len(hosts) + 1) % (len(hosts) + 1)
+				continue
+			}
+			switch sel - first {
 			case 0:
 				flip("WIFI_SEND_SETTINGS", false)
 			case 1:
 				if ev.k == kEnter {
 					if v, ok := t.input("Contrast", "0-255 (used when 'send contrast' is on)", strconv.Itoa(c.num("CONTRAST", 100))); ok {
 						if n, err := strconv.Atoi(v); err == nil && n >= 0 && n <= 255 {
-							setIniValue(ini, "CONTRAST", strconv.Itoa(n))
+							setIniValue(ini, pk("CONTRAST"), strconv.Itoa(n))
 						}
 					}
 				} else {
@@ -580,7 +691,7 @@ func (t *tui) options() {
 					if n > 255 {
 						n = 255
 					}
-					setIniValue(ini, "CONTRAST", strconv.Itoa(n))
+					setIniValue(ini, pk("CONTRAST"), strconv.Itoa(n))
 				}
 			case 2:
 				flip("ROTATE", false)
@@ -591,7 +702,7 @@ func (t *tui) options() {
 						i = j
 					}
 				}
-				setIniValue(ini, "TRANSITION", trans[(i+step+len(trans))%len(trans)])
+				setIniValue(ini, pk("TRANSITION"), trans[(i+step+len(trans))%len(trans)])
 			case 4:
 				flip("USE_RANDOM_ALT", true)
 			case 5:
@@ -613,23 +724,30 @@ func (t *tui) sendTest() {
 		return
 	}
 	cfg := loadConfig(t.base)
-	host := cfg.str("HOST", "")
-	if host == "" || strings.EqualFold(host, "auto") {
+	hosts, _ := hostList(cfg.str("HOST", ""))
+	if len(hosts) == 0 || strings.EqualFold(hosts[0], "auto") {
 		t.notice = "Pick a display first."
 		return
 	}
-	w, left := t.begin()
-	t.frame(4, left, w, 5, "Sending")
-	t.at(6, left+3, "Sending "+v+" to "+host+"...")
-	t.end("")
-	dev, err := dialDevice(host)
-	if err == nil {
-		d := &daemon{cfg: cfg, finder: &ArtFinder{base: t.base, stock: stockDir, cfg: cfg}}
-		err = d.sendCore(dev, v)
-		dev.Close()
+	var failed []string
+	for _, host := range hosts {
+		w, left := t.begin()
+		t.frame(4, left, w, 5, "Sending")
+		t.at(6, left+3, "Sending "+v+" to "+host+"...")
+		t.end("")
+		dev, err := dialDevice(host)
+		if err == nil {
+			hc := cfg.forHost(host)
+			d := &daemon{cfg: hc, finder: &ArtFinder{base: t.base, stock: stockDir, cfg: cfg}}
+			err = d.sendCore(dev, v)
+			dev.Close()
+		}
+		if err != nil {
+			failed = append(failed, hostKey(host)+": "+err.Error())
+		}
 	}
-	if err != nil {
-		t.notice = "Failed: " + err.Error()
+	if len(failed) > 0 {
+		t.notice = "Failed: " + strings.Join(failed, "; ")
 	} else {
 		t.notice = "Sent " + v + "."
 	}

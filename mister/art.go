@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 // ArtFinder looks up a picture for a core name. Search order:
@@ -141,4 +143,28 @@ func (f *ArtFinder) Find(core string) (*Art, error) {
 		return nil, err
 	}
 	return &Art{JPEG: data, Path: p}, nil
+}
+
+// artCache lets several displays share one lookup (and one JPEG conversion) of the same
+// core change, and the same random _alt pick.
+type artCache struct {
+	mu   sync.Mutex
+	core string
+	art  *Art
+	err  error
+	at   time.Time
+}
+
+var sharedArt artCache
+
+// FindShared is Find with a 5 s single-entry cache.
+func (f *ArtFinder) FindShared(core string) (*Art, error) {
+	sharedArt.mu.Lock()
+	defer sharedArt.mu.Unlock()
+	if sharedArt.core == core && time.Since(sharedArt.at) < 5*time.Second && !sharedArt.at.IsZero() {
+		return sharedArt.art, sharedArt.err
+	}
+	art, err := f.Find(core)
+	sharedArt.core, sharedArt.art, sharedArt.err, sharedArt.at = core, art, err, time.Now()
+	return art, err
 }
