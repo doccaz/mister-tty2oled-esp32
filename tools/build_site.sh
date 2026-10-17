@@ -91,6 +91,9 @@ done
 
 cp "${ROOT}/flasher/index.html" "${SITE}/index.html"
 sed -i "s/__FW_VERSION__/${VERSION}/g" "${SITE}/index.html"
+cp "${ROOT}/web/public/favicon.svg" "${SITE}/favicon.svg"
+mkdir -p "${SITE}/img"
+cp "${ROOT}/docs/hw-gc9a01-connected.jpg" "${ROOT}/docs/hw-supermini-oled.jpg" "${ROOT}/docs/case-photo.jpg" "${SITE}/img/"
 
 ( cd "${ROOT}/web" && npx --no-install vite build --base=./ --outDir "${SITE}/app" --emptyOutDir )
 

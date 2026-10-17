@@ -6,6 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tty2oled-gc9a01 web flasher</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <meta name="description" content="Flash tty2oled-gc9a01 firmware onto an ESP32-C3 round-display marquee from your browser." />
     <script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
     <style>
@@ -40,7 +41,7 @@
         color: var(--text);
         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
-      main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
+      main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
       h1 { font-size: 1.6rem; margin: 0 0 4px; }
       .sub { color: var(--muted); margin: 0 0 16px; }
       .topnav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
@@ -96,13 +97,62 @@
       ol, ul { margin: 0; padding-left: 1.2em; }
       li { margin-bottom: 4px; }
       a { color: var(--accent); }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 18px;
+        margin: 0 0 20px;
+        color: #f2f5fb;
+        background: radial-gradient(120% 140% at 85% 20%, #2c5bd9 0%, #162a63 45%, #0c1220 100%);
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        align-items: center;
+        gap: 16px;
+        padding: 28px 28px 28px 32px;
+      }
+      .hero h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 8px; }
+      .hero h1 span { color: #5eead4; }
+      .hero p { margin: 0 0 14px; color: #c9d3ea; }
+      .hero .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+      .hero .badges b {
+        font-weight: 600; font-size: 0.8rem; padding: 4px 10px; border-radius: 999px;
+        background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+      }
+      .hero .shot {
+        width: 240px; height: 240px; border-radius: 50%;
+        object-fit: cover; object-position: 50% 30%;
+        border: 4px solid #5eead4;
+        box-shadow: 0 0 0 8px rgba(94,234,212,0.15), 0 12px 40px rgba(0,0,0,0.5);
+      }
+      @media (max-width: 620px) {
+        .hero { grid-template-columns: 1fr; padding: 22px; text-align: center; }
+        .hero .badges { justify-content: center; }
+        .hero .shot { width: 200px; height: 200px; margin: 0 auto; order: -1; }
+        .hero h1 { font-size: 1.6rem; }
+      }
+      .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .gallery figure { margin: 0; }
+      .gallery img {
+        width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px;
+        border: 1px solid var(--line); display: block;
+      }
+      .gallery figcaption { color: var(--muted); font-size: 0.82rem; margin-top: 6px; }
+      @media (max-width: 620px) { .gallery { grid-template-columns: 1fr; } .gallery img { aspect-ratio: 16/10; } }
+      button.install { font-size: 1.05rem; padding: 14px 16px; box-shadow: 0 4px 14px rgba(47,95,208,0.35); }
       footer { color: var(--muted); font-size: 0.88rem; text-align: center; margin-top: 24px; }
     </style>
   </head>
   <body>
     <main>
-      <h1>tty2oled-gc9a01 web flasher</h1>
-      <p class="sub">Flash the firmware onto your round-display marquee straight from the browser. No tools to install.</p>
+      <header class="hero">
+        <div>
+          <h1>tty2oled<span>-gc9a01</span><br />web flasher</h1>
+          <p>Turn an ESP32-C3 and a round GC9A01 screen into a full-colour MiSTer marquee. Flash it straight from the browser, no tools to install.</p>
+          <div class="badges"><b>USB or WiFi</b><b>Full-colour art</b><b>Works with tty2oled</b></div>
+        </div>
+        <img class="shot" src="img/hw-gc9a01-connected.jpg" alt="The round display showing Connected and its network name" />
+      </header>
       <nav class="topnav" aria-label="Sections">
         <span class="current">Flash firmware</span>
         <a href="app/">Marquee web app →</a>
@@ -158,6 +208,15 @@
           <li>Manage the marquee art from the <a href="app/">marquee web app</a> over USB (WiFi works when you run the app locally, see the README).</li>
           <li>Flashing keeps your saved WiFi and settings. When the installer asks, leave <b>Erase device</b> unticked; ticking it wipes them.</li>
         </ul>
+      </div>
+
+      <div class="card">
+        <h2>The real thing</h2>
+        <div class="gallery">
+          <figure><img src="img/hw-gc9a01-connected.jpg" alt="Round display on its module" loading="lazy" /><figcaption>GC9A01 round display on a Super Mini</figcaption></figure>
+          <figure><img src="img/hw-supermini-oled.jpg" alt="Super Mini with its onboard OLED" loading="lazy" /><figcaption>The onboard OLED shows status</figcaption></figure>
+          <figure><img src="img/case-photo.jpg" alt="Sunton board in a 3D-printed case" loading="lazy" /><figcaption>Sunton all-in-one in the printable case</figcaption></figure>
+        </div>
       </div>
 
       <footer>
