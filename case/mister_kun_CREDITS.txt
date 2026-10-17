@@ -1,0 +1,11 @@
+MiSTer-Kun mascot artwork (used for the embossed logo on the stand)
+
+The MiSTer-Kun mascot was originally created by GitHub user "HeWhoisRed" for the MiSTer
+FPGA project, and is a gift to the MiSTer community to use and remix as people wish; a simple
+credit is appreciated. The remastered icons and logos are by baxysquare:
+https://github.com/baxysquare/mister_kun
+
+mister_kun_logo.scad is derived from that repository's mister_kun_bw.svg (the black layer,
+composited and simplified into one 2D polygon). Their license text is in the repository's
+LICENSE file; it is not an SPDX license, so this credit is not a relicense of the artwork.
+The rest of this project is GPL-3.0-or-later.

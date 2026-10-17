@@ -356,6 +356,14 @@ Re-export both STLs after changing the `.scad`, and check each is a single valid
 - Unconfirmed: the real FPC tail angle relative to the USB-C receptacle (both default
   270 deg in `tail_angle`/`usb_angle`; photos suggest ~90-130 deg apart).
 
+Desk stand: `case/sunton_2424s012_stand.scad` + `.stl` (print-tested by the owner, 2026-10-17,
+"perfect"). Hull of a base slab and a cradle leaning back 15 deg; `case_d` (45.5) is hand-copied
+from the case file, so update it if the case's outer diameter changes. Cable notches at
+`exit_angles = [0, 180]`. The MiSTer-Kun mascot is embossed on the front slope from
+`mister_kun_logo.scad`, a baked polygon of the official `mister_kun_bw.svg` black layer
+(OpenSCAD's SVG import fills the whole silhouette because the file paints white over black);
+credits in `mister_kun_CREDITS.txt`, not relicensed under GPL.
+
 ### Onboard status OLED
 
 `firmware/src/oled_status.h`/`.cpp` drives this board's built-in 0.42"

@@ -216,6 +216,18 @@ openscad -o case/sunton_2424s012_front.stl -D 'part="front"' case/sunton_2424s01
 openscad -o case/sunton_2424s012_back.stl  -D 'part="back"'  case/sunton_2424s012_case.scad
 ```
 
+**Desk stand.** `case/sunton_2424s012_stand.scad` (and its `.stl`) is a wedge-shaped
+dock: a flat base with a round cradle leaning back 15 degrees. The case drops in
+plug-side first and is held by a friction fit (`fit_clr`, 0.25 mm). Cable notches on
+both sides let the USB cable leave left or right. Print it base-down, no supports.
+The MiSTer-Kun mascot is embossed on the front (`logo` = `"mascot"`, `"text"` or
+`"none"`); the artwork is credited in `case/mister_kun_CREDITS.txt`. The owner
+printed it and reports it works well.
+
+```bash
+openscad -o case/sunton_2424s012_stand.stl case/sunton_2424s012_stand.scad
+```
+
 ## Flash from your browser
 
 No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
@@ -599,3 +611,7 @@ Built on the protocol and hardware design work of
 the original tty2oled project's authors. The onboard status OLED support
 was ported from a [WLED usermod](https://github.com/wled/WLED/pull/5475)
 for the same panel.
+
+The embossed mascot on the case stand is MiSTer-Kun, created by HeWhoisRed and
+remastered by baxysquare ([mister_kun](https://github.com/baxysquare/mister_kun));
+see `case/mister_kun_CREDITS.txt`. It is not covered by this project's GPL grant.
