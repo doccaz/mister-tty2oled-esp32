@@ -1,0 +1,30 @@
+#!/bin/bash
+# Start/stop the WiFi display daemon. It lives in its own folder and runs next to the stock
+# tty2oled daemon. No name or path here contains "tty2oled": the stock S60tty2oled's stop
+# command finds its process with `ps | grep tty2oled` and could otherwise kill this one.
+#
+# Install: copy this, t2o-wifi and t2o-wifi.ini to /media/fat/t2o-wifi/, then add
+#   [[ -e /media/fat/t2o-wifi/S60t2o-wifi ]] && /media/fat/t2o-wifi/S60t2o-wifi start
+# to /media/fat/linux/user-startup.sh (or use the menu: t2o-wifi -menu).
+
+DIR=/media/fat/t2o-wifi
+BIN=$DIR/t2o-wifi
+PIDFILE=/run/t2o-wifi.pid
+
+case "$1" in
+  start)
+    if [ -e $PIDFILE ] && [ -d /proc/$(<$PIDFILE) ]; then echo "t2o-wifi already running"; exit 1; fi
+    cd /tmp
+    $BIN >/tmp/t2o-wifi.log 2>&1 &
+    echo $! >$PIDFILE
+    ;;
+  stop)
+    [ -e $PIDFILE ] && kill $(<$PIDFILE) 2>/dev/null
+    rm -f $PIDFILE
+    ;;
+  restart)
+    $0 stop; $0 start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"; exit 1
+esac

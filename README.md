@@ -228,6 +228,13 @@ printed it and reports it works well.
 openscad -o case/sunton_2424s012_stand.stl case/sunton_2424s012_stand.scad
 ```
 
+### MiSTer daemon over WiFi
+
+`mister/` holds `t2o-wifi`, a companion to the MiSTer's `tty2oled.sh` (it runs next to it, not instead of it) that sends the
+current core's picture to the display over WiFi, so no USB cable is needed. It handles both the
+community's legacy art packs (converted on the fly) and full-colour JPEGs. See
+[`mister/README.md`](mister/README.md) for building and installing it.
+
 ## Flash from your browser
 
 No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
