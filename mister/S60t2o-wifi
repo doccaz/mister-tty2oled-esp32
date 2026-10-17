@@ -15,7 +15,16 @@ case "$1" in
   start)
     if [ -e $PIDFILE ] && [ -d /proc/$(<$PIDFILE) ]; then echo "t2o-wifi already running"; exit 1; fi
     cd /tmp
-    $BIN >/tmp/t2o-wifi.log 2>&1 &
+    # At boot this runs before WiFi is up: wait (up to 90 s, in the background, so boot is not
+    # held) until there is a default route, then become the daemon. The subshell execs the
+    # binary, so $! below is the daemon's pid.
+    (
+      n=0
+      while [ $n -lt 90 ] && ! awk '$2=="00000000"{f=1} END{exit !f}' /proc/net/route 2>/dev/null; do
+        sleep 1; n=$((n+1))
+      done
+      exec $BIN >/tmp/t2o-wifi.log 2>&1
+    ) &
     echo $! >$PIDFILE
     ;;
   stop)
