@@ -195,14 +195,15 @@ and the WiFi/MQTT features.
 - **Back (plug):** a flat disc the same diameter as the cup, with a hollow
   threaded skirt that screws in from behind (right-hand thread, 2 turns) and a
   coin slot underneath. Print it **flat, thread up**.
-- Outer diameter about 45.9 mm, height about 13.7 mm. The USB-C window is sized
+- Outer diameter about 45.5 mm, height about 13.7 mm. The USB-C window is sized
   for a molded cable plug (about 11.5 x 6.5 mm) with a little play.
 - Print-tested on a real board; it fits and the glass has only slight play. The
   display can still float a little in depth, so a small foam pad behind the PCB
   helps. The back has an optional flat pedestal (`back_pedestal`, `ped_gap`) just
-  below the board's tallest parts, so the board can only sag back about 0.5 mm and
-  the foam pad can be thin. The pedestal is not print-tested yet; if the plug
-  won't seat, raise `ped_gap` or set `back_pedestal = false`.
+  below the board's tallest parts, so the board can only sag back about 0.3 mm and
+  the foam pad can be thin. The owner reports the current values (`pcb_d` 38.2,
+  `ped_gap` 0.3) fit the real hardware almost perfectly; if the plug won't seat
+  on yours, raise `ped_gap` or set `back_pedestal = false`.
 
 Tolerances depend on your printer. The ones you're most likely to tune are at
 the top of the `.scad` file: `glass_clr` (side play around the glass, 0.35 mm
