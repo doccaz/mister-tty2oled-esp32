@@ -28,7 +28,7 @@ const (
 	// tools/build_site.sh publishes it here. This is the compiled DEFAULT; DB_URL in
 	// t2o-wifi.ini overrides it (see dbURL), so a repo rename - which moves the Pages URL -
 	// can be fixed with one ini line instead of needing a reflash to change the baked-in value.
-	updateDBURL   = "https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json"
+	updateDBURL   = "https://doccaz.github.io/mister-tty2oled-esp32/t2o-wifi-db.json"
 	updateFileKey = "t2o-wifi/t2o-wifi" // the daemon binary's entry in the database
 	pidFile       = "/run/t2o-wifi.pid"
 	// The MiSTer's CA bundle (the stock tty2oled scripts pass this exact path to wget).

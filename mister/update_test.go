@@ -29,7 +29,7 @@ const sampleDB = `{
     "t2o-wifi/t2o-wifi": {
       "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "size": 3408056,
-      "url": "https://github.com/doccaz/mister-tty2oled-gc9a01/releases/download/v0.5.4/t2o-wifi",
+      "url": "https://github.com/doccaz/mister-tty2oled-esp32/releases/download/v0.5.4/t2o-wifi",
       "reboot": true
     },
     "t2o-wifi/t2o-wifi.ini": { "hash": "b", "size": 948, "url": "u", "overwrite": false }

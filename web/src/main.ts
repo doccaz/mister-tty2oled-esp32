@@ -15,8 +15,8 @@ import { DEFAULT_TRANSFORM_BY_SHAPE, type TransformMode } from "./transforms";
 import { EFFECTS, SPEED_PRESETS, DEFAULT_SPEED } from "./effects";
 import { COMMANDS, COMMAND_CATEGORIES, type CommandDef } from "./commands";
 
-const REPO_URL = "https://github.com/doccaz/mister-tty2oled-gc9a01";
-const FLASHER_URL = "https://doccaz.github.io/mister-tty2oled-gc9a01/";
+const REPO_URL = "https://github.com/doccaz/mister-tty2oled-esp32";
+const FLASHER_URL = "https://doccaz.github.io/mister-tty2oled-esp32/";
 
 const ABOUT_LINKS = [
   { title: "Web flasher", desc: "install or update the firmware from your browser", url: FLASHER_URL },
@@ -531,7 +531,7 @@ function syncFitControls() {
 
 // --- Local pack browser (imported from reference/Pictures/ZIPs) -----------
 //
-// See /home/erico/Projetos/mister-tty2oled-gc9a01/library/ for the
+// See /home/erico/Projetos/mister-tty2oled-esp32/library/ for the
 // conversion pipeline: original .gsc (4bpp)/.xbm (1bpp) 256x64 files from
 // the reference project's community marquee packs, decoded to PNG.
 

@@ -54,7 +54,7 @@ def main():
     ap.add_argument("--files-dir", required=True,
                     help="directory holding t2o-wifi, S60t2o-wifi, t2o-wifi.ini, t2o_wifi.sh")
     ap.add_argument("--version", required=True, help="release version, e.g. 0.5.4 (no leading v)")
-    ap.add_argument("--repo", default="doccaz/mister-tty2oled-gc9a01",
+    ap.add_argument("--repo", default="doccaz/mister-tty2oled-esp32",
                     help="GitHub owner/repo the release assets live under")
     ap.add_argument("--db-id", default="doccaz_mister_tty2oled_gc9a01",
                     help="Downloader database id (also the downloader.ini section name)")

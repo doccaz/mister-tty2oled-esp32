@@ -1,3 +1,3 @@
-module github.com/doccaz/mister-tty2oled-gc9a01/mister
+module github.com/doccaz/mister-tty2oled-esp32/mister
 
 go 1.21

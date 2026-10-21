@@ -1,8 +1,8 @@
 # tty2oled-gc9a01
 
-**[⚡ Flash the firmware](https://doccaz.github.io/mister-tty2oled-gc9a01/)** ·
-**[🎨 Open the marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)** ·
-[Releases](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) ·
+**[⚡ Flash the firmware](https://doccaz.github.io/mister-tty2oled-esp32/)** ·
+**[🎨 Open the marquee web app](https://doccaz.github.io/mister-tty2oled-esp32/app/)** ·
+[Releases](https://github.com/doccaz/mister-tty2oled-esp32/releases) ·
 [Build from source](#build--flash-the-firmware)
 
 <p align="center">
@@ -37,8 +37,8 @@ both use WebSerial):
 
 | | What it does |
 |---|---|
-| **[⚡ Web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)** | Installs the latest release on your board over USB. No toolchain. Hold BOOT while plugging the board in. |
-| **[🎨 Marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)** | Build and manage the per-core art, preview it live on the display over USB. Back up your library from the header. |
+| **[⚡ Web flasher](https://doccaz.github.io/mister-tty2oled-esp32/)** | Installs the latest release on your board over USB. No toolchain. Hold BOOT while plugging the board in. |
+| **[🎨 Marquee web app](https://doccaz.github.io/mister-tty2oled-esp32/app/)** | Build and manage the per-core art, preview it live on the display over USB. Back up your library from the header. |
 | [Build from source](#build--flash-the-firmware) | PlatformIO, if you want to change the firmware. |
 
 The two link to each other, so you can start with either. Details are in
@@ -255,7 +255,7 @@ community's legacy art packs (converted on the fly) and full-colour JPEGs. See
 
 ```ini
 [doccaz_mister_tty2oled_gc9a01]
-db_url = https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json
+db_url = https://doccaz.github.io/mister-tty2oled-esp32/t2o-wifi-db.json
 ```
 
 Your `t2o-wifi.ini` (`HOST` and per-display settings) is shipped once but never overwritten,
@@ -266,7 +266,7 @@ verifies the download, and swaps the binary in place. See
 
 ## Flash from your browser
 
-No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
+No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-esp32/)**
 writes the latest release to the board over USB (Chrome, Edge or Opera on
 a desktop; it uses WebSerial and [ESP Web Tools](https://esphome.github.io/esp-web-tools/)).
 First hold BOOT while plugging the board in (the browser can't reset the
@@ -275,11 +275,11 @@ C3's native USB into download mode on its own; without this the page says
 and choose the serial port ("USB JTAG/serial debug unit"). Flashing
 keeps your saved WiFi and MQTT settings (the page writes the firmware's four
 parts separately and never touches the settings area). The same site hosts the
-[marquee web app](https://doccaz.github.io/mister-tty2oled-gc9a01/app/)
+[marquee web app](https://doccaz.github.io/mister-tty2oled-esp32/app/)
 (the local art pack isn't included, it isn't redistributed).
 
 With `esptool`, take the parts from the latest
-[release](https://github.com/doccaz/mister-tty2oled-gc9a01/releases) and write
+[release](https://github.com/doccaz/mister-tty2oled-esp32/releases) and write
 them at their own offsets, which also keeps your settings:
 
 ```bash

@@ -57,7 +57,7 @@ bottom of `/media/fat/downloader.ini`:
 
 ```ini
 [doccaz_mister_tty2oled_gc9a01]
-db_url = https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json
+db_url = https://doccaz.github.io/mister-tty2oled-esp32/t2o-wifi-db.json
 ```
 
 From then on `update_all` keeps `t2o-wifi/t2o-wifi`, `S60t2o-wifi` and `Scripts/t2o_wifi.sh`
