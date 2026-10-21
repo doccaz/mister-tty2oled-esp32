@@ -248,6 +248,22 @@ current core's picture to the display over WiFi, so no USB cable is needed. It h
 community's legacy art packs (converted on the fly) and full-colour JPEGs. See
 [`mister/README.md`](mister/README.md) for building and installing it.
 
+**Keeping it updated.** The daemon is published as a
+[MiSTer Downloader](https://github.com/MiSTer-devel/Downloader_MiSTer) database, so
+`update_all` can keep it current alongside everything else. Add this once to the bottom of
+`/media/fat/downloader.ini`:
+
+```ini
+[doccaz_mister_tty2oled_gc9a01]
+db_url = https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json
+```
+
+Your `t2o-wifi.ini` (`HOST` and per-display settings) is shipped once but never overwritten,
+so it survives updates. Or update on demand without touching `downloader.ini`: run
+`t2o-wifi -update` (or the menu's **Check for updates**), which reads the same database,
+verifies the download, and swaps the binary in place. See
+[`mister/README.md`](mister/README.md#updating) for details.
+
 ## Flash from your browser
 
 No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-gc9a01/)**
