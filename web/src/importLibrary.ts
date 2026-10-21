@@ -62,15 +62,24 @@ export function entryUrl(entry: ImportEntry): string {
  * core that already has an obvious match.
  */
 export function findAutoMatch(entries: ImportEntry[], coreId: string): ImportEntry | undefined {
-  const target = coreId.toLowerCase();
-  const exact = entries.find((e) => e.name.toLowerCase() === target);
+  // Prefer a full-color render (kind "color", e.g. from library/color-gen/)
+  // over a grayscale master of the same name, so a colorized logo wins.
+  const pick = (name: string): ImportEntry | undefined => {
+    const matches = entries.filter((e) => e.name.toLowerCase() === name);
+    if (!matches.length) return undefined;
+    return matches.find((e) => e.kind === "color") ?? matches[0];
+  };
+
+  const exact = pick(target(coreId));
   if (exact) return exact;
 
-  const aliases = CORE_ALIASES[coreId] ?? [];
-  for (const alias of aliases) {
-    const aliasTarget = alias.toLowerCase();
-    const hit = entries.find((e) => e.name.toLowerCase() === aliasTarget);
+  for (const alias of CORE_ALIASES[coreId] ?? []) {
+    const hit = pick(target(alias));
     if (hit) return hit;
   }
   return undefined;
+}
+
+function target(s: string): string {
+  return s.toLowerCase();
 }
