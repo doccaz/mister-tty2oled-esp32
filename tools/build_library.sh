@@ -53,6 +53,28 @@ idx_path.write_text(json.dumps(idx, indent=2))
 PY
 fi
 
+# Procedurally-generated full-color art (library/color-gen/*.jpg|png, named
+# after the core id, produced by tools/colorize_library.py). Gitignored and
+# kept separate from local-extra so a regen never clobbers hand-curated art.
+GEN_DIR="${ROOT}/library/color-gen"
+if compgen -G "${GEN_DIR}/*" >/dev/null; then
+  echo "Merging color-gen generated art ..."
+  mkdir -p "${ROOT}/library/converted/color-gen"
+  python3 - "${GEN_DIR}" "${ROOT}/library/converted" <<'PY'
+import json, shutil, sys
+from pathlib import Path
+src, out = Path(sys.argv[1]), Path(sys.argv[2])
+idx_path = out / "index.json"
+idx = json.loads(idx_path.read_text())
+for f in sorted(src.iterdir()):
+    if f.suffix.lower() not in (".png", ".jpg", ".jpeg"):
+        continue
+    shutil.copy(f, out / "color-gen" / f.name)
+    idx.append({"pack": "color-gen", "name": f.stem, "kind": "color", "png": f"color-gen/{f.name}"})
+idx_path.write_text(json.dumps(idx, indent=2))
+PY
+fi
+
 echo "Syncing into web/public/library ..."
 rm -rf "${ROOT}/web/public/library"
 mkdir -p "${ROOT}/web/public/library"

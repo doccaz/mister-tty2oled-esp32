@@ -20,3 +20,9 @@ release/
 # Copy of the MiSTer's tty2oled pictures (third-party art) kept locally for the
 # web app's "Import folder" - never committed.
 library/mister-pics/
+
+# Local SVG sources for the colorizer (PD-textlogo, kept local like the packs)
+library/color-src/
+
+# Generated full-color art (tools/colorize_library.py), personal-use derivative
+library/color-gen/

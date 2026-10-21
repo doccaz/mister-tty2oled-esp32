@@ -1,0 +1,47 @@
+{
+  "NES": {
+    "primary": "#e60012",
+    "bg": "#180305",
+    "style": "svg",
+    "svg": "nes.svg",
+    "master": "JP_STYLE/NES.png",
+    "source": "https://commons.wikimedia.org/wiki/File:NES_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Genesis": {
+    "primary": "#1f8ad6",
+    "bg": "#02121f",
+    "style": "svg",
+    "svg": "genesis.svg",
+    "master": "JP_STYLE/Genesis.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Sega_genesis_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "SNES": {
+    "primary": "#5b4b9e",
+    "bg": "#120f24",
+    "style": "native",
+    "svg": "snes.svg",
+    "master": "JP_STYLE/SNES.png",
+    "source": "https://commons.wikimedia.org/wiki/File:SNES_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "C64": {
+    "primary": "#5a78e0",
+    "bg": "#0a1030",
+    "style": "gradient",
+    "master": "tty2oled-gsc_1/C64.png"
+  },
+  "battroad": {
+    "primary": "#f28a1c",
+    "bg": "#241206",
+    "style": "gradient",
+    "master": "tty2oled-gsc_1/battroad.png"
+  },
+  "punisher": {
+    "primary": "#d42b2b",
+    "bg": "#1a0606",
+    "style": "gradient",
+    "master": "tty2oled-gsc_1/punisher.png"
+  }
+}
