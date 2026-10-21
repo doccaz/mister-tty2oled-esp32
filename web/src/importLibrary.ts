@@ -3,8 +3,8 @@
 
 // Browsable local copy of the reference project's community marquee packs
 // (converted from the original .gsc/4bpp-grayscale and .xbm/1bpp text
-// format to PNG - see /home/erico/Projetos/mister-tty2oled-gc9a01/library/
-// and the conversion notes in this project's CLAUDE.md). Served from
+// format to PNG - see the library/ folder and the conversion notes in this
+// project's CLAUDE.md). Served from
 // web/public/library so it's a plain static fetch, no bundler import of
 // 500+ files.
 
