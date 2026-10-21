@@ -531,7 +531,7 @@ function syncFitControls() {
 
 // --- Local pack browser (imported from reference/Pictures/ZIPs) -----------
 //
-// See /home/erico/Projetos/mister-tty2oled-esp32/library/ for the
+// See the library/ folder for the
 // conversion pipeline: original .gsc (4bpp)/.xbm (1bpp) 256x64 files from
 // the reference project's community marquee packs, decoded to PNG.
 
