@@ -46,6 +46,37 @@ only read (its ini files and `pics/` packs), never changed.
 
 Full-colour art goes in `/media/fat/t2o-wifi/art/<core>.jpg`.
 
+## Updating
+
+Two ways, use either.
+
+**Automatic, with the MiSTer's own `update_all` / `update`.** The project publishes a
+[MiSTer Downloader](https://github.com/MiSTer-devel/Downloader_MiSTer) database, so the
+daemon updates alongside everything else you already keep current. Add this once to the
+bottom of `/media/fat/downloader.ini`:
+
+```ini
+[doccaz_mister_tty2oled_gc9a01]
+db_url = https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json
+```
+
+From then on `update_all` keeps `t2o-wifi/t2o-wifi`, `S60t2o-wifi` and `Scripts/t2o_wifi.sh`
+current (it compares MD5s, so it only downloads when something changed), and offers a reboot
+after it replaces the running binary. Your `t2o-wifi.ini` is shipped once but never
+overwritten (`overwrite: false`), so your `HOST` and per-display settings survive updates.
+The first install still needs the one-time `t2o-wifi -menu` step to pick a display and turn
+on start-at-boot - the Downloader only manages files, it can't edit `user-startup.sh` or
+start the daemon.
+
+**Manual, from the daemon itself.** `t2o-wifi -update` (or the menu's "Check for updates")
+reads that same published database, and if the binary it lists differs from the running one,
+downloads it, verifies its size and MD5, then swaps it in - stopping the daemon first and
+restarting it after (so nothing is executing the file on `/media/fat`'s exFAT during the
+swap). It downloads with `wget` (falling back to `curl`), the same tools the stock tty2oled
+scripts use, rather than linking a TLS stack into the always-running binary. It updates the
+binary only; the init script and menu wrapper change rarely, so for those run `update_all`
+or reinstall.
+
 **Why the name has no "tty2oled" in it:** the stock `S60tty2oled stop` finds its process with
 `ps | grep tty2oled`, which would also match a binary, path or argument containing that word and
 could end up killing this daemon. So the folder, binary, init script, pid file and log are all
@@ -67,6 +98,7 @@ and lets you:
 - turn "start at boot" on or off (only the WiFi daemon's own line; the stock tty2oled daemon's
   line is never touched);
 - change the options (send contrast/rotation, contrast, rotation, transition, `_alt` pictures);
+- check for and install a new version (see "Updating");
 - send a test picture, and read the log.
 
 It is part of the same binary (plain ANSI, no `dialog`). On a UTF-8 terminal it draws box

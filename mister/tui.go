@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 	"unicode/utf8"
 )
@@ -75,6 +76,7 @@ type tui struct {
 	links                                     []linkState // one per display, "" state = not checked yet
 	notice                                    string
 	out                                       *strings.Builder
+	reexec                                    bool // set after a successful self-update: re-run the new binary on exit
 }
 
 func readKeys(ch chan<- keyEvent) {
@@ -374,6 +376,7 @@ func (t *tui) mainMenu() {
 			"Restart daemon",
 			boot,
 			"Options",
+			"Check for updates",
 			"Send a test picture",
 			"View log",
 			"Quit",
@@ -414,12 +417,80 @@ func (t *tui) mainMenu() {
 			case 4:
 				t.options()
 			case 5:
-				t.sendTest()
+				t.updateDaemon()
 			case 6:
-				t.viewLog()
+				t.sendTest()
 			case 7:
+				t.viewLog()
+			case 8:
 				return
 			}
+		}
+		if t.reexec { // a self-update just landed: leave so runMenu can run the new binary
+			return
+		}
+	}
+}
+
+// updateDaemon checks the published database and, on confirmation, downloads and installs
+// the newer build (see update.go). On success it sets reexec so the menu relaunches on the
+// freshly installed binary rather than keep running the replaced one.
+func (t *tui) updateDaemon() {
+	w, left := t.begin()
+	t.frame(4, left, w, 5, "Update")
+	t.at(6, left+3, "Checking for a new version...")
+	t.end("")
+	entry, _, differs, err := checkUpdate()
+	if err != nil {
+		t.notice = "Update check failed: " + err.Error()
+		return
+	}
+	tag := updateTag(entry.URL)
+	if !differs {
+		t.notice = "Already up to date (" + t.version + ")."
+		return
+	}
+	if !t.confirm("Update to "+tag, "The daemon stops briefly while the new build installs.") {
+		return
+	}
+	w, left = t.begin()
+	t.frame(4, left, w, 5, "Update")
+	t.at(6, left+3, "Downloading and installing "+tag+"...")
+	t.end("")
+	if _, err := doUpdate(t.base, entry); err != nil {
+		t.notice = "Update failed: " + err.Error()
+		return
+	}
+	t.reexec = true
+}
+
+// confirm is a two-choice yes/no screen. No is the highlighted default.
+func (t *tui) confirm(title, msg string) bool {
+	sel := 0 // 0 = No, 1 = Yes
+	for {
+		w, left := t.begin()
+		t.frame(4, left, w, 6, title)
+		t.at(5, left+2, truncate(msg, w-4))
+		for i, it := range []string{"No", "Yes"} {
+			x := left + 4 + i*10
+			if i == sel {
+				t.at(7, x, bgSel+bold+" "+it+" "+reset)
+			} else {
+				t.at(7, x, " "+it+" ")
+			}
+		}
+		t.end("Left/Right choose   Enter select   Esc cancel")
+		ev, ok := t.wait(time.Hour)
+		if !ok {
+			return false
+		}
+		switch ev.k {
+		case kLeft, kRight:
+			sel ^= 1
+		case kEnter:
+			return sel == 1
+		case kEsc:
+			return false
 		}
 	}
 }
@@ -844,12 +915,27 @@ func runMenu(base string) {
 	go readKeys(t.keys)
 	stop := make(chan struct{})
 	go t.probe(stop)
-	defer func() {
+	cleaned := false
+	cleanup := func() {
+		if cleaned {
+			return
+		}
+		cleaned = true
 		close(stop)
 		os.Stdout.WriteString("\x1b[?25h\x1b[0m\x1b[2J\x1b[H")
 		restore()
-	}()
+	}
+	defer cleanup()
 	t.mainMenu()
+	if t.reexec {
+		// A self-update replaced this binary. Restore the terminal, then exec the new
+		// one so we don't keep paging the old binary off /media/fat's exFAT (where the
+		// replaced file's clusters may be reused).
+		cleanup()
+		if exe, err := os.Executable(); err == nil {
+			syscall.Exec(exe, []string{exe, "-menu"}, os.Environ())
+		}
+	}
 }
 
 func envOr(k, def string) string {

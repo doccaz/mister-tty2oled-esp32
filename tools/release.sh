@@ -57,6 +57,7 @@ echo "== Release ${TAG}"
 
 echo "-- 1. Repository state"
 command -v gh >/dev/null || die "gh (GitHub CLI) not found"
+command -v go >/dev/null || die "go toolchain not found (needed to cross-compile the MiSTer daemon)"
 gh auth status >/dev/null 2>&1 || die "gh isn't logged in (gh auth login)"
 [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || guard "not on main"
 [ -z "$(git status --porcelain --untracked-files=no)" ] || guard "uncommitted changes to tracked files"
@@ -106,6 +107,19 @@ for env in "${ENVS[@]}"; do
   cp "firmware/.pio/build/${env}/firmware.bin" "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-app.bin"
 done
 
+echo "-- 3b. Build the MiSTer WiFi daemon"
+# Pin VERSION to the tag so the binary reports it (build.sh otherwise uses git describe),
+# and so its MD5 matches what -update/update_all will serve. Asset names are plain
+# (t2o-wifi, S60t2o-wifi, ...) - they don't collide with the firmware's *.bin, and the
+# Downloader database (tools/build_mister_db.py) maps them to their install paths.
+VERSION="${TAG}" "${ROOT}/mister/build.sh" >/dev/null
+cp "${ROOT}/mister/release/t2o-wifi" "${OUT}/t2o-wifi"
+cp "${ROOT}/mister/S60t2o-wifi" "${ROOT}/mister/t2o-wifi.ini" "${ROOT}/mister/t2o_wifi.sh" "${OUT}/"
+if command -v file >/dev/null; then
+  file "${OUT}/t2o-wifi" | grep -q ARM || guard "the daemon binary isn't an ARM build"
+fi
+echo "   built $(stat -c %s "${OUT}/t2o-wifi")-byte daemon (version ${TAG})"
+
 echo "-- 4. Verify images"
 for env in "${ENVS[@]}"; do
   f="${OUT}/tty2oled-gc9a01-${VERSION}-${env}-full.bin"
@@ -124,7 +138,14 @@ for env in "${ENVS[@]}"; do
   rm -f "${tmp}"
 done
 echo "   ok: parts reproduce each full image"
-( cd "${OUT}" && sha256sum ./*.bin | sed 's# \./# #' > SHA256SUMS )
+# Rehearse the MiSTer daemon database here (so --dry-run exercises it too). The live copy
+# is generated and published by tools/build_site.sh in the Pages workflow, from these same
+# uploaded assets; this one just proves the generator works and the files are complete.
+python3 "${ROOT}/tools/build_mister_db.py" --files-dir "${OUT}" --version "${VERSION}" --out "${OUT}/t2o-wifi-db.json"
+python3 -c "import json; d=json.load(open('${OUT}/t2o-wifi-db.json')); assert d['v']==1 and len(d['files'])==4, d" \
+  || die "the generated MiSTer database looks wrong"
+echo "   ok: MiSTer daemon database generates and parses"
+( cd "${OUT}" && sha256sum ./*.bin t2o-wifi S60t2o-wifi t2o-wifi.ini t2o_wifi.sh | sed 's# \./# #' > SHA256SUMS )
 echo "   toolchain lines above should be: Espressif 32 (2024.6.0), framework 2.0.18 - if not, this isn't the tested build"
 
 if [ "${DRY_RUN}" = 1 ]; then
@@ -136,10 +157,11 @@ echo "-- 5. Publish"
 confirm "   Tag ${TAG} on $(git rev-parse --short HEAD) and publish the release?" || die "aborted (images kept in ${OUT})"
 git tag -a "${TAG}" -m "${TAG}"
 git push origin "${TAG}"
+DAEMON_ASSETS=("${OUT}/t2o-wifi" "${OUT}/S60t2o-wifi" "${OUT}/t2o-wifi.ini" "${OUT}/t2o_wifi.sh")
 if [ -n "${NOTES_FILE}" ]; then
-  gh release create "${TAG}" --title "${TAG}" --notes-file "${NOTES_FILE}" "${OUT}"/*.bin "${OUT}/SHA256SUMS"
+  gh release create "${TAG}" --title "${TAG}" --notes-file "${NOTES_FILE}" "${OUT}"/*.bin "${OUT}/SHA256SUMS" "${DAEMON_ASSETS[@]}"
 else
-  gh release create "${TAG}" --title "${TAG}" --generate-notes "${OUT}"/*.bin "${OUT}/SHA256SUMS"
+  gh release create "${TAG}" --title "${TAG}" --generate-notes "${OUT}"/*.bin "${OUT}/SHA256SUMS" "${DAEMON_ASSETS[@]}"
 fi
 # The Pages workflow must run on main (the github-pages environment rejects
 # runs on a tag ref), so it's dispatched here rather than triggered by the release.
