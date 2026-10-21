@@ -623,6 +623,8 @@ async function openMatchReviewModal(summary: string[] = []) {
       </div>
       <div class="review-list" id="review-list">Loading...</div>
       <div class="controls-row">
+        <button id="review-select-all">Select all</button>
+        <button id="review-deselect-all">Deselect all</button>
         <button id="review-save-all">Save checked matches to library</button>
       </div>
     </div>
@@ -697,6 +699,21 @@ async function openMatchReviewModal(summary: string[] = []) {
   } else {
     renderMore();
   }
+
+  // Select all / Deselect all: the checked state lives in `checked` (not the
+  // DOM), so update every matched row there, then sync the checkboxes that are
+  // currently rendered - rows not yet paged in are already covered by the Map.
+  const selectAllBtn = overlay.querySelector("#review-select-all") as HTMLButtonElement;
+  const deselectAllBtn = overlay.querySelector("#review-deselect-all") as HTMLButtonElement;
+  const setAll = (value: boolean) => {
+    for (const row of matched) checked.set(row, value);
+    list.querySelectorAll<HTMLInputElement>(".review-row input[type=checkbox]").forEach(
+      (cb) => (cb.checked = value),
+    );
+  };
+  selectAllBtn.disabled = deselectAllBtn.disabled = matched.length === 0;
+  selectAllBtn.addEventListener("click", () => setAll(true));
+  deselectAllBtn.addEventListener("click", () => setAll(false));
 
   const saveAllBtn = overlay.querySelector("#review-save-all") as HTMLButtonElement;
   saveAllBtn.addEventListener("click", async () => {
