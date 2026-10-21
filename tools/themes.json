@@ -147,5 +147,85 @@
     "svg": "atari800.svg",
     "source": "https://commons.wikimedia.org/wiki/File:Atari_800_logo-05.svg",
     "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "S32X": {
+    "primary": "#d02020",
+    "bg": "#0d0d11",
+    "style": "native",
+    "svg": "sega32x.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sega_32X_logo.svg",
+    "license": "public domain (PD-text; trademark applies)"
+  },
+  "GameNWatch": {
+    "primary": "#c7a53a",
+    "bg": "#12110a",
+    "style": "svg",
+    "svg": "gamenwatch.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Game_and_watch_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Apple-I": {
+    "primary": "#d8a23a",
+    "bg": "#120f0a",
+    "style": "svg",
+    "svg": "apple1.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Apple-1.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "PCXT": {
+    "primary": "#1f6fd0",
+    "bg": "#080c16",
+    "style": "svg",
+    "svg": "pcxt.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:IBM_Personal_Computer_XT_badge_recreation.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "AQUARIUS": {
+    "primary": "#eb222c",
+    "bg": "#0d0d11",
+    "style": "native",
+    "svg": "aquarius.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mattel_Aquarius_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Adam": {
+    "primary": "#2892c7",
+    "bg": "#06121a",
+    "style": "native",
+    "svg": "adam.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Coleco_Adam_logo_blue.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "ChannelF": {
+    "primary": "#e0602a",
+    "bg": "#140a06",
+    "style": "svg",
+    "svg": "channelf.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Channel_F_Logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "CreatiVision": {
+    "primary": "#ffd21a",
+    "bg": "#11100a",
+    "style": "svg",
+    "svg": "creativision.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:VTech_CreatiVision_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "PokemonMini": {
+    "primary": "#f1d941",
+    "bg": "#141206",
+    "style": "native",
+    "svg": "pokemonmini.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pokemon_mini_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Gamate": {
+    "primary": "#2ab0a0",
+    "bg": "#06110f",
+    "style": "svg",
+    "svg": "gamate.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Gamate_Logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
   }
 }
