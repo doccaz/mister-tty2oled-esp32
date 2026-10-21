@@ -440,7 +440,7 @@ func (t *tui) updateDaemon() {
 	t.frame(4, left, w, 5, "Update")
 	t.at(6, left+3, "Checking for a new version...")
 	t.end("")
-	entry, _, differs, err := checkUpdate()
+	entry, _, differs, err := checkUpdate(t.base)
 	if err != nil {
 		t.notice = "Update check failed: " + err.Error()
 		return
