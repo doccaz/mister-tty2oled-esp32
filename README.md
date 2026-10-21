@@ -232,6 +232,11 @@ The MiSTer-Kun mascot is embossed on the front (`logo` = `"mascot"`, `"text"` or
 `"none"`); the artwork is credited in `case/mister_kun_CREDITS.txt`. The owner
 printed it and reports it works well.
 
+![The Sunton board in the 3D-printed case, sitting in the matching desk stand (MiSTer-Kun embossed on the front), showing the WiFi "Connected" screen](docs/case-stand-sunton.jpg)
+
+Both the case and this stand print from the `.scad`/`.stl` files in `case/` — no
+supports, standard FDM.
+
 ```bash
 openscad -o case/sunton_2424s012_stand.stl case/sunton_2424s012_stand.scad
 ```
