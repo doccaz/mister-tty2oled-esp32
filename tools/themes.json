@@ -8,7 +8,7 @@
     "source": "https://commons.wikimedia.org/wiki/File:NES_logo.svg",
     "license": "PD-textlogo, public domain (trademark still applies)"
   },
-  "Genesis": {
+  "MegaDrive": {
     "primary": "#1f8ad6",
     "bg": "#02121f",
     "style": "svg",

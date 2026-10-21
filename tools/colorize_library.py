@@ -36,6 +36,8 @@ from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 THEMES = ROOT / "tools" / "themes.json"
+CORES_TS = ROOT / "web" / "src" / "cores.ts"
+ALIASES_TS = ROOT / "web" / "src" / "aliases.ts"
 CONVERTED = ROOT / "library" / "converted"
 SVG_DIR = ROOT / "library" / "color-src" / "svg"   # gitignored, fetched separately
 # Generated art lands in its OWN dir (not local-extra, which is the user's
@@ -60,6 +62,46 @@ def hexrgb(s: str) -> np.ndarray:
 
 def lerp(a: np.ndarray, b: np.ndarray, t: float) -> np.ndarray:
     return a + (b - a) * t
+
+
+def parse_core_ids() -> list:
+    import re
+    return re.findall(r'id:\s*"([^"]+)"', CORES_TS.read_text())
+
+
+def parse_aliases() -> dict:
+    """Parse CORE_ALIASES { Core: ["Alt", ...] } from the TS source."""
+    import re
+    txt = ALIASES_TS.read_text()
+    body = txt[txt.index("{"): txt.rindex("}") + 1]
+    out = {}
+    for m in re.finditer(r'(\w+)\s*:\s*\[([^\]]*)\]', body):
+        out[m.group(1)] = re.findall(r'"([^"]+)"', m.group(2))
+    return out
+
+
+def master_index() -> dict:
+    """name(lower) -> master path under converted/, preferring gsc over xbm."""
+    idx = json.loads((CONVERTED / "index.json").read_text())
+    best = {}
+    for e in idx:
+        if e.get("kind") not in ("gsc", "xbm"):
+            continue
+        key = e["name"].lower()
+        if key not in best or (e["kind"] == "gsc" and best[key][1] != "gsc"):
+            best[key] = (e["png"], e["kind"])
+    return {k: v[0] for k, v in best.items()}
+
+
+def resolve_master(core: str, aliases: dict, masters: dict):
+    hit = masters.get(core.lower())
+    if hit:
+        return hit
+    for alt in aliases.get(core, []):
+        hit = masters.get(alt.lower())
+        if hit:
+            return hit
+    return None
 
 
 def procedural_theme(core: str) -> dict:
@@ -269,16 +311,41 @@ def render_core(core: str, theme: dict) -> Image.Image:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cores", nargs="*")
+    ap.add_argument("--all", action="store_true",
+                    help="render every core in cores.ts that has a master")
     ap.add_argument("--contact", help="write a masked contact sheet PNG here")
     args = ap.parse_args()
 
     themes = json.loads(THEMES.read_text())
-    cores = args.cores or list(themes.keys())
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # build the (core -> theme) work list
+    worklist = {}  # core -> theme dict
+    if args.all:
+        aliases, masters = parse_aliases(), master_index()
+        skipped = []
+        for core in parse_core_ids():
+            if core in themes:
+                worklist[core] = themes[core]        # keep hand-curation (incl. SVG)
+                continue
+            m = resolve_master(core, aliases, masters)
+            if not m:
+                skipped.append(core)
+                continue
+            theme = procedural_theme(core)
+            theme["master"] = m
+            worklist[core] = theme
+        print(f"--all: {len(worklist)} cores resolvable, {len(skipped)} with no master")
+        if skipped:
+            print("  no master: " + ", ".join(skipped))
+    else:
+        for core in (args.cores or list(themes.keys())):
+            worklist[core] = themes.get(core) or procedural_theme(core)
+    cores = list(worklist.keys())
 
     rendered = []
     for core in cores:
-        theme = themes.get(core) or procedural_theme(core)
+        theme = worklist[core]
         try:
             img = render_core(core, theme)
         except Exception as e:
