@@ -43,5 +43,109 @@
     "bg": "#1a0606",
     "style": "gradient",
     "master": "tty2oled-gsc_1/punisher.png"
+  },
+  "Gameboy": {
+    "primary": "#8a9a3c",
+    "bg": "#10140a",
+    "style": "svg",
+    "svg": "gameboy.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Nintendo_Game_Boy_Logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "GBA": {
+    "primary": "#1f5bd6",
+    "bg": "#061233",
+    "style": "native",
+    "svg": "gba.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Game_Boy_Advance_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "N64": {
+    "primary": "#3a86e0",
+    "bg": "#0a0c14",
+    "style": "native",
+    "svg": "n64.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Nintendo_64_wordmark.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "SMS": {
+    "primary": "#d8232a",
+    "bg": "#0d0d11",
+    "style": "svg",
+    "svg": "sms.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Master_System_Logo.svg",
+    "license": "PD-textlogo, public domain (fan-made, approximate font; trademark applies)"
+  },
+  "Coleco": {
+    "primary": "#2aa0d0",
+    "bg": "#05121a",
+    "style": "native",
+    "svg": "coleco.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:COLECO_VISION_LOGO.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Intv": {
+    "primary": "#e08a2c",
+    "bg": "#1a1206",
+    "style": "svg",
+    "svg": "intv.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Intellivision-logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Atari5200": {
+    "primary": "#e4202f",
+    "bg": "#180305",
+    "style": "native",
+    "svg": "atari5200.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_5200_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Atari7800": {
+    "primary": "#ad0e0e",
+    "bg": "#160303",
+    "style": "native",
+    "svg": "atari7800.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_7800_logo-05.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "AtariLynx": {
+    "primary": "#ff3b1e",
+    "bg": "#180703",
+    "style": "native",
+    "svg": "atarilynx.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_Lynx_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Vectrex": {
+    "primary": "#39d0d0",
+    "bg": "#04161a",
+    "style": "svg",
+    "svg": "vectrex.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Vectrex_logo_(rest_of_the_world).svg",
+    "license": "public domain (PD-other; trademark still applies)"
+  },
+  "Amstrad": {
+    "primary": "#2f8600",
+    "bg": "#06140a",
+    "style": "native",
+    "svg": "amstrad.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Amstrad_CPC_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "TI-99_4A": {
+    "primary": "#d4342b",
+    "bg": "#0d0d11",
+    "style": "svg",
+    "svg": "ti994a.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:TI-994A_logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Atari800": {
+    "primary": "#ffc20b",
+    "bg": "#1a1405",
+    "style": "native",
+    "svg": "atari800.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_800_logo-05.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
   }
 }
