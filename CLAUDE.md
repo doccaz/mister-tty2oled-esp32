@@ -8,9 +8,10 @@ previewing it live on the physical display over WebSerial.
 > **Repo renamed 2026-10-21** from `mister-tty2oled-gc9a01` to
 > `doccaz/mister-tty2oled-esp32` (panel-neutral, ahead of possible rectangular-panel
 > support — see the `repo-rename-multipanel` memory). The GitHub repo and Pages URL
-> are now `-esp32`; the **local working directory stays `mister-tty2oled-gc9a01`** (so
-> the memory dir, keyed on that path, isn't orphaned). Deliberately kept at their old
-> values because they're decoupled identities, not the repo name: the Downloader
+> are now `-esp32`; the **local working directory was also renamed to
+> `mister-tty2oled-esp32`** (done with Claude Code closed, moving `~/.claude/projects/`'s
+> path-keyed slug dir alongside it so memory/history weren't orphaned). Deliberately kept
+> at their old values because they're decoupled identities, not the repo name: the Downloader
 > `db_id` `doccaz_mister_tty2oled_gc9a01`, the backup format `tty2oled-gc9a01-library`,
 > the HW id `HWGC9A01C`, and the firmware release-asset prefix `tty2oled-gc9a01-*`
 > (panel-accurate).
