@@ -95,6 +95,33 @@ cp "${ROOT}/web/public/favicon.svg" "${SITE}/favicon.svg"
 mkdir -p "${SITE}/img"
 cp "${ROOT}/docs/hw-gc9a01-connected.jpg" "${ROOT}/docs/hw-supermini-oled.jpg" "${ROOT}/docs/case-photo.jpg" "${SITE}/img/"
 
+# ---- MiSTer daemon Downloader database --------------------------------------------------
+# Published at a stable URL (site root) so `update_all` and the daemon's own -update keep
+# the WiFi daemon current; each entry points at the matching release asset.
+DBSTAGE="$(mktemp -d)"
+trap 'rm -rf "${DBSTAGE}"' EXIT
+DBFILES=(t2o-wifi S60t2o-wifi t2o-wifi.ini t2o_wifi.sh)
+gen_db=1
+if [ -n "${FIRMWARE_DIR:-}" ]; then
+  # CI: the daemon assets must be downloaded alongside the firmware, or the published
+  # database would 404 for every subscriber. Fail loudly rather than quietly skip it.
+  for f in "${DBFILES[@]}"; do
+    [ -f "${FIRMWARE_DIR}/${f}" ] || { echo "missing daemon release asset '${f}' in ${FIRMWARE_DIR}" >&2; exit 1; }
+    cp "${FIRMWARE_DIR}/${f}" "${DBSTAGE}/${f}"
+  done
+elif [ -f "${ROOT}/mister/release/t2o-wifi" ]; then
+  # Local build: the cross-compiled binary plus the checked-in support files.
+  cp "${ROOT}/mister/release/t2o-wifi" "${DBSTAGE}/t2o-wifi"
+  cp "${ROOT}/mister/S60t2o-wifi" "${ROOT}/mister/t2o-wifi.ini" "${ROOT}/mister/t2o_wifi.sh" "${DBSTAGE}/"
+else
+  gen_db=0
+  echo "note: mister/release/t2o-wifi not built; skipping the daemon database (run mister/build.sh)" >&2
+fi
+if [ "${gen_db}" = 1 ]; then
+  python3 "${ROOT}/tools/build_mister_db.py" --files-dir "${DBSTAGE}" --version "${VERSION}" \
+    --out "${SITE}/t2o-wifi-db.json"
+fi
+
 ( cd "${ROOT}/web" && npx --no-install vite build --base=./ --outDir "${SITE}/app" --emptyOutDir )
 
 # web/public/library is generated locally from third-party fan-made art

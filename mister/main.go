@@ -157,6 +157,7 @@ func main() {
 	list := flag.Bool("list", false, "list the displays found on the network and exit")
 	plain := flag.Bool("plain", false, "with -list: one tab-separated line per display (name, ip, port, version), for scripts")
 	selectDev := flag.Bool("select", false, "list the displays, pick one and save it as HOST in t2o-wifi.ini")
+	update := flag.Bool("update", false, "update the daemon to the latest published build and exit")
 	showVersion := flag.Bool("version", false, "print the version")
 	flag.Parse()
 	stockDir = *stock
@@ -167,6 +168,10 @@ func main() {
 
 	if *menu {
 		runMenu(*base)
+		return
+	}
+	if *update {
+		runUpdateCLI(*base)
 		return
 	}
 	cfg := loadConfig(*base)

@@ -62,7 +62,12 @@ jobs:
           fi
           echo "Publishing firmware from release $TAG"
           mkdir -p fw
-          gh release download "$TAG" --pattern '*.bin' --dir fw
+          # Firmware images plus the MiSTer daemon assets (build_site.sh needs both: the
+          # flasher parts and the four files the Downloader database points at).
+          gh release download "$TAG" --dir fw \
+            --pattern '*.bin' \
+            --pattern 't2o-wifi' --pattern 'S60t2o-wifi' \
+            --pattern 't2o-wifi.ini' --pattern 't2o_wifi.sh'
           ls -l fw
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
