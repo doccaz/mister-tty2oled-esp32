@@ -77,6 +77,10 @@ scripts use, rather than linking a TLS stack into the always-running binary. It 
 binary only; the init script and menu wrapper change rarely, so for those run `update_all`
 or reinstall.
 
+The database URL is built in, but `DB_URL="..."` in `t2o-wifi.ini` overrides it - so if the
+project's hosting ever moves, point the self-update at the new location with one line instead
+of reflashing.
+
 **Why the name has no "tty2oled" in it:** the stock `S60tty2oled stop` finds its process with
 `ps | grep tty2oled`, which would also match a binary, path or argument containing that word and
 could end up killing this daemon. So the folder, binary, init script, pid file and log are all

@@ -25,7 +25,9 @@ import (
 const (
 	// The stable entry point. Its contents change each release (new MD5s, a new tag in
 	// each url); the URL itself never does. tools/build_mister_db.py writes it, and
-	// tools/build_site.sh publishes it here.
+	// tools/build_site.sh publishes it here. This is the compiled DEFAULT; DB_URL in
+	// t2o-wifi.ini overrides it (see dbURL), so a repo rename - which moves the Pages URL -
+	// can be fixed with one ini line instead of needing a reflash to change the baked-in value.
 	updateDBURL   = "https://doccaz.github.io/mister-tty2oled-gc9a01/t2o-wifi-db.json"
 	updateFileKey = "t2o-wifi/t2o-wifi" // the daemon binary's entry in the database
 	pidFile       = "/run/t2o-wifi.pid"
@@ -118,10 +120,16 @@ func pickUpdate(dbJSON []byte, localHash string) (entry dbFile, differs bool, er
 	return e, localHash != e.Hash, nil
 }
 
+// dbURL is the update database URL: DB_URL from t2o-wifi.ini if set, else the compiled
+// default. One editable line survives a repo/Pages rename without a reflash.
+func dbURL(base string) string {
+	return loadConfig(base).str("DB_URL", updateDBURL)
+}
+
 // checkUpdate fetches the database and returns the binary entry it lists, the running
 // executable's MD5, and whether they differ.
-func checkUpdate() (entry dbFile, localHash string, differs bool, err error) {
-	data, err := fetchURL(updateDBURL)
+func checkUpdate(base string) (entry dbFile, localHash string, differs bool, err error) {
+	data, err := fetchURL(dbURL(base))
 	if err != nil {
 		return
 	}
@@ -197,7 +205,7 @@ func doUpdate(base string, entry dbFile) (restarted bool, err error) {
 
 // runUpdateCLI is `t2o-wifi -update`.
 func runUpdateCLI(base string) {
-	entry, local, differs, err := checkUpdate()
+	entry, local, differs, err := checkUpdate(base)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "update:", err)
 		os.Exit(1)

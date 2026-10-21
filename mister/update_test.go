@@ -6,7 +6,9 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 )
 
@@ -90,6 +92,21 @@ func TestFetchURL(t *testing.T) {
 	// present, also fails on 404 with -f, so the fallback stays an error too.
 	if _, err := fetchURL(srv.URL + "/missing"); err == nil {
 		t.Fatal("expected an error for a 404")
+	}
+}
+
+func TestDBURLOverride(t *testing.T) {
+	dir := t.TempDir()
+	// No ini -> the compiled default.
+	if got := dbURL(dir); got != updateDBURL {
+		t.Fatalf("dbURL without an ini = %q, want the compiled default", got)
+	}
+	// DB_URL in t2o-wifi.ini overrides it (one line survives a hosting move, no reflash).
+	if err := os.WriteFile(filepath.Join(dir, wifiIni), []byte("DB_URL=\"https://example.com/db.json\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := dbURL(dir); got != "https://example.com/db.json" {
+		t.Fatalf("dbURL with override = %q, want the ini value", got)
 	}
 }
 
