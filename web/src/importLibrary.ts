@@ -61,25 +61,42 @@ export function entryUrl(entry: ImportEntry): string {
  * auto-fill without requiring the user to manually browse+assign every
  * core that already has an obvious match.
  */
-export function findAutoMatch(entries: ImportEntry[], coreId: string): ImportEntry | undefined {
-  // Prefer a full-color render (kind "color", e.g. from library/color-gen/)
-  // over a grayscale master of the same name, so a colorized logo wins.
+// Which art "set" the user prefers. "color" prefers a full-color render but
+// falls back to grayscale so every matchable core still has art; "gray" uses
+// the original grayscale packs only (ignores color).
+export type ArtSource = "color" | "gray";
+
+// Higher rank wins; <0 excludes the entry entirely for that source.
+function rank(kind: ImportEntry["kind"], source: ArtSource): number {
+  if (source === "gray") return kind === "color" ? -1 : kind === "gsc" ? 2 : 1;
+  return kind === "color" ? 3 : kind === "gsc" ? 2 : 1; // color: prefer color, then gsc, then xbm
+}
+
+export function findAutoMatch(
+  entries: ImportEntry[],
+  coreId: string,
+  source: ArtSource = "color",
+): ImportEntry | undefined {
   const pick = (name: string): ImportEntry | undefined => {
-    const matches = entries.filter((e) => e.name.toLowerCase() === name);
-    if (!matches.length) return undefined;
-    return matches.find((e) => e.kind === "color") ?? matches[0];
+    let best: ImportEntry | undefined;
+    let bestRank = 0; // entries start at rank >=1, so 0 means "nothing yet"
+    for (const e of entries) {
+      if (e.name.toLowerCase() !== name) continue;
+      const r = rank(e.kind, source);
+      if (r > bestRank) {
+        best = e;
+        bestRank = r;
+      }
+    }
+    return best;
   };
 
-  const exact = pick(target(coreId));
+  const exact = pick(coreId.toLowerCase());
   if (exact) return exact;
 
   for (const alias of CORE_ALIASES[coreId] ?? []) {
-    const hit = pick(target(alias));
+    const hit = pick(alias.toLowerCase());
     if (hit) return hit;
   }
   return undefined;
-}
-
-function target(s: string): string {
-  return s.toLowerCase();
 }

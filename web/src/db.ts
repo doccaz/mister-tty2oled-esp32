@@ -14,6 +14,15 @@ export interface CoreArtRecord {
   coreId: string;
   jpegBlob: Blob;
   updatedAt: number;
+  // true  = auto-assigned from a pack match (safe to replace when the art
+  //         "source" preference changes, or when re-seeding).
+  // false = hand-saved from the editor (never replace without the user asking).
+  // undefined = legacy record (pre-dating this flag); treated as auto-seeded.
+  autoSeed?: boolean;
+  // For auto-seeded records: the library entry URL the art came from, so a
+  // source switch can skip cores whose art is already the right one. Absent
+  // on hand-saved (editor-exported) records.
+  sourceUrl?: string;
 }
 
 // One shared connection: every call used to open (and never close) its own,
@@ -47,11 +56,11 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-export async function saveCoreArt(coreId: string, jpegBlob: Blob): Promise<void> {
+export async function saveCoreArt(coreId: string, jpegBlob: Blob, autoSeed = false, sourceUrl?: string): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put({ coreId, jpegBlob, updatedAt: Date.now() } satisfies CoreArtRecord);
+    tx.objectStore(STORE).put({ coreId, jpegBlob, updatedAt: Date.now(), autoSeed, sourceUrl } satisfies CoreArtRecord);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });

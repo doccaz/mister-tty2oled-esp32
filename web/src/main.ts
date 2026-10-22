@@ -9,7 +9,7 @@ import { MarqueeEditor } from "./editor";
 import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, type CoreArtRecord } from "./db";
 import { exportLibrary, restoreLibrary } from "./backup";
 import { importFolder } from "./packImport";
-import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, markPackLibraryAvailable, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry } from "./importLibrary";
+import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, markPackLibraryAvailable, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry, type ArtSource } from "./importLibrary";
 import { DISPLAY_PROFILES, DEFAULT_DISPLAY_PROFILE, findDisplayProfile, type DisplayProfile } from "./displays";
 import { DEFAULT_TRANSFORM_BY_SHAPE, type TransformMode } from "./transforms";
 import { EFFECTS, SPEED_PRESETS, DEFAULT_SPEED } from "./effects";
@@ -36,6 +36,12 @@ app.innerHTML = `
     <label class="hint">display
       <select id="display-select">
         ${DISPLAY_PROFILES.map((p) => `<option value="${p.id}">${p.label}</option>`).join("")}
+      </select>
+    </label>
+    <label class="hint" title="Which art set auto-assigned cores pull from">art set
+      <select id="art-source-select">
+        <option value="color">Color</option>
+        <option value="gray">Grayscale</option>
       </select>
     </label>
     <button id="review-matches-btn">Review core matches</button>
@@ -113,6 +119,21 @@ const statusText = document.getElementById("status-text")!;
 const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const transportSelect = document.getElementById("transport-select") as HTMLSelectElement;
 const wifiHostInput = document.getElementById("wifi-host-input") as HTMLInputElement;
+
+// --- Art set (which marquee source auto-assigned cores pull from) ----------
+const ART_SOURCE_STORAGE_KEY = "artSource";
+let artSource: ArtSource = localStorage.getItem(ART_SOURCE_STORAGE_KEY) === "gray" ? "gray" : "color";
+const artSourceSelect = document.getElementById("art-source-select") as HTMLSelectElement;
+artSourceSelect.value = artSource;
+artSourceSelect.addEventListener("change", async () => {
+  artSource = artSourceSelect.value === "gray" ? "gray" : "color";
+  try {
+    localStorage.setItem(ART_SOURCE_STORAGE_KEY, artSource);
+  } catch {
+    /* private window / blocked storage - preference just won't persist */
+  }
+  await reseedForSource();
+});
 
 const deviceStatusLink = document.getElementById("device-status-link") as HTMLAnchorElement;
 const deviceSettingsLink = document.getElementById("device-settings-link") as HTMLAnchorElement;
@@ -313,7 +334,7 @@ const libraryEl = document.getElementById("library")!;
 function thumbUrl(coreId: string): string | null {
   const rec = artCache.get(coreId);
   if (rec) return URL.createObjectURL(rec.jpegBlob);
-  const match = findAutoMatch(importIndex, coreId);
+  const match = findAutoMatch(importIndex, coreId, artSource);
   return match ? entryUrl(match) : null;
 }
 
@@ -429,7 +450,7 @@ function renderEditorPanel(core: CoreDef) {
   updateActionButtons(); // starts disabled: nothing loaded yet
 
   const existing = artCache.get(core.id);
-  const autoMatch = existing ? undefined : findAutoMatch(importIndex, core.id);
+  const autoMatch = existing ? undefined : findAutoMatch(importIndex, core.id, artSource);
   if (existing) {
     editor.loadFile(existing.jpegBlob).then(updateActionButtons);
   } else if (autoMatch) {
@@ -469,7 +490,7 @@ function renderEditorPanel(core: CoreDef) {
     if (!editor?.hasImage()) return;
     const blob = await editor.exportJpegBlob();
     await saveCoreArt(core.id, blob);
-    artCache.set(core.id, { coreId: core.id, jpegBlob: blob, updatedAt: Date.now() });
+    artCache.set(core.id, { coreId: core.id, jpegBlob: blob, updatedAt: Date.now(), autoSeed: false });
     renderLibrary();
   });
 
@@ -650,7 +671,7 @@ async function openMatchReviewModal(summary: string[] = []) {
 
   const rows: MatchRow[] = allCores.map((core) => ({
     core,
-    match: findAutoMatch(importIndex, core.id),
+    match: findAutoMatch(importIndex, core.id, artSource),
     alreadySaved: artCache.has(core.id),
   }));
 
@@ -725,7 +746,7 @@ async function openMatchReviewModal(summary: string[] = []) {
     for (const row of matched) {
       if (!checked.get(row) || !row.match) continue;
       const res = await fetch(entryUrl(row.match));
-      toSave.push({ coreId: row.core.id, jpegBlob: await res.blob(), updatedAt: Date.now() });
+      toSave.push({ coreId: row.core.id, jpegBlob: await res.blob(), updatedAt: Date.now(), autoSeed: true, sourceUrl: entryUrl(row.match) });
       if (toSave.length % 100 === 0) saveAllBtn.textContent = `Saving... ${toSave.length}`;
     }
     await putCoreArtRecords(toSave);
@@ -1025,7 +1046,7 @@ function buildAllCores(entries: ImportEntry[]): { cores: CoreDef[]; guesses: Map
   const guesses = new Map<string, ImportEntry>();
   const claimed = new Set<string>();
   for (const core of SEED_CORES) {
-    const m = findAutoMatch(entries, core.id);
+    const m = findAutoMatch(entries, core.id, artSource);
     if (m) {
       guesses.set(core.id, m);
       claimed.add(m.name);
@@ -1061,12 +1082,46 @@ async function autoSeedLibrary(guesses: Map<string, ImportEntry>) {
       const match = guesses.get(core.id)!;
       const res = await fetch(entryUrl(match));
       const blob = await res.blob();
-      await saveCoreArt(core.id, blob);
-      artCache.set(core.id, { coreId: core.id, jpegBlob: blob, updatedAt: Date.now() });
+      await saveCoreArt(core.id, blob, true, entryUrl(match));
+      artCache.set(core.id, { coreId: core.id, jpegBlob: blob, updatedAt: Date.now(), autoSeed: true, sourceUrl: entryUrl(match) });
     }),
   );
   renderLibrary();
   statusText.textContent = `Assigned ${toSeed.length} marquees from the local library.`;
+}
+
+// Re-assign auto-seeded cores from the current `artSource` preference. Only
+// replaces records that are safe to replace (auto-seeded or legacy, never a
+// hand-saved editor export - autoSeed === false), so switching the art set,
+// or upgrading an existing install to the color set, never clobbers real work.
+async function reseedForSource() {
+  const replaceable = (id: string) => {
+    const rec = artCache.get(id);
+    return !rec || rec.autoSeed !== false; // absent, auto-seeded, or legacy
+  };
+  const toSeed: { id: string; match: ImportEntry }[] = [];
+  for (const core of allCores) {
+    if (!replaceable(core.id)) continue;
+    const match = findAutoMatch(importIndex, core.id, artSource);
+    if (!match) continue;
+    const cur = artCache.get(core.id);
+    if (cur && entryUrl(match) === cur.sourceUrl) continue; // already this exact art
+    toSeed.push({ id: core.id, match });
+  }
+  if (toSeed.length === 0) {
+    statusText.textContent = `Art set: ${artSource === "color" ? "Color" : "Grayscale"} (no changes).`;
+    return;
+  }
+  statusText.textContent = `Switching ${toSeed.length} cores to ${artSource === "color" ? "color" : "grayscale"}…`;
+  const records: CoreArtRecord[] = [];
+  for (const { id, match } of toSeed) {
+    const blob = await (await fetch(entryUrl(match))).blob();
+    records.push({ coreId: id, jpegBlob: blob, updatedAt: Date.now(), autoSeed: true, sourceUrl: entryUrl(match) });
+  }
+  await putCoreArtRecords(records);
+  for (const rec of records) artCache.set(rec.coreId, rec);
+  renderLibrary();
+  statusText.textContent = `Switched ${records.length} cores to ${artSource === "color" ? "color" : "grayscale"} art.`;
 }
 
 // --- Boot ----------------------------------------------------------------
