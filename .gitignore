@@ -26,3 +26,7 @@ library/color-src/
 
 # Generated full-color art (tools/colorize_library.py), personal-use derivative
 library/color-gen/
+
+# Python bytecode
+__pycache__/
+*.pyc
