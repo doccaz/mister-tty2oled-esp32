@@ -259,5 +259,11 @@
     "svg": "archie.svg",
     "source": "https://commons.wikimedia.org/wiki/File:Archimedes_Computer_Logo_Recreation.svg",
     "license": "CC BY-SA 4.0 by Spanspanspan (recreation)"
+  },
+  "Amiga": {
+    "primary": "#cf2b2b",
+    "bg": "#0d0d11",
+    "style": "gradient",
+    "master": "tty2oled-gsc_1/Minimig.png"
   }
 }
