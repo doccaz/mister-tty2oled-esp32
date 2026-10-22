@@ -258,7 +258,8 @@
     "style": "native",
     "svg": "archie.svg",
     "source": "https://commons.wikimedia.org/wiki/File:Archimedes_Computer_Logo_Recreation.svg",
-    "license": "CC BY-SA 4.0 by Spanspanspan (recreation)"
+    "license": "CC BY-SA 4.0 by Spanspanspan (recreation)",
+    "note": "background rectangle removed from the local SVG (the recreation includes a full-canvas #019ade rect) so the logo floats on the themed bg like the others"
   },
   "Amiga": {
     "primary": "#cf2b2b",
