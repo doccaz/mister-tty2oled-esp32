@@ -227,5 +227,37 @@
     "svg": "gamate.svg",
     "source": "https://commons.wikimedia.org/wiki/File:Gamate_Logo.svg",
     "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "MSX": {
+    "primary": "#e2001a",
+    "bg": "#0d0d11",
+    "style": "svg",
+    "svg": "msx.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "MSX1": {
+    "primary": "#e2001a",
+    "bg": "#0d0d11",
+    "style": "svg",
+    "svg": "msx.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
+    "license": "PD-textlogo, public domain (trademark still applies)"
+  },
+  "Apple-II": {
+    "primary": "#75bd21",
+    "bg": "#0a0c0a",
+    "style": "native",
+    "svg": "appleii.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Apple_Computer_Logo_rainbow.svg",
+    "license": "public domain (Rob Janoff; the rainbow Apple mark, used for the Apple II era)"
+  },
+  "ARCHIE": {
+    "primary": "#019ade",
+    "bg": "#05121a",
+    "style": "native",
+    "svg": "archie.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Archimedes_Computer_Logo_Recreation.svg",
+    "license": "CC BY-SA 4.0 by Spanspanspan (recreation)"
   }
 }
