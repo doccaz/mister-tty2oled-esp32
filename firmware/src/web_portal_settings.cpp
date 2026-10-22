@@ -210,10 +210,16 @@ void WebPortal::handleSettingsPart() {
   out(F("'><label>Then blank the display after a further (minutes, 0 = never)</label>"
                         "<input type='number' name='blankMin' min='0' max='1440' value='"));
   out(String(c.blankMin));
-  out(F("'><label>Blank the status OLED after (seconds idle, 0 = never)</label>"
+  out(F("'>"));
+#if HAS_ONBOARD_OLED
+  // Only boards with the onboard status OLED (env:esp32c3) have this to blank;
+  // the nooled and Sunton builds have no such display, so hide the field.
+  out(F("<label>Blank the status OLED after (seconds idle, 0 = never)</label>"
                         "<input type='number' name='oledSec' min='0' max='3600' value='"));
   out(String(c.oledIdleSec));
-  out(F("'><p class='muted'>Any command from the MiSTer, WiFi or MQTT, or a press of the "
+  out(F("'>"));
+#endif
+  out(F("<p class='muted'>Any command from the MiSTer, WiFi or MQTT, or a press of the "
                         "BOOT button, brings the picture back. The clock needs the time from NTP "
                         "(below) or from the MiSTer. A MiSTer with its screensaver set to &ldquo;no&rdquo; "
                         "turns the blank step off at start-up; the clock is not affected.</p></div>"));
