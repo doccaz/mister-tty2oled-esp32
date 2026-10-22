@@ -268,5 +268,11 @@
     "bg": "#0d0d11",
     "style": "gradient",
     "master": "tty2oled-gsc_1/Minimig.png"
+  },
+  "Saturn": {
+    "primary": "#1f6fd0",
+    "bg": "#06101f",
+    "style": "gradient",
+    "master": "tty2oled-gsc_6/Sega_Saturn.png"
   }
 }
