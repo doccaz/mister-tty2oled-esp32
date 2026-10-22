@@ -6,7 +6,8 @@
     "svg": "nes.svg",
     "master": "JP_STYLE/NES.png",
     "source": "https://commons.wikimedia.org/wiki/File:NES_logo.svg",
-    "license": "PD-textlogo, public domain (trademark still applies)"
+    "license": "PD-textlogo, public domain (trademark still applies)",
+    "note": "local SVG: black 'ENTERTAINMENT SYSTEM' subtitle recolored #000000->#dcdcdc so it reads on the dark themed bg (native style)"
   },
   "MegaDrive": {
     "primary": "#1f8ad6",
@@ -229,8 +230,8 @@
     "license": "PD-textlogo, public domain (trademark still applies)"
   },
   "MSX": {
-    "primary": "#e2001a",
-    "bg": "#0d0d11",
+    "primary": "#dbe4f2",
+    "bg": "#0c0d11",
     "style": "svg",
     "svg": "msx.svg",
     "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
@@ -238,8 +239,8 @@
     "note": "background rectangle removed from local SVG (full-canvas #00000f rect)"
   },
   "MSX1": {
-    "primary": "#e2001a",
-    "bg": "#0d0d11",
+    "primary": "#dbe4f2",
+    "bg": "#0c0d11",
     "style": "svg",
     "svg": "msx.svg",
     "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
@@ -264,8 +265,8 @@
     "note": "background rectangle removed from the local SVG (the recreation includes a full-canvas #019ade rect) so the logo floats on the themed bg like the others"
   },
   "Amiga": {
-    "primary": "#cf2b2b",
-    "bg": "#0d0d11",
+    "primary": "#dbe4f2",
+    "bg": "#0c0d11",
     "style": "gradient",
     "master": "tty2oled-gsc_1/Minimig.png"
   },
