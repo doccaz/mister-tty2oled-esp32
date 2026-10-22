@@ -6,7 +6,7 @@ import { SerialLink, type ConnectionState } from "./serial";
 import { WifiLink, MixedContentError, WifiTimeoutError, isSecurePage } from "./wifiLink";
 import type { DeviceLink } from "./deviceLink";
 import { MarqueeEditor } from "./editor";
-import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, type CoreArtRecord } from "./db";
+import { loadAllCoreArt, saveCoreArt, putCoreArtRecords, deleteCoreArt, type CoreArtRecord } from "./db";
 import { exportLibrary, restoreLibrary } from "./backup";
 import { importFolder } from "./packImport";
 import { loadImportIndex, entryUrl, findAutoMatch, isPackLibraryMissing, markPackLibraryAvailable, PACK_LIBRARY_MISSING_MESSAGE, type ImportEntry, type ArtSource } from "./importLibrary";
@@ -1095,24 +1095,49 @@ async function autoSeedLibrary(guesses: Map<string, ImportEntry>) {
 // hand-saved editor export - autoSeed === false), so switching the art set,
 // or upgrading an existing install to the color set, never clobbers real work.
 async function reseedForSource() {
+  // URLs of the bundled library entries. Art from an imported folder is saved
+  // with an object URL that is not in the index, so it never matches.
+  const libraryUrls = new Set(importIndex.map((e) => entryUrl(e)));
+  // A record is ours to replace or clear only when we can tell it came from the
+  // bundled library: tagged autoSeed with a source URL that is a library entry,
+  // or an older untagged record whose blob is a PNG (the old auto-seed stored
+  // the pack PNGs as-is; editor exports are JPEG). Everything else - hand-saved
+  // art, imported-folder art (even when saved through the review dialog),
+  // restored backups - is left alone.
+  const isAutoSeeded = (rec: CoreArtRecord) =>
+    (rec.autoSeed === true && !!rec.sourceUrl && libraryUrls.has(rec.sourceUrl)) ||
+    (rec.autoSeed === undefined && rec.jpegBlob.type === "image/png");
   const replaceable = (id: string) => {
     const rec = artCache.get(id);
-    return !rec || rec.autoSeed !== false; // absent, auto-seeded, or legacy
+    return !rec || isAutoSeeded(rec);
   };
   const toSeed: { id: string; match: ImportEntry }[] = [];
+  const toClear: string[] = []; // cores with no art in the chosen set -> show "not found"
   for (const core of allCores) {
     if (!replaceable(core.id)) continue;
     const match = findAutoMatch(importIndex, core.id, artSource);
-    if (!match) continue;
     const cur = artCache.get(core.id);
+    if (!match) {
+      // No art for this core in the chosen set (e.g. a colour-only SVG core in
+      // Grayscale mode). Drop it only if it provably came from the library's
+      // other set, so it reads "not found" instead of lingering as the wrong
+      // set's colour.
+      if (cur && cur.sourceUrl && libraryUrls.has(cur.sourceUrl)) toClear.push(core.id);
+      continue;
+    }
     if (cur && entryUrl(match) === cur.sourceUrl) continue; // already this exact art
     toSeed.push({ id: core.id, match });
   }
-  if (toSeed.length === 0) {
-    statusText.textContent = `Art set: ${artSource === "color" ? "Color" : "Grayscale"} (no changes).`;
+  const label = artSource === "color" ? "color" : "grayscale";
+  if (toSeed.length === 0 && toClear.length === 0) {
+    statusText.textContent = `Art set: ${label} (no changes).`;
     return;
   }
-  statusText.textContent = `Switching ${toSeed.length} cores to ${artSource === "color" ? "color" : "grayscale"}…`;
+  statusText.textContent = `Switching to ${label}…`;
+  for (const id of toClear) {
+    await deleteCoreArt(id);
+    artCache.delete(id);
+  }
   const records: CoreArtRecord[] = [];
   for (const { id, match } of toSeed) {
     const blob = await (await fetch(entryUrl(match))).blob();
@@ -1121,7 +1146,8 @@ async function reseedForSource() {
   await putCoreArtRecords(records);
   for (const rec of records) artCache.set(rec.coreId, rec);
   renderLibrary();
-  statusText.textContent = `Switched ${records.length} cores to ${artSource === "color" ? "color" : "grayscale"} art.`;
+  const cleared = toClear.length ? `, ${toClear.length} with no ${label} art cleared` : "";
+  statusText.textContent = `Switched ${records.length} cores to ${label}${cleared}.`;
 }
 
 // --- Boot ----------------------------------------------------------------
