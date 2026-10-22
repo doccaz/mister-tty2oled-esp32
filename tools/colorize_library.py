@@ -154,6 +154,24 @@ def load_svg(svg_name: str):
     return lum, a, rgb  # rgb kept for style="native"
 
 
+def load_png_on_white(png_name: str):
+    """A raster logo drawn on a white background (library/color-src/raster/): the white is
+    turned into transparency (alpha = distance from white, soft ramp so the edges stay
+    smooth) and the logo's own colours are kept, like style="native" for an SVG."""
+    src = ROOT / "library" / "color-src" / "raster" / png_name
+    if not src.exists():
+        return None
+    img = Image.open(src).convert("RGB")
+    target_w = int(SIZE * 0.90)
+    target_h = max(1, round(target_w * img.height / img.width))
+    img = img.resize((target_w, target_h), Image.LANCZOS)
+    rgb = np.asarray(img, dtype=np.float64) / 255.0
+    away = (1.0 - rgb).max(axis=2)  # 0 = white, larger = more ink
+    alpha = np.clip(away / 0.25, 0.0, 1.0)
+    lum = 0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]
+    return lum, alpha, rgb
+
+
 # ---------------------------------------------------------------------------
 # gradient map: luminance 0..1 -> shadow/mid/highlight ramp in the core hue
 # ---------------------------------------------------------------------------
@@ -270,7 +288,12 @@ def render_core(core: str, theme: dict) -> Image.Image:
     style = theme.get("style", "gradient")
 
     loaded = None
-    if style in ("svg", "native") and "svg" in theme:
+    if style == "native" and "png" in theme:
+        loaded = load_png_on_white(theme["png"])
+        if loaded is None:
+            print(f"  {core}: PNG missing, falling back to gradient-map")
+            style = "gradient"
+    elif style in ("svg", "native") and "svg" in theme:
         loaded = load_svg(theme["svg"])
         if loaded is None:
             print(f"  {core}: SVG missing, falling back to gradient-map")
