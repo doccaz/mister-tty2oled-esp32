@@ -2,7 +2,7 @@
   "NES": {
     "primary": "#e60012",
     "bg": "#180305",
-    "style": "svg",
+    "style": "native",
     "svg": "nes.svg",
     "master": "JP_STYLE/NES.png",
     "source": "https://commons.wikimedia.org/wiki/File:NES_logo.svg",
@@ -234,7 +234,8 @@
     "style": "svg",
     "svg": "msx.svg",
     "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
-    "license": "PD-textlogo, public domain (trademark still applies)"
+    "license": "PD-textlogo, public domain (trademark still applies)",
+    "note": "background rectangle removed from local SVG (full-canvas #00000f rect)"
   },
   "MSX1": {
     "primary": "#e2001a",
@@ -242,7 +243,8 @@
     "style": "svg",
     "svg": "msx.svg",
     "source": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
-    "license": "PD-textlogo, public domain (trademark still applies)"
+    "license": "PD-textlogo, public domain (trademark still applies)",
+    "note": "background rectangle removed from local SVG (full-canvas #00000f rect)"
   },
   "Apple-II": {
     "primary": "#75bd21",
