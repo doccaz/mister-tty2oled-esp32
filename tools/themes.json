@@ -265,10 +265,14 @@
     "note": "background rectangle removed from the local SVG (the recreation includes a full-canvas #019ade rect) so the logo floats on the themed bg like the others"
   },
   "Amiga": {
-    "primary": "#dbe4f2",
-    "bg": "#0c0d11",
-    "style": "gradient",
-    "master": "tty2oled-gsc_1/Minimig.png"
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "amiga1985.svg",
+    "master": "tty2oled-gsc_1/Minimig.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Amiga-Logo-1985.svg",
+    "license": "public domain (trademark still applies)",
+    "note": "classic 1985 rainbow logo; black 'Amiga' wordmark recolored #000000->#dcdcdc in the local SVG so it reads on the dark bg"
   },
   "Saturn": {
     "primary": "#1f6fd0",
