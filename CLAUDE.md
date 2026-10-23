@@ -398,6 +398,42 @@ Manual update: `t2o-wifi -update` and the menu's "Check for updates" read that *
 
 Service discovery: the firmware (from 0.5.3) advertises `_tty2oled._tcp` (port 81, TXT `ver`, `hw`) next to `_http`/`_ws` (`enterConnected()`), and `t2o-wifi -list/-select`, `HOST="auto"` browse it (PTR query; SRV/TXT/A from the answer). Older firmware is found through `_ws._tcp` + the `tty2oled-` name prefix, which is how it was tested live on two real displays; the new service is flashed and seen by avahi-browse on CD20 (ver, hw TXT). A reader goroutine left running after a browse stole the next query's answers (found live: the fallback browse got nothing) - readers are now stopped and waited for. Verified with a fake WebSocket display and unit tests, and end to end on 2026-10-17: a real MiSTer (stock tty2oled running beside it) sent MENU/NES/SNES/Genesis art from the mono pack to two real displays, all drawn correctly. Also confirmed on the MiSTer: the menu's d-pad keys, and start at boot (the init script waits for a default route first; before that the daemon sat ~30 s in mDNS back-off). A display with no version in its mDNS record gets it from `GET /status` (`fillVersions`).
 
+### Art lookup order, the public-domain pack, and the test picker (2026-10-23)
+
+`mister/art.go`'s `findFile` checks, at each name length of the prefix-shortening loop: `art/` (the
+user's own pictures), then the stock `pics_pri` (exact name only), then `art-pd/` (the downloaded
+pack), and only after all lengths the stock `pics/` folders. So a user file always wins at the same
+length, a longer pack match still beats a shorter user match, and a core with no colour art falls back
+to the stock grayscale. `ArtFinder.Names()` lists every name with a picture (art, art-pd, stock; no
+extensions or `_altN`, de-duplicated, sorted); `TestFinderPackOrder` pins the order.
+
+**Pack distribution (built, nothing published yet).** `tools/release_art.sh` re-checks the Commons
+licences (`tools/check_commons_licenses.py`, report `tools/PD_LICENSE_CHECK.md`), builds the
+public-domain-only set (`tools/build_pd_set.py` into the gitignored `library/pd-set/`: only themes
+whose source is a Commons file tagged public domain, rendered with the pack masters and loaders
+removed, and verified pixel-identical to `color-gen`), stages `art-pd_<core>.jpg` +
+`art-pd_ATTRIBUTIONS.md` + `art-pd_MANIFEST.json`, and publishes them as release `art-pd-N`.
+`build_art_db.py` generates a SECOND Downloader database, `t2o-wifi-art-db.json` (`db_id`
+`doccaz_mister_tty2oled_art_pd`, opt-in via `downloader.ini`), installing into
+`/media/fat/t2o-wifi/art-pd/`, never `art/`: the Downloader overwrites same-named files, so it must
+not touch the user's own art. Hashes/sizes come from the uploaded asset bytes (a fresh render could
+differ), and the manifest is the completeness check (a missing picture exits non-zero). Traps handled:
+the art release is created `--latest=false` because `pages.yml` and `gh release view` treat the latest
+release as the firmware one (a pack release in that slot would break the next deploy and the flasher);
+`pages.yml` downloads the newest `art-pd-N` and `build_site.sh` regenerates the art database on EVERY
+deploy (a deploy replaces the whole site; with no pack release it just isn't published). The new
+folder does nothing until a daemon release that knows `art-pd/` is cut with `tools/release.sh`.
+Verified only by `--dry-run`, the failure cases and `go test`: no release was cut, no database
+published, and the new daemon was not installed on a MiSTer.
+
+**Menu test picker.** A joystick has no text entry, so "Send a test picture" opens a small menu:
+current core (from `/tmp/CORENAME`), random core, pick from a list (Up/Down move, Left/Right jump to the
+previous/next initial letter; the stock folder alone is ~1,900 names), or type a name (SSH/keyboard).
+The result notice names the random pick and now survives the 1.5 s status refresh (it used to be wiped by
+the refresh tick). Tested in tmux with arrow keys only and a real send to a display. Still text-only for
+joystick users: "Type an address by hand" in the display picker (the found-displays list works without
+it); Options' contrast already has Left/Right steps.
+
 ### Onboard status OLED
 
 `firmware/src/oled_status.h`/`.cpp` drives this board's built-in 0.42"

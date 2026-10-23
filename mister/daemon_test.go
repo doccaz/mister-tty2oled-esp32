@@ -157,6 +157,56 @@ func TestFinderOrder(t *testing.T) {
 	}
 }
 
+func TestFinderPackOrder(t *testing.T) {
+	base := t.TempDir()
+	for _, d := range []string{"art", "art-pd", "pics_pri", filepath.Join("pics", "GSC")} {
+		os.MkdirAll(filepath.Join(base, d), 0o755)
+	}
+	var jb bytes.Buffer
+	jpeg.Encode(&jb, image.NewRGBA(image.Rect(0, 0, 240, 240)), nil)
+	put := func(rel string, b []byte) { os.WriteFile(filepath.Join(base, rel), b, 0o644) }
+	put("art/NES.jpg", jb.Bytes())     // the user's own art ...
+	put("art-pd/NES.jpg", jb.Bytes())  // ... and the pack's, same name
+	put("art-pd/SNES.jpg", jb.Bytes()) // pack only, and a stock picture exists too
+	put("pics/GSC/SNES.gsc", testGSC())
+	put("art-pd/marioworld.jpg", jb.Bytes()) // a long pack match ...
+	put("art/mario.jpg", jb.Bytes())         // ... against a shorter user match
+	put("art-pd/Genesis.jpg", jb.Bytes())    // pack vs the stock priority folder
+	put("pics_pri/Genesis.gsc", testGSC())
+	put("art-pd/VIC20.jpg", jb.Bytes())
+	put("art-pd/VIC20_alt1.jpg", jb.Bytes())
+	f := &ArtFinder{base: base, cfg: Config{}}
+	want := func(core, dir string) {
+		t.Helper()
+		got := f.findFile(core)
+		if got == "" || filepath.Base(filepath.Dir(got)) != dir {
+			t.Errorf("%s: found %q, want it in %s/", core, got, dir)
+		}
+	}
+	want("NES", "art")           // user art wins at the same name length
+	want("SNES", "art-pd")       // the pack beats the stock grayscale
+	want("marioworld", "art-pd") // a longer pack match beats a shorter user match
+	want("Genesis", "pics_pri")  // the stock priority folder still beats the pack
+	want("SNESfoo", "art-pd")    // name shortening reaches the pack too
+	names := f.Names()
+	has := func(n string) bool {
+		for _, x := range names {
+			if x == n {
+				return true
+			}
+		}
+		return false
+	}
+	if !has("NES") || !has("SNES") || !has("VIC20") || has("VIC20_alt1") {
+		t.Errorf("Names() = %v (want NES/SNES/VIC20 once, no _alt)", names)
+	}
+	for i := 1; i < len(names); i++ {
+		if strings.ToLower(names[i-1]) >= strings.ToLower(names[i]) {
+			t.Errorf("Names() not sorted/unique at %q, %q", names[i-1], names[i])
+		}
+	}
+}
+
 func TestSendOverWebSocket(t *testing.T) {
 	srv := newFakeDisplay(t)
 	defer srv.ln.Close()

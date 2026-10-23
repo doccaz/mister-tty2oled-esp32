@@ -7,15 +7,18 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
 // ArtFinder looks up a picture for a core name. Search order:
-//  1. <base>/art/<core>.jpg - full-colour JPEGs exported from the web app
+//  1. <base>/art/<core>.jpg - the user's own full-colour JPEGs (exported from the web app)
 //  2. <base>/pics_pri/<core>.gsc|xbm - the stock "priority" pictures
-//  3. <base>/pics/<GSC_US|XBM_US|GSC|XBM|XBM_TEXT>/ per the USE_* switches
+//  3. <base>/art-pd/<core>.jpg - the downloaded public-domain colour pack (never edited by
+//     hand: the Downloader owns that folder, so user art stays in art/)
+//  4. <base>/pics/<GSC_US|XBM_US|GSC|XBM|XBM_TEXT>/ per the USE_* switches
 //
 // Like the stock daemon, a name that has no match is shortened one character at a time
 // ("jackalfixed" -> "jackalfixe" -> ... -> "jackal"), and _altN variants are diced.
@@ -95,6 +98,7 @@ func (f *ArtFinder) findFile(core string) string {
 		stock = f.base
 	}
 	artDir := filepath.Join(f.base, "art")
+	packDir := filepath.Join(f.base, "art-pd") // the downloaded public-domain pack
 	priDir := filepath.Join(stock, "pics_pri")
 	for n := len(core); n >= 1; n-- {
 		name := core[:n]
@@ -105,6 +109,11 @@ func (f *ArtFinder) findFile(core string) string {
 			if p := lookup(priDir, name, "gsc", "xbm"); p != "" {
 				return p
 			}
+		}
+		// The pack comes after the user's own art at the same name length, so a user's
+		// file always wins, but a longer pack match still beats a shorter user match.
+		if p := lookup(packDir, name, "jpg", "jpeg"); p != "" {
+			return p
 		}
 	}
 	for _, folder := range f.folders() {
@@ -167,4 +176,58 @@ func (f *ArtFinder) FindShared(core string) (*Art, error) {
 	art, err := f.Find(core)
 	sharedArt.core, sharedArt.art, sharedArt.err, sharedArt.at = core, art, err, time.Now()
 	return art, err
+}
+
+// Names returns every core name that has a picture somewhere the finder looks (art/,
+// art-pd/, then the stock pics folders), without extensions or _altN variants, de-duplicated
+// case-insensitively and sorted. It feeds the menu's "pick a core" list.
+func (f *ArtFinder) Names() []string {
+	stock := f.stock
+	if stock == "" {
+		stock = f.base
+	}
+	type src struct {
+		dir  string
+		exts []string
+	}
+	srcs := []src{
+		{filepath.Join(f.base, "art"), []string{"jpg", "jpeg"}},
+		{filepath.Join(f.base, "art-pd"), []string{"jpg", "jpeg"}},
+	}
+	for _, folder := range f.folders() {
+		srcs = append(srcs, src{filepath.Join(stock, "pics", strings.ToUpper(folder)), []string{folder[:3]}})
+	}
+	seen := map[string]string{}
+	for _, s := range srcs {
+		ents, err := os.ReadDir(s.dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range ents {
+			if e.IsDir() {
+				continue
+			}
+			ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(e.Name())), ".")
+			ok := false
+			for _, x := range s.exts {
+				ok = ok || ext == x
+			}
+			if !ok {
+				continue
+			}
+			name := strings.TrimSuffix(e.Name(), filepath.Ext(e.Name()))
+			if i := strings.LastIndex(strings.ToLower(name), "_alt"); i > 0 {
+				name = name[:i]
+			}
+			if _, dup := seen[strings.ToLower(name)]; !dup {
+				seen[strings.ToLower(name)] = name
+			}
+		}
+	}
+	names := make([]string, 0, len(seen))
+	for _, n := range seen {
+		names = append(names, n)
+	}
+	sort.Slice(names, func(i, j int) bool { return strings.ToLower(names[i]) < strings.ToLower(names[j]) })
+	return names
 }

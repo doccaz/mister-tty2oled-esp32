@@ -11,6 +11,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -392,7 +393,9 @@ func (t *tui) mainMenu() {
 		if !ok {
 			return
 		}
-		t.notice = ""
+		if ev.k != kNone { // the status refresh tick must not wipe a notice before it is read
+			t.notice = ""
+		}
 		switch ev.k {
 		case kUp:
 			sel = (sel + len(items) - 1) % len(items)
@@ -785,16 +788,152 @@ func (t *tui) options() {
 	}
 }
 
+// sendTest asks which core to show, then sends it to every selected display. A joystick
+// has no text entry, so the choices are things it can do (the current core, a random one,
+// one picked from a list); typing a name stays for SSH and keyboards.
 func (t *tui) sendTest() {
-	core := "NES"
-	if b, err := os.ReadFile("/tmp/CORENAME"); err == nil && strings.TrimSpace(string(b)) != "" {
-		core = strings.TrimSpace(string(b))
-	}
-	v, ok := t.input("Send a test", "Core name to show on the display", core)
-	if !ok || v == "" {
-		return
-	}
 	cfg := loadConfig(t.base)
+	finder := &ArtFinder{base: t.base, stock: stockDir, cfg: cfg}
+	current := ""
+	if b, err := os.ReadFile("/tmp/CORENAME"); err == nil {
+		current = strings.TrimSpace(string(b))
+	}
+	items := []string{"Random core", "Pick a core from the list", "Type a name..."}
+	if current != "" {
+		items = append([]string{"Current core (" + current + ")"}, items...)
+	}
+	sel := 0
+	for {
+		w, left := t.begin()
+		t.menuBox(4, left, w, "Send a test picture", items, sel)
+		t.end("Up/Down move   Enter/A select   Esc/B back")
+		ev, ok := t.wait(time.Hour)
+		if !ok {
+			return
+		}
+		switch ev.k {
+		case kUp:
+			sel = (sel + len(items) - 1) % len(items)
+		case kDown:
+			sel = (sel + 1) % len(items)
+		case kEsc:
+			return
+		case kEnter:
+			name, label := "", ""
+			switch {
+			case strings.HasPrefix(items[sel], "Current core"):
+				name = current
+			case items[sel] == "Random core":
+				names := finder.Names()
+				if len(names) == 0 {
+					t.notice = "No pictures found to pick from."
+					return
+				}
+				name = names[rand.Intn(len(names))]
+				label = " (random)"
+			case items[sel] == "Pick a core from the list":
+				names := finder.Names()
+				if len(names) == 0 {
+					t.notice = "No pictures found to pick from."
+					return
+				}
+				var ok bool
+				if name, ok = t.pickCore(names); !ok {
+					continue
+				}
+			default:
+				v, ok := t.input("Send a test", "Core name to show on the display", current)
+				if !ok || v == "" {
+					continue
+				}
+				name = v
+			}
+			t.sendCoreTo(cfg, finder, name, label)
+			return
+		}
+	}
+}
+
+// pickCore is a scrollable list of core names that works with just a d-pad: Up/Down move one,
+// Left/Right jump to the previous/next initial letter (the stock set alone is ~1,900 names).
+func (t *tui) pickCore(names []string) (string, bool) {
+	sel, top := 0, 0
+	initial := func(n string) rune {
+		r := []rune(strings.ToUpper(n))[0]
+		if r >= 'A' && r <= 'Z' {
+			return r
+		}
+		return '#' // digits and symbols sort together at the front
+	}
+	for {
+		w, left := t.begin()
+		rows := t.h - 8
+		if rows < 4 {
+			rows = 4
+		}
+		if sel < top {
+			top = sel
+		}
+		if sel >= top+rows {
+			top = sel - rows + 1
+		}
+		t.frame(3, left, w, rows+2, fmt.Sprintf("Pick a core  %d/%d  [%c]", sel+1, len(names), initial(names[sel])))
+		for i := 0; i < rows && top+i < len(names); i++ {
+			line := " " + truncate(names[top+i], w-6)
+			line += t.rep(" ", w-4-vlen(line))
+			if top+i == sel {
+				t.at(4+i, left+1, bgSel+bold+" "+line+" "+reset)
+			} else {
+				t.at(4+i, left+1, " "+line+" ")
+			}
+		}
+		t.end("Up/Down move   Left/Right jump letter   Enter/A send   Esc/B back")
+		ev, ok := t.wait(time.Hour)
+		if !ok {
+			return "", false
+		}
+		switch ev.k {
+		case kUp:
+			sel = (sel + len(names) - 1) % len(names)
+		case kDown:
+			sel = (sel + 1) % len(names)
+		case kRight:
+			cur := initial(names[sel])
+			for i := sel; i < len(names); i++ {
+				if initial(names[i]) != cur {
+					sel = i
+					break
+				}
+			}
+		case kLeft:
+			cur := initial(names[sel])
+			i := sel
+			for i > 0 && initial(names[i]) == cur { // step out of this letter ...
+				i--
+			}
+			if initial(names[i]) == cur { // already in the first letter
+				sel = 0
+				break
+			}
+			prev := initial(names[i])
+			for i > 0 && initial(names[i-1]) == prev { // ... to the first entry of the previous one
+				i--
+			}
+			sel = i
+		case kRune:
+			if ev.r == ' ' {
+				return names[sel], true
+			}
+		case kEnter:
+			return names[sel], true
+		case kEsc:
+			return "", false
+		}
+	}
+}
+
+// sendCoreTo sends one core's picture to every display in HOST and sets the menu notice.
+func (t *tui) sendCoreTo(cfg Config, finder *ArtFinder, name, label string) {
 	hosts, _ := hostList(cfg.str("HOST", ""))
 	if len(hosts) == 0 || strings.EqualFold(hosts[0], "auto") {
 		t.notice = "Pick a display first."
@@ -804,13 +943,12 @@ func (t *tui) sendTest() {
 	for _, host := range hosts {
 		w, left := t.begin()
 		t.frame(4, left, w, 5, "Sending")
-		t.at(6, left+3, "Sending "+v+" to "+host+"...")
+		t.at(6, left+3, "Sending "+name+" to "+host+"...")
 		t.end("")
 		dev, err := dialDevice(host)
 		if err == nil {
-			hc := cfg.forHost(host)
-			d := &daemon{cfg: hc, finder: &ArtFinder{base: t.base, stock: stockDir, cfg: cfg}}
-			err = d.sendCore(dev, v)
+			d := &daemon{cfg: cfg.forHost(host), finder: finder}
+			err = d.sendCore(dev, name)
 			dev.Close()
 		}
 		if err != nil {
@@ -820,7 +958,7 @@ func (t *tui) sendTest() {
 	if len(failed) > 0 {
 		t.notice = "Failed: " + strings.Join(failed, "; ")
 	} else {
-		t.notice = "Sent " + v + "."
+		t.notice = "Sent " + name + label + "."
 	}
 }
 

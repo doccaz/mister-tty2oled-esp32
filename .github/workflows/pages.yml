@@ -71,6 +71,24 @@ jobs:
           ls -l fw
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
+      # The public-domain art pack lives in its own release (art-pd-N, never "latest", so the
+      # firmware release above stays what `gh release view` returns). Optional: with no pack
+      # release yet, the art database is just not published. When one exists its assets must
+      # all download, or build_site.sh (build_art_db.py) fails the deploy.
+      - name: Download art pack release
+        id: art
+        run: |
+          ART_TAG="$(gh release list --limit 200 --json tagName -q '.[].tagName' | grep -E '^art-pd-[0-9]+$' | sort -V | tail -1 || true)"
+          if [ -n "$ART_TAG" ]; then
+            echo "Publishing art database from release $ART_TAG"
+            mkdir -p art
+            gh release download "$ART_TAG" --dir art --pattern 'art-pd_*'
+            ls art | wc -l
+            echo "tag=$ART_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "No art-pd-N release yet; skipping the art database"
+          fi
+
       - name: Install web dependencies
         working-directory: web
         run: npm ci
@@ -79,6 +97,8 @@ jobs:
         env:
           FIRMWARE_DIR: ${{ github.workspace }}/fw
           FIRMWARE_VERSION: ${{ steps.fw.outputs.version }}
+          ART_DIR: ${{ steps.art.outputs.tag && format('{0}/art', github.workspace) || '' }}
+          ART_TAG: ${{ steps.art.outputs.tag }}
         run: tools/build_site.sh
 
       - uses: actions/configure-pages@v5

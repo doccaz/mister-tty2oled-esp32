@@ -122,6 +122,18 @@ if [ "${gen_db}" = 1 ]; then
     --out "${SITE}/t2o-wifi-db.json"
 fi
 
+# ---- Public-domain art pack Downloader database (optional second database) ---------------
+# ART_DIR holds the pack release's assets (art-pd_*) and ART_TAG its tag. Like the daemon
+# database it is regenerated on EVERY deploy (a Pages deploy replaces the whole site), from
+# the uploaded asset bytes, and the generator exits non-zero if any picture the manifest
+# lists is missing - so a deploy never publishes a short database. With no pack release yet,
+# ART_DIR is unset and the database is simply not published.
+if [ -n "${ART_DIR:-}" ]; then
+  [ -n "${ART_TAG:-}" ] || { echo "ART_DIR set without ART_TAG" >&2; exit 1; }
+  python3 "${ROOT}/tools/build_art_db.py" --files-dir "${ART_DIR}" --tag "${ART_TAG}" \
+    --out "${SITE}/t2o-wifi-art-db.json"
+fi
+
 ( cd "${ROOT}/web" && npx --no-install vite build --base=./ --outDir "${SITE}/app" --emptyOutDir )
 
 # web/public/library is generated locally from third-party fan-made art
