@@ -1072,6 +1072,8 @@ user `admin`; gates `/`, `/save`, `/reset`, `/mqtt-*`, `/scan`, settings; `/stat
 stays open) and the tint options. MiSTer commands (`CMDCON`, `CMDROT`, `CMDSAVER`)
 still override live until the next reboot.
 
+- **Default brightness is 127** (2026-10-23; was 255, too bright on the Sunton board). Only a device
+  that never saved a value (or a fresh flash) gets it; one that saved brightness on `/settings` keeps its own.
 - **Idle stages** (`protocol_saver_check()`): clock after X min idle, then blank
   after a further Y min (0 = never); any command or the BOOT button wakes. The
   clock redraws each minute and never paints over an MQTT notification.

@@ -40,7 +40,7 @@ struct DeviceSettings {
   uint8_t tintDir;       // gradient: 0 top-to-bottom, 1 left-to-right
 
   void setDefaults() {
-    contrast = 255;
+    contrast = 127; // 255 was too bright on the Sunton board
     rotation = 0;
     clockIdleMin = 0;
     blankMin = 0;

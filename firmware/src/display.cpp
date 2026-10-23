@@ -33,7 +33,7 @@ constexpr int16_t LEGACY_SRC_LINE_4BPP = LEGACY_SRC_W / 2; // 128
 GC9A01Display gfx;
 JPEGDEC jpeg;
 
-uint8_t g_contrast = 128;
+uint8_t g_contrast = 127;
 uint8_t g_rotation = 0;
 
 // State for display_toggle_wifi_qr(): remembers the AP-status screen's
