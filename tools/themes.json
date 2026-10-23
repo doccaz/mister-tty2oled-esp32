@@ -838,5 +838,119 @@
     "bg": "#041a18",
     "master": "stock:puzlclub",
     "note": "teal (owner asked for a recolour) instead of the procedural lime"
+  },
+  "sosterm": {
+    "primary": "#ff5fa8",
+    "bg": "#1c0612",
+    "style": "gradient",
+    "master": "stock:sosterm",
+    "crop": [
+      56,
+      190
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cropped to the lettering so the logo is centred on the round face"
+  },
+  "theglobp": {
+    "primary": "#3be0a0",
+    "bg": "#04180f",
+    "style": "gradient",
+    "master": "stock:theglobp",
+    "crop": [
+      61,
+      194
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cropped to the lettering: faint stray pixels left of it skewed the centring"
+  },
+  "vfkids": {
+    "primary": "#f2a33a",
+    "bg": "#1a0d03",
+    "style": "native",
+    "svg": "virtuafighter.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:VIRTUA-FIGHTER-logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "series logo (no Kids lettering); the logo's own blue/red/white kept, black outline recoloured amber #f2a33a for the dark face"
+  },
+  "vulgus": {
+    "primary": "#ff6a2e",
+    "bg": "#1f0a04",
+    "style": "gradient",
+    "master": "stock:vulgus",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "orange recolour on request (procedural green); not a verified brand colour"
+  },
+  "zzyzzyxx": {
+    "primary": "#ffd23a",
+    "bg": "#1a1303",
+    "style": "gradient",
+    "master": "stock:zzyzzyxx",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "yellow recolour on request; not a verified brand colour"
+  },
+  "st-v": {
+    "primary": "#4aa0ff",
+    "bg": "#04101f",
+    "style": "gradient",
+    "master": "stock:st-v",
+    "crop": [
+      77,
+      186,
+      0,
+      36
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cropped to the SEGA ST-V lettering; the master also holds a knight, console and board"
+  },
+  "starwars": {
+    "primary": "#ff4a3a",
+    "bg": "#1f0705",
+    "style": "gradient",
+    "master": "stock:starwars",
+    "crop": [
+      97,
+      163,
+      10,
+      50
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cropped to the ATARI STAR WARS lettering; the banner's ships and grid were too small"
+  },
+  "wpksoc": {
+    "primary": "#b48cff",
+    "bg": "#12081f",
+    "style": "gradient",
+    "master": "stock:wpksoc",
+    "crop": [
+      0,
+      148
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cropped to the World Soccer lettering; screenshot inset dropped"
+  },
+  "zaxxon": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "zaxxon.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Zaxxon_logo.svg",
+    "license": "PD (Wikimedia Commons, PD-textlogo), public domain (trademark still applies)",
+    "note": "real logo, native colours"
+  },
+  "turtles": {
+    "primary": "#b8bdc8",
+    "bg": "#06100a",
+    "style": "native",
+    "svg": "tmntmovie.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tmnt-movie-logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "Turtles (1990 film) lettering; full-canvas black background rect removed from the local SVG"
   }
 }

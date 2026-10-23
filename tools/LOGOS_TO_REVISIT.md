@@ -8,6 +8,9 @@ inferno, insector, kabukikl, kchamp, knights, legion, mx5000, ncv1, ncv2, overto
 puzzledp, qtheater. Earlier drops: 4in1, IFS Fractals, MyVision, NABU, amatelas, VirtualBoy, frogs.
 Revisit with a real logo or a different master/crop; the stock fallback (grayscale) still shows on the MiSTer.
 
+## Dropped in the final review pass
+- twinsqua (illegible), wwmarine (thin strip, too small); renders in library/color-src/revisit/. Remove from the MiSTer `art/` on the next sync.
+
 ## Recoloured or dropped after review
 - kangaroo - dropped after the orange recolour (small busy label, still hard to read); render kept in library/color-src/revisit/kangaroo_orange.jpg.
 - puzlclub - recoloured teal (kept).
@@ -20,4 +23,6 @@ Revisit with a real logo or a different master/crop; the stock fallback (graysca
 - Per-game logos (KOF, Metal Slug, Street Fighter share one series logo each today).
 - mk2 uses only the lettering (the dragon version is black, illegible on the dark face).
 - Microdigital, Sharp MZ, C128, Xevious, Bubble Bobble, Acorn Atom/Electron, BBC Micro, Atari 2600 brand colours.
-- Unreviewed: clean-subset renders from `slapshtr` onward (review paused at 126 of 190).
+- Review of the clean subset finished (190 of 190); `vanvan` and `vhunt2` never displayed (CD20 link drops) and were not seen.
+- Xevious wants a real colour logo; Commons has none (only a game-scene diagram).
+- Still muddled and left as is: `ws89`, `ws90` (thin Japanese World Stadium logos, already as large as the round face allows), `znpwfv` (dense banner).

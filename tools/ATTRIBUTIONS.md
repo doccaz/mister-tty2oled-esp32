@@ -79,10 +79,13 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | TI-99_4A | <https://commons.wikimedia.org/wiki/File:TI-994A_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | TRS-80 | <https://commons.wikimedia.org/wiki/File:TRS-80_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | black wordmark recoloured cool silver #c8d6ec for the dark face |
 | TurboGrafx16 | <https://commons.wikimedia.org/wiki/File:PC_engine_logo_red.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-supplied; original red logo unmodified |
+| turtles | <https://commons.wikimedia.org/wiki/File:Tmnt-movie-logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | Turtles (1990 film) lettering; full-canvas black background rect removed from the local SVG |
 | Vectrex | <https://commons.wikimedia.org/wiki/File:Vectrex_logo_(rest_of_the_world).svg> | public domain (PD-other; trademark still applies) |  |
+| vfkids | <https://commons.wikimedia.org/wiki/File:VIRTUA-FIGHTER-logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | series logo (no Kids lettering); the logo's own blue/red/white kept, black outline recoloured amber #f2a33a for the dark face |
 | VIC20 | <https://commons.wikimedia.org/wiki/File:Commodore_VIC-20_logo-13.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | rainbow-bar lockup (default): black text recoloured cool silver #c8d6ec, rainbow bars kept |
 | VIC20_alt1 | <https://commons.wikimedia.org/wiki/File:Commodore_VIC-20_logo-20.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | colourful 3D logo, unmodified; shown as an _alt variant (the daemon dices _alt files) |
 | X68000 | <https://commons.wikimedia.org/wiki/File:Logo_X68000.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-supplied; black logo recoloured cool silver (#c8d6ec) for the dark face; local RGBA PNG |
+| zaxxon | <https://commons.wikimedia.org/wiki/File:Zaxxon_logo.svg> | PD (Wikimedia Commons, PD-textlogo), public domain (trademark still applies) | real logo, native colours |
 
 ## Recoloured from the tty2oled picture packs, or supplied by the owner
 
@@ -107,3 +110,10 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | sengoku | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | SG1000 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Sega blue (owner preference); same blue family as Saturn |
 | SharpMZ | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Sharp red (from memory of the Sharp logo; not verified online) |
+| sosterm | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cropped to the lettering so the logo is centred on the round face |
+| st-v | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cropped to the SEGA ST-V lettering; the master also holds a knight, console and board |
+| starwars | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cropped to the ATARI STAR WARS lettering; the banner's ships and grid were too small |
+| theglobp | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cropped to the lettering: faint stray pixels left of it skewed the centring |
+| vulgus | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | orange recolour on request (procedural green); not a verified brand colour |
+| wpksoc | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cropped to the World Soccer lettering; screenshot inset dropped |
+| zzyzzyxx | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | yellow recolour on request; not a verified brand colour |

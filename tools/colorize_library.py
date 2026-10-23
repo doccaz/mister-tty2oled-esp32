@@ -138,8 +138,10 @@ def load_raster(master_rel: str, crop=None):
         img = stock_master(master_rel[6:]).convert("L")
     else:
         img = Image.open(CONVERTED / master_rel).convert("L")
-    if crop:  # [x0, x1] master columns to keep (drops a "NEO-GEO MVS" badge or edge fragments)
-        img = img.crop((crop[0], 0, crop[1], img.height))
+    if crop:  # [x0, x1] master columns to keep (drops a "NEO-GEO MVS" badge or edge fragments);
+        # an optional [x0, x1, y0, y1] also trims rows (isolates one logo from a busy master)
+        y0, y1 = (crop[2], crop[3]) if len(crop) == 4 else (0, img.height)
+        img = img.crop((crop[0], y0, crop[1], y1))
     # upscale BEFORE mapping so the ramp is smooth, not blocky
     target_w = int(SIZE * 0.90)
     target_h = max(1, round(target_w * img.height / img.width))
