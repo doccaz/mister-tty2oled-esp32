@@ -489,5 +489,219 @@
     "svg": "vic20.svg",
     "source": "https://commons.wikimedia.org/wiki/File:Commodore_VIC-20_logo-20.svg",
     "note": "colourful 3D logo, unmodified; shown as an _alt variant (the daemon dices _alt files)"
+  },
+  "aof": {
+    "primary": "#53f248",
+    "bg": "#072305",
+    "style": "gradient",
+    "master": "stock:aof",
+    "crop": [
+      56,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "crsword": {
+    "primary": "#48b4f2",
+    "bg": "#051823",
+    "style": "gradient",
+    "master": "stock:crsword",
+    "crop": [
+      95,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "joyjoy": {
+    "primary": "#f25148",
+    "bg": "#230605",
+    "style": "gradient",
+    "master": "stock:joyjoy",
+    "crop": [
+      68,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof2001": {
+    "primary": "#f24897",
+    "bg": "#230513",
+    "style": "gradient",
+    "master": "stock:kof2001",
+    "crop": [
+      63,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof2003": {
+    "primary": "#f2ae48",
+    "bg": "#231705",
+    "style": "gradient",
+    "master": "stock:kof2003",
+    "crop": [
+      61,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof94": {
+    "primary": "#94f248",
+    "bg": "#132305",
+    "style": "gradient",
+    "master": "stock:kof94",
+    "crop": [
+      25,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof95": {
+    "primary": "#f248a8",
+    "bg": "#230516",
+    "style": "gradient",
+    "master": "stock:kof95",
+    "crop": [
+      56,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof96": {
+    "primary": "#48b1f2",
+    "bg": "#051823",
+    "style": "gradient",
+    "master": "stock:kof96",
+    "crop": [
+      44,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof97": {
+    "primary": "#53f248",
+    "bg": "#072305",
+    "style": "gradient",
+    "master": "stock:kof97",
+    "crop": [
+      49,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "kof99": {
+    "primary": "#97f248",
+    "bg": "#132305",
+    "style": "gradient",
+    "master": "stock:kof99",
+    "crop": [
+      22,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "mslug3": {
+    "primary": "#8948f2",
+    "bg": "#100523",
+    "style": "gradient",
+    "master": "stock:mslug3",
+    "crop": [
+      60,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "mslug4": {
+    "primary": "#a3f248",
+    "bg": "#152305",
+    "style": "gradient",
+    "master": "stock:mslug4",
+    "crop": [
+      59,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "sengoku": {
+    "primary": "#f24859",
+    "bg": "#230508",
+    "style": "gradient",
+    "master": "stock:sengoku",
+    "crop": [
+      10,
+      195
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+  },
+  "mario": {
+    "style": "gradient",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "primary": "#e5322d",
+    "bg": "#1a0504",
+    "master": "stock:mario",
+    "note": "Mario red (owner: the procedural green was the wrong colour)"
+  },
+  "maglord": {
+    "style": "gradient",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "primary": "#e8b03a",
+    "bg": "#1a1204",
+    "master": "stock:maglord",
+    "note": "gold instead of the procedural pink (owner request)"
+  },
+  "ngp": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "ngpc.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Neo_Geo_Pocket_Color_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-found; dark purple #290063 lettering recoloured #b9a8ff to read on the dark face, red/teal/blue kept"
+  },
+  "ribbit": {
+    "style": "gradient",
+    "primary": "#4cd23e",
+    "bg": "#071a05",
+    "master": "stock:ribbit",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "green (frog game; owner request) instead of the procedural cyan"
+  },
+  "sbagman": {
+    "style": "gradient",
+    "primary": "#e8b03a",
+    "bg": "#1a1204",
+    "master": "stock:sbagman",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "gold (money-bag theme; owner asked for another colour) instead of the procedural magenta"
   }
 }

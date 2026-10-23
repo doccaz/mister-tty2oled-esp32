@@ -40,6 +40,7 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | N64 | <https://commons.wikimedia.org/wiki/File:Nintendo_64_wordmark.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | NeoGeo | <https://commons.wikimedia.org/wiki/File:Neo_Geo_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | original yellow/blue logo, unmodified; the alternative File:Neogeo-logo.svg is a black wordmark only |
 | NES | <https://commons.wikimedia.org/wiki/File:NES_logo.svg> | PD-textlogo, public domain (trademark still applies) | local SVG: black 'ENTERTAINMENT SYSTEM' subtitle recolored #000000->#dcdcdc so it reads on the dark themed bg (native style) |
+| ngp | <https://commons.wikimedia.org/wiki/File:Neo_Geo_Pocket_Color_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-found; dark purple #290063 lettering recoloured #b9a8ff to read on the dark face, red/teal/blue kept |
 | PC8801 | <https://commons.wikimedia.org/wiki/File:PC8800_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | PC-8800 series logo, black; local SVG recoloured #060606 -> #c8d6ec |
 | PCXT | <https://commons.wikimedia.org/wiki/File:IBM_Personal_Computer_XT_badge_recreation.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | PokemonMini | <https://commons.wikimedia.org/wiki/File:Pokemon_mini_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
@@ -62,11 +63,28 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 |---|---|---|---|
 | 000-DREAMCAST | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | two-tone: red swirl (columns left of 0.336) + cool-silver wordmark; silver is faintly cool so the firmware grayscale re-tint never triggers |
 | AO486 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | cool white-blue (owner: white to match the Intel mark); tinted just enough that the firmware grayscale re-tint never triggers |
+| aof | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | battroad | stock master | third-party pack art, personal use only |  |
 | Casio_PV-2000 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Casio blue, matched to the PV-1000 logo (the Casio logo is blue, not red) |
+| crsword | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | galaxian | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | yellow (owner preference) |
+| joyjoy | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof2001 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof2003 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof94 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof95 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof96 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof97 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kof99 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| maglord | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | gold instead of the procedural pink (owner request) |
+| mario | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Mario red (owner: the procedural green was the wrong colour) |
+| mslug3 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| mslug4 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | PSX | owner-supplied PlayStation logo, 240x240 on white (hand-curated) | trademark logo, personal use only (art not redistributed) | raster logo on white: white keyed to transparency (png style). primary neutral so the bg tint stays neutral behind the multi-colour mark |
 | punisher | stock master | third-party pack art, personal use only |  |
+| ribbit | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | green (frog game; owner request) instead of the procedural cyan |
 | Saturn | stock master | third-party pack art, personal use only |  |
+| sbagman | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | gold (money-bag theme; owner asked for another colour) instead of the procedural magenta |
+| sengoku | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | SG1000 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Sega blue (owner preference); same blue family as Saturn |
 | SharpMZ | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Sharp red (from memory of the Sharp logo; not verified online) |

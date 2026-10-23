@@ -133,11 +133,13 @@ def stock_master(stem: str) -> Image.Image:
     return cv.decode_gsc(buf)
 
 
-def load_raster(master_rel: str):
+def load_raster(master_rel: str, crop=None):
     if master_rel.startswith("stock:"):
         img = stock_master(master_rel[6:]).convert("L")
     else:
         img = Image.open(CONVERTED / master_rel).convert("L")
+    if crop:  # [x0, x1] master columns to keep (drops a "NEO-GEO MVS" badge or edge fragments)
+        img = img.crop((crop[0], 0, crop[1], img.height))
     # upscale BEFORE mapping so the ramp is smooth, not blocky
     target_w = int(SIZE * 0.90)
     target_h = max(1, round(target_w * img.height / img.width))
@@ -342,7 +344,7 @@ def render_core(core: str, theme: dict) -> Image.Image:
                     mod = 0.55 + 0.45 * norm
                     logo_rgb = logo_rgb * mod[..., None]
     else:
-        lum, alpha = load_raster(theme["master"])
+        lum, alpha = load_raster(theme["master"], theme.get("crop"))
         logo_rgb = gradient_map(lum, primary)
         # Optional per-region colours for a logo whose parts have different brand colours
         # (Dreamcast's swirl vs its text): {"x1": 0.34, "primary": "#rrggbb"} recolours the
