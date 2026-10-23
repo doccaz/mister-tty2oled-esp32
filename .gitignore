@@ -30,3 +30,6 @@ library/color-gen/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Public-domain-only colour set (tools/build_pd_set.py), built locally, not published yet
+library/pd-set/
