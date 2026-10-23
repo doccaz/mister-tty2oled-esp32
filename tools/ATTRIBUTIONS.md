@@ -30,11 +30,30 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | GameNWatch | <https://commons.wikimedia.org/wiki/File:Game_and_watch_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | GBA | <https://commons.wikimedia.org/wiki/File:Game_Boy_Advance_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | GBC | <https://commons.wikimedia.org/wiki/File:Game_Boy_Color_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | local SVG: navy 'GAME BOY' (#2e3192) recolored #c8d2ff and #231f20 -> #dcdcdc to read on the dark bg |
+| hsf2 | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
 | Intv | <https://commons.wikimedia.org/wiki/File:Intellivision-logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | Jaguar | <https://commons.wikimedia.org/wiki/File:Atari_Jaguar_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | local SVG: near-black fills (#18180E, #231F20) recolored #dcdcdc to read on the dark bg |
+| kof2000 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof2001 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof2002 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof2003 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof94 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof95 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof96 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof97 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof98 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
+| kof99 | <https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every KOF core |
 | MegaCD | <https://commons.wikimedia.org/wiki/File:Sega_CD_Logo_(USA).svg> | PD (Wikimedia Commons), public domain (trademark still applies) | chrome Sega CD logo as published, unmodified |
 | MegaDrive | <https://commons.wikimedia.org/wiki/File:Sega_genesis_logo.svg> | PD-textlogo, public domain (trademark still applies) | sheen fill in cool silver (owner preference); faintly cool so the firmware grayscale re-tint never triggers |
 | Minimig | <https://commons.wikimedia.org/wiki/File:Commodore_Amiga_500_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | local SVG: black AMIGA text recolored #000000->#dcdcdc to read on the dark bg; navy 'Commodore' (#002255) lightened to #5f8fe8 |
+| mk | <https://commons.wikimedia.org/wiki/File:Mortal_Kombat_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | black wordmark only (no dragon); sheen-recoloured blood red |
+| mk2 | <https://commons.wikimedia.org/wiki/File:MortalKombatIILogo.jpg> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; MK II lettering (the black dragon version is not legible on the dark face) |
+| mslug | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
+| mslug2 | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
+| mslug3 | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
+| mslug4 | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
+| mslug5 | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
+| mslugx | <https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; one series logo shared by every Metal Slug core |
 | MSX | <https://commons.wikimedia.org/wiki/File:MSX-Logo.svg> | PD-textlogo, public domain (trademark still applies) | background rectangle removed from local SVG (full-canvas #00000f rect) |
 | MSX1 | <https://commons.wikimedia.org/wiki/File:MSX-Logo.svg> | PD-textlogo, public domain (trademark still applies) | background rectangle removed from local SVG (full-canvas #00000f rect) |
 | N64 | <https://commons.wikimedia.org/wiki/File:Nintendo_64_wordmark.svg> | PD-textlogo, public domain (trademark still applies) |  |
@@ -45,10 +64,18 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | PCXT | <https://commons.wikimedia.org/wiki/File:IBM_Personal_Computer_XT_badge_recreation.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | PokemonMini | <https://commons.wikimedia.org/wiki/File:Pokemon_mini_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | S32X | <https://commons.wikimedia.org/wiki/File:Sega_32X_logo.svg> | public domain (PD-text; trademark applies) |  |
+| sf | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| sf2 | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| sf2ce | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| sf2hf | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| sf2t | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
 | SharpX1 | <https://commons.wikimedia.org/wiki/File:Sharp_X1_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | black logo; local SVG recoloured cool silver #c8d6ec for the dark face |
 | SMS | <https://commons.wikimedia.org/wiki/File:Master_System_Logo.svg> | PD-textlogo, public domain (fan-made, approximate font; trademark applies) |  |
 | SNES | <https://commons.wikimedia.org/wiki/File:SNES_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | Spectrum | <https://commons.wikimedia.org/wiki/File:Sinclair_ZX_Spectrum-01.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | cyan sinclair ZX Spectrum wordmark, unmodified |
+| ssf2 | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| ssf2t | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
+| ssf2tb | <https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-requested; classic SF logo shared by the SF1/SF2-family cores |
 | TI-99_4A | <https://commons.wikimedia.org/wiki/File:TI-994A_logo.svg> | PD-textlogo, public domain (trademark still applies) |  |
 | TRS-80 | <https://commons.wikimedia.org/wiki/File:TRS-80_logo.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | black wordmark recoloured cool silver #c8d6ec for the dark face |
 | TurboGrafx16 | <https://commons.wikimedia.org/wiki/File:PC_engine_logo_red.svg> | PD (Wikimedia Commons), public domain (trademark still applies) | owner-supplied; original red logo unmodified |
@@ -69,17 +96,8 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | crsword | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | galaxian | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | yellow (owner preference) |
 | joyjoy | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof2001 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof2003 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof94 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof95 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof96 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof97 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| kof99 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | maglord | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | gold instead of the procedural pink (owner request) |
 | mario | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Mario red (owner: the procedural green was the wrong colour) |
-| mslug3 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
-| mslug4 | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | PSX | owner-supplied PlayStation logo, 240x240 on white (hand-curated) | trademark logo, personal use only (art not redistributed) | raster logo on white: white keyed to transparency (png style). primary neutral so the bg tint stays neutral behind the multi-colour mark |
 | punisher | stock master | third-party pack art, personal use only |  |
 | ribbit | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | green (frog game; owner request) instead of the procedural cyan |

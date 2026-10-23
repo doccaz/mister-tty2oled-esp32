@@ -530,121 +530,85 @@
     "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
   },
   "kof2001": {
-    "primary": "#f24897",
-    "bg": "#230513",
-    "style": "gradient",
-    "master": "stock:kof2001",
-    "crop": [
-      63,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof2003": {
-    "primary": "#f2ae48",
-    "bg": "#231705",
-    "style": "gradient",
-    "master": "stock:kof2003",
-    "crop": [
-      61,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof94": {
-    "primary": "#94f248",
-    "bg": "#132305",
-    "style": "gradient",
-    "master": "stock:kof94",
-    "crop": [
-      25,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof95": {
-    "primary": "#f248a8",
-    "bg": "#230516",
-    "style": "gradient",
-    "master": "stock:kof95",
-    "crop": [
-      56,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof96": {
-    "primary": "#48b1f2",
-    "bg": "#051823",
-    "style": "gradient",
-    "master": "stock:kof96",
-    "crop": [
-      44,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof97": {
-    "primary": "#53f248",
-    "bg": "#072305",
-    "style": "gradient",
-    "master": "stock:kof97",
-    "crop": [
-      49,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "kof99": {
-    "primary": "#97f248",
-    "bg": "#132305",
-    "style": "gradient",
-    "master": "stock:kof99",
-    "crop": [
-      22,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
   },
   "mslug3": {
-    "primary": "#8948f2",
-    "bg": "#100523",
-    "style": "gradient",
-    "master": "stock:mslug3",
-    "crop": [
-      60,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
   },
   "mslug4": {
-    "primary": "#a3f248",
-    "bg": "#152305",
-    "style": "gradient",
-    "master": "stock:mslug4",
-    "crop": [
-      59,
-      195
-    ],
-    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
-    "license": "third-party pack art, personal use only (not redistributed)",
-    "note": "Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them"
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
   },
   "sengoku": {
     "primary": "#f24859",
@@ -703,5 +667,167 @@
     "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
     "license": "third-party pack art, personal use only (not redistributed)",
     "note": "gold (money-bag theme; owner asked for another colour) instead of the procedural magenta"
+  },
+  "mk": {
+    "primary": "#e0281f",
+    "bg": "#1a0504",
+    "style": "svg",
+    "svg": "mortalkombat.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mortal_Kombat_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "black wordmark only (no dragon); sheen-recoloured blood red"
+  },
+  "kof98": {
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
+  },
+  "kof2000": {
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
+  },
+  "kof2002": {
+    "primary": "#b8bdc8",
+    "bg": "#05091a",
+    "style": "native",
+    "png": "kof.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_King_of_Fighters.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every KOF core"
+  },
+  "mslug": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
+  },
+  "mslug2": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
+  },
+  "mslug5": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
+  },
+  "mslugx": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0a04",
+    "style": "native",
+    "png": "metalslug.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_Slug_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; one series logo shared by every Metal Slug core"
+  },
+  "sf": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "sf2": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "sf2ce": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "sf2hf": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "sf2t": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "hsf2": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "ssf2": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "ssf2t": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "ssf2tb": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0804",
+    "style": "native",
+    "png": "streetfighter.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Street_Fighter_old_logo.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; classic SF logo shared by the SF1/SF2-family cores"
+  },
+  "mk2": {
+    "primary": "#b8bdc8",
+    "bg": "#1a0504",
+    "style": "native",
+    "png": "mk2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:MortalKombatIILogo.jpg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-requested; MK II lettering (the black dragon version is not legible on the dark face)"
   }
 }
