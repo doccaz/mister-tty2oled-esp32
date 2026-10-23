@@ -10,13 +10,14 @@
     "note": "local SVG: black 'ENTERTAINMENT SYSTEM' subtitle recolored #000000->#dcdcdc so it reads on the dark themed bg (native style)"
   },
   "MegaDrive": {
-    "primary": "#1f8ad6",
-    "bg": "#02121f",
+    "primary": "#dbe4f2",
+    "bg": "#0b0b0f",
     "style": "svg",
     "svg": "genesis.svg",
     "master": "JP_STYLE/Genesis.png",
     "source": "https://commons.wikimedia.org/wiki/File:Sega_genesis_logo.svg",
-    "license": "PD-textlogo, public domain (trademark still applies)"
+    "license": "PD-textlogo, public domain (trademark still applies)",
+    "note": "sheen fill in cool silver (owner preference); faintly cool so the firmware grayscale re-tint never triggers"
   },
   "SNES": {
     "primary": "#5b4b9e",
@@ -28,10 +29,14 @@
     "license": "PD-textlogo, public domain (trademark still applies)"
   },
   "C64": {
-    "primary": "#5a78e0",
-    "bg": "#0a1030",
-    "style": "gradient",
-    "master": "tty2oled-gsc_1/C64.png"
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "master": "tty2oled-gsc_1/C64.png",
+    "svg": "commodore64.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Commodore_64.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "local SVG: dark pill background path (class st39) removed; native colours (white wordmark + rainbow stripes); primary neutral"
   },
   "battroad": {
     "primary": "#f28a1c",
@@ -288,5 +293,201 @@
     "source": "owner-supplied PlayStation logo, 240x240 on white (hand-curated)",
     "license": "trademark logo, personal use only (art not redistributed)",
     "note": "raster logo on white: white keyed to transparency (png style). primary neutral so the bg tint stays neutral behind the multi-colour mark"
+  },
+  "000-DREAMCAST": {
+    "primary": "#dbe4f2",
+    "bg": "#0b0b0f",
+    "style": "gradient",
+    "master": "stock:000-DREAMCAST",
+    "regions": [
+      {
+        "x1": 0.336,
+        "primary": "#e8261c"
+      }
+    ],
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "two-tone: red swirl (columns left of 0.336) + cool-silver wordmark; silver is faintly cool so the firmware grayscale re-tint never triggers"
+  },
+  "AO486": {
+    "primary": "#bcd0f5",
+    "bg": "#090d16",
+    "style": "gradient",
+    "master": "stock:AO486",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "cool white-blue (owner: white to match the Intel mark); tinted just enough that the firmware grayscale re-tint never triggers"
+  },
+  "Minimig": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "amiga500.svg",
+    "master": "JP_STYLE/Minimig.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Commodore_Amiga_500_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "local SVG: black AMIGA text recolored #000000->#dcdcdc to read on the dark bg; navy 'Commodore' (#002255) lightened to #5f8fe8"
+  },
+  "Jaguar": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "jaguar.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_Jaguar_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "local SVG: near-black fills (#18180E, #231F20) recolored #dcdcdc to read on the dark bg"
+  },
+  "GBC": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "gbc.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Game_Boy_Color_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "local SVG: navy 'GAME BOY' (#2e3192) recolored #c8d2ff and #231f20 -> #dcdcdc to read on the dark bg"
+  },
+  "SG1000": {
+    "primary": "#1f6fd0",
+    "bg": "#02101f",
+    "style": "gradient",
+    "master": "stock:SG1000",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Sega blue (owner preference); same blue family as Saturn"
+  },
+  "galaxian": {
+    "primary": "#f2c418",
+    "bg": "#1a1400",
+    "style": "gradient",
+    "master": "stock:galaxian",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "yellow (owner preference)"
+  },
+  "MegaCD": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "segacd.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sega_CD_Logo_(USA).svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "chrome Sega CD logo as published, unmodified"
+  },
+  "AtariST": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "atarist.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Atari_ST_logo-02.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "blue ATARI + white ST variant, unmodified"
+  },
+  "Casio_PV-1000": {
+    "primary": "#b8bdc8",
+    "bg": "#06101e",
+    "style": "native",
+    "png": "Casio_PV-1000.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Casio_PV-1000_logo.jpg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-supplied; Casio blue lightened (#4a86d8) to read on the dark face; local RGBA PNG in library/color-src/raster"
+  },
+  "Casio_PV-2000": {
+    "primary": "#4a86d8",
+    "bg": "#06101e",
+    "style": "gradient",
+    "master": "stock:Casio_PV-2000",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Casio blue, matched to the PV-1000 logo (the Casio logo is blue, not red)"
+  },
+  "PC8801": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "pc8800.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:PC8800_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "PC-8800 series logo, black; local SVG recoloured #060606 -> #c8d6ec"
+  },
+  "SharpMZ": {
+    "primary": "#e60012",
+    "bg": "#1a0306",
+    "style": "gradient",
+    "master": "stock:sharpmz",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "Sharp red (from memory of the Sharp logo; not verified online)"
+  },
+  "SharpX1": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "sharpx1.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sharp_X1_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "black logo; local SVG recoloured cool silver #c8d6ec for the dark face"
+  },
+  "X68000": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "png": "X68000.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Logo_X68000.png",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-supplied; black logo recoloured cool silver (#c8d6ec) for the dark face; local RGBA PNG"
+  },
+  "NeoGeo": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "neogeo.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Neo_Geo_logo.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "original yellow/blue logo, unmodified; the alternative File:Neogeo-logo.svg is a black wordmark only"
+  },
+  "TurboGrafx16": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "pcengine.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:PC_engine_logo_red.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "owner-supplied; original red logo unmodified"
+  },
+  "Spectrum": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "svg": "spectrum.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sinclair_ZX_Spectrum-01.svg",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "note": "cyan sinclair ZX Spectrum wordmark, unmodified"
+  },
+  "TRS-80": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "svg": "trs80.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:TRS-80_logo.svg",
+    "note": "black wordmark recoloured cool silver #c8d6ec for the dark face"
+  },
+  "VIC20": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "svg": "vic20_b.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Commodore_VIC-20_logo-13.svg",
+    "note": "rainbow-bar lockup (default): black text recoloured cool silver #c8d6ec, rainbow bars kept"
+  },
+  "VIC20_alt1": {
+    "primary": "#b8bdc8",
+    "bg": "#09090c",
+    "style": "native",
+    "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
+    "svg": "vic20.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Commodore_VIC-20_logo-20.svg",
+    "note": "colourful 3D logo, unmodified; shown as an _alt variant (the daemon dices _alt files)"
   }
 }

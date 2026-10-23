@@ -122,9 +122,22 @@ def procedural_theme(core: str) -> dict:
 # ---------------------------------------------------------------------------
 # source loaders -> (luminance[H,W] 0..1, alpha[H,W] 0..1) at high res
 # ---------------------------------------------------------------------------
+def stock_master(stem: str) -> Image.Image:
+    """Decode library/mister-pics/GSC/<stem>.gsc (the MiSTer's stock 4bpp folder), which
+    holds many more logos than the converted pack index. theme "master": "stock:<stem>"."""
+    import convert_library as cv
+    files = {f.stem.lower(): f for f in (ROOT / "library" / "mister-pics" / "GSC").glob("*.gsc")}
+    buf = cv.parse_bytes(files[stem.lower()])
+    if len(buf) == 8192 + 6:
+        buf = buf[6:]
+    return cv.decode_gsc(buf)
+
+
 def load_raster(master_rel: str):
-    path = CONVERTED / master_rel
-    img = Image.open(path).convert("L")
+    if master_rel.startswith("stock:"):
+        img = stock_master(master_rel[6:]).convert("L")
+    else:
+        img = Image.open(CONVERTED / master_rel).convert("L")
     # upscale BEFORE mapping so the ramp is smooth, not blocky
     target_w = int(SIZE * 0.90)
     target_h = max(1, round(target_w * img.height / img.width))
@@ -161,13 +174,18 @@ def load_png_on_white(png_name: str):
     src = ROOT / "library" / "color-src" / "raster" / png_name
     if not src.exists():
         return None
-    img = Image.open(src).convert("RGB")
+    raw = Image.open(src)
+    has_alpha = raw.mode == "RGBA" and raw.getchannel("A").getextrema()[0] < 255
+    img = raw.convert("RGB")
     target_w = int(SIZE * 0.90)
     target_h = max(1, round(target_w * img.height / img.width))
     img = img.resize((target_w, target_h), Image.LANCZOS)
     rgb = np.asarray(img, dtype=np.float64) / 255.0
-    away = (1.0 - rgb).max(axis=2)  # 0 = white, larger = more ink
-    alpha = np.clip(away / 0.25, 0.0, 1.0)
+    if has_alpha:  # a recoloured logo that already carries its own alpha
+        alpha = np.asarray(raw.getchannel("A").resize((target_w, target_h), Image.LANCZOS), dtype=np.float64) / 255.0
+    else:
+        away = (1.0 - rgb).max(axis=2)  # 0 = white, larger = more ink
+        alpha = np.clip(away / 0.25, 0.0, 1.0)
     lum = 0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]
     return lum, alpha, rgb
 
@@ -326,6 +344,14 @@ def render_core(core: str, theme: dict) -> Image.Image:
     else:
         lum, alpha = load_raster(theme["master"])
         logo_rgb = gradient_map(lum, primary)
+        # Optional per-region colours for a logo whose parts have different brand colours
+        # (Dreamcast's swirl vs its text): {"x1": 0.34, "primary": "#rrggbb"} recolours the
+        # columns left of x1 (a fraction of the logo's width).
+        for region in theme.get("regions", []):
+            cut = int(region["x1"] * lum.shape[1])
+            part = gradient_map(lum[:, :cut], hexrgb(region["primary"]))
+            logo_rgb = logo_rgb.copy()
+            logo_rgb[:, :cut] = part
 
     bg_img = radial_background(primary, bg)
     return paste_logo(bg_img, logo_rgb, alpha, primary)

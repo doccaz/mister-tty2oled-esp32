@@ -17,10 +17,6 @@ from pathlib import Path
 
 from PIL import Image
 
-SRC_ROOT = Path(sys.argv[1])
-OUT_ROOT = Path(sys.argv[2])
-OUT_ROOT.mkdir(parents=True, exist_ok=True)
-
 HEX_RE = re.compile(rb"0[xX]([0-9a-fA-F]{2})")
 
 W, H = 256, 64
@@ -63,6 +59,9 @@ def decode_gsc(buf: bytes) -> Image.Image:
 
 
 def main():
+    SRC_ROOT = Path(sys.argv[1])
+    OUT_ROOT = Path(sys.argv[2])
+    OUT_ROOT.mkdir(parents=True, exist_ok=True)
     entries = []
     files = sorted(SRC_ROOT.rglob("*"))
     candidates = [f for f in files if f.suffix.lower() in (".gsc", ".xbm") and f.is_file()]
