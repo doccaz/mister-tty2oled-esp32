@@ -99,6 +99,7 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | crsword | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
 | galaxian | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | yellow (owner preference) |
 | joyjoy | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Neo Geo MVS master: left fragment and the NEO-GEO MVS badge cropped off so the round face does not cut them |
+| kangaroo | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | orange recolour; owner kept it after review (readable once recoloured) |
 | maglord | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | gold instead of the procedural pink (owner request) |
 | mario | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Mario red (owner: the procedural green was the wrong colour) |
 | PSX | owner-supplied PlayStation logo, 240x240 on white (hand-curated) | trademark logo, personal use only (art not redistributed) | raster logo on white: white keyed to transparency (png style). primary neutral so the bg tint stays neutral behind the multi-colour mark |

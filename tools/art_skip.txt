@@ -1,0 +1,27 @@
+# Cores/games dropped from the colour art set after review (illegible, too small, or
+# no usable logo). colorize_library.py skips these so regenerating the library does not
+# bring them back; pass --include-skipped to render one anyway.
+# Why each one was dropped: tools/LOGOS_TO_REVISIT.md (renders kept in library/color-src/revisit/).
+4in1
+IFS Fractals
+MyVision
+NABU
+VirtualBoy
+amatelas
+frogs
+inferno
+insector
+kabukikl
+kchamp
+knights
+legion
+mx5000
+ncv1
+ncv2
+overtop
+pnickj
+pokonyan
+puzzledp
+qtheater
+twinsqua
+wwmarine

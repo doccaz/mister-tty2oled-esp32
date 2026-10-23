@@ -952,5 +952,14 @@
     "source": "https://commons.wikimedia.org/wiki/File:Tmnt-movie-logo.svg",
     "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
     "note": "Turtles (1990 film) lettering; full-canvas black background rect removed from the local SVG"
+  },
+  "kangaroo": {
+    "primary": "#ff8a2e",
+    "bg": "#1c0d03",
+    "style": "gradient",
+    "master": "stock:kangaroo",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "note": "orange recolour; owner kept it after review (readable once recoloured)"
   }
 }

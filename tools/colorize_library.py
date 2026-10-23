@@ -361,12 +361,22 @@ def render_core(core: str, theme: dict) -> Image.Image:
     return paste_logo(bg_img, logo_rgb, alpha, primary)
 
 
+def load_skip_list():
+    """Names dropped after review (tools/art_skip.txt), so a regen does not bring them back."""
+    f = Path(__file__).with_name("art_skip.txt")
+    if not f.exists():
+        return set()
+    return {l.strip() for l in f.read_text().splitlines() if l.strip() and not l.startswith("#")}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cores", nargs="*")
     ap.add_argument("--all", action="store_true",
                     help="render every core in cores.ts that has a master")
     ap.add_argument("--contact", help="write a masked contact sheet PNG here")
+    ap.add_argument("--include-skipped", action="store_true",
+                    help="also render the names listed in tools/art_skip.txt")
     args = ap.parse_args()
 
     themes = json.loads(THEMES.read_text())
@@ -394,6 +404,13 @@ def main():
     else:
         for core in (args.cores or list(themes.keys())):
             worklist[core] = themes.get(core) or procedural_theme(core)
+    if not args.include_skipped:
+        skip = load_skip_list()
+        dropped = [c for c in worklist if c in skip]
+        for c in dropped:
+            del worklist[c]
+        if dropped:
+            print(f"  skipping {len(dropped)} dropped name(s) (tools/art_skip.txt): " + ", ".join(dropped))
     cores = list(worklist.keys())
 
     rendered = []

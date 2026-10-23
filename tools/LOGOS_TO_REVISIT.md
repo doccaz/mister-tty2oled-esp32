@@ -12,7 +12,7 @@ Revisit with a real logo or a different master/crop; the stock fallback (graysca
 - twinsqua (illegible), wwmarine (thin strip, too small); renders in library/color-src/revisit/. Remove from the MiSTer `art/` on the next sync.
 
 ## Recoloured or dropped after review
-- kangaroo - dropped after the orange recolour (small busy label, still hard to read); render kept in library/color-src/revisit/kangaroo_orange.jpg.
+- kangaroo - orange recolour kept after all (owner: readable once recoloured); first dropped on a misread "I agree", restored.
 - puzlclub - recoloured teal (kept).
 
 ## Real colour logos still wanted
