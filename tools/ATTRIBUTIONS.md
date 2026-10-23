@@ -100,6 +100,7 @@ The rendered JPEGs and the downloaded logo files are not in this repository (`li
 | mario | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | Mario red (owner: the procedural green was the wrong colour) |
 | PSX | owner-supplied PlayStation logo, 240x240 on white (hand-curated) | trademark logo, personal use only (art not redistributed) | raster logo on white: white keyed to transparency (png style). primary neutral so the bg tint stays neutral behind the multi-colour mark |
 | punisher | stock master | third-party pack art, personal use only |  |
+| puzlclub | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | teal (owner asked for a recolour) instead of the procedural lime |
 | ribbit | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | green (frog game; owner request) instead of the procedural cyan |
 | Saturn | stock master | third-party pack art, personal use only |  |
 | sbagman | stock tty2oled GSC master (library/mister-pics/GSC) | third-party pack art, personal use only (not redistributed) | gold (money-bag theme; owner asked for another colour) instead of the procedural magenta |

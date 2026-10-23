@@ -829,5 +829,14 @@
     "source": "https://commons.wikimedia.org/wiki/File:MortalKombatIILogo.jpg",
     "license": "PD (Wikimedia Commons), public domain (trademark still applies)",
     "note": "owner-requested; MK II lettering (the black dragon version is not legible on the dark face)"
+  },
+  "puzlclub": {
+    "style": "gradient",
+    "source": "stock tty2oled GSC master (library/mister-pics/GSC)",
+    "license": "third-party pack art, personal use only (not redistributed)",
+    "primary": "#2ec4b6",
+    "bg": "#041a18",
+    "master": "stock:puzlclub",
+    "note": "teal (owner asked for a recolour) instead of the procedural lime"
   }
 }
