@@ -430,7 +430,9 @@ published, and the new daemon was not installed on a MiSTer.
 current core (from `/tmp/CORENAME`), random core, pick from a list (Up/Down move, Left/Right jump to the
 previous/next initial letter; the stock folder alone is ~1,900 names), or type a name (SSH/keyboard).
 The result notice names the random pick and now survives the 1.5 s status refresh (it used to be wiped by
-the refresh tick). Tested in tmux with arrow keys only and a real send to a display. Still text-only for
+the refresh tick). Tested in tmux with arrow keys only and a real send to a display.
+
+**On-screen keyboard and per-display settings (2026-10-24).** `tui.go`'s `input()` now shows a key grid (letters, digits, `- _ .`, Shift/Space/Del/Clear/OK) that a d-pad drives; the cursor rests on OK so Enter from a real keyboard still saves, and typing resets it there. Every text field uses it. The new main-menu "Display settings" (`tui_settings.go`) picks one display of HOST, reads its `GET /status` (firmware, ip, rssi, uptime, heap) and sends live `CMDCON`/`CMDROT`/`CMDCLS` to just that display. Those last until the display restarts; the display does not report its brightness, so the value shown is the last one sent (starting from the ini). Saved defaults still live on the display's own `/settings` page. Still text-only for
 joystick users: "Type an address by hand" in the display picker (the found-displays list works without
 it); Options' contrast already has Left/Right steps.
 

@@ -377,6 +377,7 @@ func (t *tui) mainMenu() {
 			"Restart daemon",
 			boot,
 			"Options",
+			"Display settings",
 			"Check for updates",
 			"Send a test picture",
 			"View log",
@@ -420,12 +421,14 @@ func (t *tui) mainMenu() {
 			case 4:
 				t.options()
 			case 5:
-				t.updateDaemon()
+				t.displaySettings()
 			case 6:
-				t.sendTest()
+				t.updateDaemon()
 			case 7:
-				t.viewLog()
+				t.sendTest()
 			case 8:
+				t.viewLog()
+			case 9:
 				return
 			}
 		}
@@ -639,34 +642,119 @@ func (t *tui) pickDisplay() {
 	}
 }
 
-// input is a one-line text editor.
+// osk is the on-screen keyboard's key grid; the last row is the actions.
+var oskRows = [][]string{
+	{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"},
+	{"k", "l", "m", "n", "o", "p", "q", "r", "s", "t"},
+	{"u", "v", "w", "x", "y", "z", "0", "1", "2", "3"},
+	{"4", "5", "6", "7", "8", "9", "-", "_", ".", " "},
+	{"Shift", "Space", "Del", "Clear", "OK"},
+}
+
+// input is a one-line text editor. A real keyboard types straight into the field; a joystick
+// uses the on-screen keyboard under it (d-pad moves, Enter/A presses a key, Esc/B cancels).
+// The cursor rests on OK, so Enter on a real keyboard still just saves.
 func (t *tui) input(title, prompt, def string) (string, bool) {
 	val := []rune(def)
+	okRow := len(oskRows) - 1
+	kr, kc := okRow, len(oskRows[okRow])-1
+	upper := false
 	for {
 		w, left := t.begin()
-		t.frame(4, left, w, 6, title)
-		t.at(5, left+2, prompt)
+		t.frame(3, left, w, 13, title)
+		t.at(4, left+2, truncate(prompt, w-4))
 		field := string(val)
-		t.at(7, left+2, bgSel+" "+field+t.rep(" ", w-8-len([]rune(field)))+" "+reset)
-		t.at(7, left+3+len([]rune(field)), bgSel+fgWh+"_"+reset)
-		t.end("type the text   Enter save   Esc cancel")
+		if n := w - 8; len([]rune(field)) > n && n > 0 { // show the tail when it is long
+			field = string([]rune(field)[len([]rune(field))-n:])
+		}
+		t.at(6, left+2, bgSel+" "+field+t.rep(" ", w-8-len([]rune(field)))+" "+reset)
+		t.at(6, left+3+len([]rune(field)), bgSel+fgWh+"_"+reset)
+		for r, row := range oskRows {
+			col := left + (w-len(row)*4)/2
+			if r == okRow {
+				col = left + 3
+			}
+			for c, k := range row {
+				label := k
+				switch {
+				case r < okRow && k == " ":
+					label = "_"
+				case r < okRow && upper:
+					label = strings.ToUpper(k)
+				case k == "Shift" && upper:
+					label = "SHIFT"
+				}
+				cell := " " + label + " "
+				if r == kr && c == kc {
+					cell = bgSel + bold + cell + reset
+				}
+				t.at(8+r+boolInt(r == okRow), col, cell+" ")
+				col += vlen(cell) + 1
+			}
+		}
+		t.end("Arrows move   Enter/A press   Esc/B cancel   or just type")
 		ev, ok := t.wait(time.Hour)
 		if !ok {
 			return "", false
 		}
+		press := func(k string) bool { // true when the field is finished
+			switch k {
+			case "Shift":
+				upper = !upper
+			case "Space", " ":
+				val = append(val, ' ')
+			case "Del":
+				if len(val) > 0 {
+					val = val[:len(val)-1]
+				}
+			case "Clear":
+				val = val[:0]
+			case "OK":
+				return true
+			default:
+				if upper {
+					k = strings.ToUpper(k)
+				}
+				val = append(val, []rune(k)...)
+			}
+			return false
+		}
 		switch ev.k {
 		case kEsc:
 			return "", false
+		case kUp:
+			kr = (kr + len(oskRows) - 1) % len(oskRows)
+		case kDown:
+			kr = (kr + 1) % len(oskRows)
+		case kLeft:
+			kc--
+		case kRight:
+			kc++
 		case kEnter:
-			return strings.TrimSpace(string(val)), true
+			if press(oskRows[kr][kc]) {
+				return strings.TrimSpace(string(val)), true
+			}
 		case kBackspace:
 			if len(val) > 0 {
 				val = val[:len(val)-1]
 			}
 		case kRune:
 			val = append(val, ev.r)
+			kr, kc = okRow, len(oskRows[okRow])-1
+		}
+		if n := len(oskRows[kr]); kc >= n {
+			kc = 0
+		} else if kc < 0 {
+			kc = n - 1
 		}
 	}
+}
+
+func boolInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func (t *tui) options() {
