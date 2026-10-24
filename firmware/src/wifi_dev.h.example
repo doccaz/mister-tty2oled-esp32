@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
+// Development shortcut: copy this file to wifi_dev.h (git-ignored), fill in your own WiFi, and
+// rebuild. A device with no saved network then joins this one at boot instead of opening its
+// setup access point. The values are kept in memory only (never written to the device's NVS),
+// so a build without this header, or a "forget WiFi", is unaffected.
+#pragma once
+#define DEV_WIFI_SSID ""
+#define DEV_WIFI_PASS ""

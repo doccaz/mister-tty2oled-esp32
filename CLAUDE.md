@@ -436,29 +436,50 @@ the refresh tick). Tested in tmux with arrow keys only and a real send to a disp
 joystick users: "Type an address by hand" in the display picker (the found-displays list works without
 it); Options' contrast already has Left/Right steps.
 
-### CYD (ESP32-2432S028) support, work in progress (branch `cyd-support`, 2026-10-24)
+### CYD (ESP32-2432S028) support (branch `cyd-support`, 2026-10-24)
 
 `env:esp32_cyd` (`-DBOARD_CYD=1`): the 2.8" 320x240 ILI9341 "Cheap Yellow Display" on a classic ESP32 (CH340
 UART serial, not native USB). Panel settings were found with a probe sketch on the owner's real board, not
 assumed: ILI9341-style minimal init (SWRESET, COLMOD 0x55, inversion off), RGB order, MADCTL `0x60` upright
 (`0x20`/`0xE0` came out rotated/mirrored), HSPI at 40 MHz on SCLK 14 / MOSI 13 / MISO 12 / CS 15 / DC 2,
-backlight 21 (PWM works), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the
-floating pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0 (touch, XPT2046 on
-33/36/25/32/39, is meant to take over as the wake input later). HW id `HWCYD28` (`HW_ID` in `version.h`; the
-C3 boards still answer `HWGC9A01C`).
+backlight 21 (PWM), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the floating
+pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0; the XPT2046 touch (33/36/25/32/39)
+is meant to take over as the wake input later, and the settings screen with touch support after that. The light
+sensor is an analog photoresistor on GPIO34 (from the ASCII-Aquarium projects), unused so far: an auto-brightness
+option would need calibrating. HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
 
-- **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, and `clearPanel()` blacks
-  the side bars once. Existing art is shown as is. Wide art would be a later, separate step.
-- **Memory:** the classic ESP32 has ~160KB static DRAM and no free heap block of 115,200 bytes (largest seen
-  110,580 even after `esp_bt_mem_release()`), so the frame is five 48-row heap bands (`frameRow(y)`,
-  `pushFrame()`; on the C3 boards they are the plain array). `display_prealloc()` runs first in `setup()`.
-- **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but
-  WebSockets' `esp_sha()` object references (only SHA-1 is ever used).
-- **Verified on the real CYD over USB:** boot splash, CMDCORC pictures with all five transitions, CMDROT,
-  CMDSHSYSHW, LED off. **Not done:** WiFi/WebSocket/MQTT on the CYD (heap with WiFi up is unmeasured), touch,
-  the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32; `release.sh`/`build_site.sh`/flasher
-  still list only the C3 envs on purpose, so a CYD image can't be published by accident), the settings screen
-  with touch. The Sunton was re-flashed with this code and looked fine; the other C3 builds were only compiled.
+- **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
+  bars once. Existing art is shown as is; wide art would be a later, separate step.
+- **Memory is the constraint (measured, 2026-10-24).** The classic ESP32 has ~160KB static DRAM, no free heap
+  block of 115,200 bytes (largest 110,580 even after `esp_bt_mem_release()`), and, decisively, **its WiFi/TCP
+  stack needs about 80KB of free heap to serve anything**: a minimal WiFi + WebServer sketch passed 40/40 requests
+  at ~80KB free and above, 17/40 at ~70KB, 0/40 at ~60KB (heap burned down with filler allocations). A first
+  version kept the frame in five 48-row heap bands (the C3 design) and left ~60KB: the setup AP's DHCP was
+  intermittent and TCP dead after ~10 requests. So the CYD keeps **no decoded frame**: `display_draw_jpeg()` copies the
+  JPEG (<=20KB) into a heap buffer and every draw, transition step, replay (`CMDSPIC`), half-size view
+  (`CMDSSCP`, JPEGDEC `JPEG_SCALE_HALF`) and notification revert decodes it straight to the glass. Transitions
+  re-decode once per step (~55-70 ms) with a mask (wipes, iris) or a brightness scale (fade) applied to each
+  block in the draw callback, driven by elapsed time and always ending on a full draw, so a 600 ms effect gets
+  8-13 steps and finishes within ~100 ms of the request. The iris reaches full radius at 85% of the duration
+  so the corners are part of the animation. The gray tint is applied in the callback (a check-only decode pass
+  decides once per new picture whether it is all gray). The QR screen pushes one row at a time. Free heap with
+  WiFi up and everything running: ~144-149KB. `display_prealloc()` runs first in `setup()`; the C3 builds keep
+  the 240x240 static array unchanged (`frameRow()`/`pushFrame()` helpers).
+- **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
+  `esp_sha()` object references (only SHA-1 is ever used).
+- **Dev WiFi shortcut:** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your WiFi,
+  rebuild: a device with no saved network then joins it at boot, in memory only (never written to NVS). Define
+  `CYD_NO_DEV_WIFI` to ignore the header and test the real setup flow.
+- **Verified on the real CYD:** boot splash, rotation, sysinfo, LED off, USB and WebSocket pictures with all five
+  transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
+  rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
+  **Not done:** brightness steps (`CMDCON`) were sent but not confirmed visually, MQTT, the touch wake and settings
+  screen, auto-brightness, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
+  `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
+  published by accident). The Sunton was re-flashed with this code and works.
+- **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
+  within 6 s, on the released v0.5.8 as well (1/96 vs 4/144 on the new code; TMNT with the iris failed in both).
+  Not investigated.
 
 ### Onboard status OLED
 

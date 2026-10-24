@@ -184,6 +184,18 @@ void wifi_manager_init() {
   WiFi.onEvent(onWifiEvent);
   configStore.begin();
   deviceName = buildDeviceName();
+#if __has_include("wifi_dev.h") && !defined(CYD_NO_DEV_WIFI)
+  // Development shortcut (see wifi_dev.h.example): a git-ignored header with your own WiFi,
+  // used while the device has no saved network. Held in memory only, never written to NVS.
+#include "wifi_dev.h"
+#if defined(DEV_WIFI_SSID)
+  if (!configStore.cfg.configured && DEV_WIFI_SSID[0] != '\0') {
+    strlcpy(configStore.cfg.wifiSsid, DEV_WIFI_SSID, sizeof(configStore.cfg.wifiSsid));
+    strlcpy(configStore.cfg.wifiPass, DEV_WIFI_PASS, sizeof(configStore.cfg.wifiPass));
+    configStore.cfg.configured = true;
+  }
+#endif
+#endif
 
   if (!configStore.cfg.configured || configStore.cfg.wifiSsid[0] == '\0') {
     enterApMode();
