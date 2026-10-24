@@ -436,6 +436,30 @@ the refresh tick). Tested in tmux with arrow keys only and a real send to a disp
 joystick users: "Type an address by hand" in the display picker (the found-displays list works without
 it); Options' contrast already has Left/Right steps.
 
+### CYD (ESP32-2432S028) support, work in progress (branch `cyd-support`, 2026-10-24)
+
+`env:esp32_cyd` (`-DBOARD_CYD=1`): the 2.8" 320x240 ILI9341 "Cheap Yellow Display" on a classic ESP32 (CH340
+UART serial, not native USB). Panel settings were found with a probe sketch on the owner's real board, not
+assumed: ILI9341-style minimal init (SWRESET, COLMOD 0x55, inversion off), RGB order, MADCTL `0x60` upright
+(`0x20`/`0xE0` came out rotated/mirrored), HSPI at 40 MHz on SCLK 14 / MOSI 13 / MISO 12 / CS 15 / DC 2,
+backlight 21 (PWM works), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the
+floating pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0 (touch, XPT2046 on
+33/36/25/32/39, is meant to take over as the wake input later). HW id `HWCYD28` (`HW_ID` in `version.h`; the
+C3 boards still answer `HWGC9A01C`).
+
+- **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, and `clearPanel()` blacks
+  the side bars once. Existing art is shown as is. Wide art would be a later, separate step.
+- **Memory:** the classic ESP32 has ~160KB static DRAM and no free heap block of 115,200 bytes (largest seen
+  110,580 even after `esp_bt_mem_release()`), so the frame is five 48-row heap bands (`frameRow(y)`,
+  `pushFrame()`; on the C3 boards they are the plain array). `display_prealloc()` runs first in `setup()`.
+- **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but
+  WebSockets' `esp_sha()` object references (only SHA-1 is ever used).
+- **Verified on the real CYD over USB:** boot splash, CMDCORC pictures with all five transitions, CMDROT,
+  CMDSHSYSHW, LED off. **Not done:** WiFi/WebSocket/MQTT on the CYD (heap with WiFi up is unmeasured), touch,
+  the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32; `release.sh`/`build_site.sh`/flasher
+  still list only the C3 envs on purpose, so a CYD image can't be published by accident), the settings screen
+  with touch. The Sunton was re-flashed with this code and looked fine; the other C3 builds were only compiled.
+
 ### Onboard status OLED
 
 `firmware/src/oled_status.h`/`.cpp` drives this board's built-in 0.42"

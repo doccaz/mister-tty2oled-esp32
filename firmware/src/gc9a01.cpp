@@ -5,8 +5,12 @@
 #include "pins.h"
 #include <SPI.h>
 
+#if defined(BOARD_CYD)
+SPIClass lcdSpi(HSPI);
+#endif
+
 namespace {
-SPISettings spiSettings(10000000, MSBFIRST, SPI_MODE0);
+SPISettings spiSettings(LCD_SPI_HZ, MSBFIRST, SPI_MODE0);
 
 // Shared by pushRect()/pushRectBatched(): writes h rows of w RGB565
 // pixels each, reading row `r` starting at `data + r*srcStride` (not
@@ -31,7 +35,7 @@ void writeRectData(int16_t w, int16_t h, const uint16_t *data, int16_t srcStride
     size_t offset = 0;
     while (offset < rowBytesLen) {
       size_t chunk = min(CHUNK_PIXELS * 2, rowBytesLen - offset);
-      SPI.transferBytes(rowBytes + offset, nullptr, chunk);
+      LCD_SPI.transferBytes(rowBytes + offset, nullptr, chunk);
       offset += chunk;
       yield();
     }
@@ -41,15 +45,16 @@ void writeRectData(int16_t w, int16_t h, const uint16_t *data, int16_t srcStride
 
 void GC9A01Display::writeCommand(uint8_t cmd) {
   digitalWrite(PIN_LCD_DC, LOW);
-  SPI.transfer(cmd);
+  LCD_SPI.transfer(cmd);
 }
 
 void GC9A01Display::writeData(uint8_t data) {
   digitalWrite(PIN_LCD_DC, HIGH);
-  SPI.transfer(data);
+  LCD_SPI.transfer(data);
 }
 
 void GC9A01Display::setAddrWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1) {
+  x0 += PANEL_OFF_X; x1 += PANEL_OFF_X; y0 += PANEL_OFF_Y; y1 += PANEL_OFF_Y;
   writeCommand(0x2A); // column address set
   writeData(x0 >> 8);
   writeData(x0 & 0xFF);
@@ -71,7 +76,11 @@ void GC9A01Display::begin() {
   if (PIN_LCD_RST >= 0) pinMode(PIN_LCD_RST, OUTPUT);
   digitalWrite(PIN_LCD_CS, HIGH);
 
-  SPI.begin(PIN_LCD_SCLK, -1 /* MISO */, PIN_LCD_MOSI, PIN_LCD_CS);
+  #if defined(PIN_LCD_MISO)
+  LCD_SPI.begin(PIN_LCD_SCLK, PIN_LCD_MISO, PIN_LCD_MOSI, PIN_LCD_CS);
+#else
+  LCD_SPI.begin(PIN_LCD_SCLK, -1 /* MISO */, PIN_LCD_MOSI, PIN_LCD_CS);
+#endif
 
   if (PIN_LCD_RST >= 0) {
     digitalWrite(PIN_LCD_RST, LOW);
@@ -80,19 +89,30 @@ void GC9A01Display::begin() {
     delay(120);
   }
 
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
 
   if (PIN_LCD_RST < 0) {
     // No reset GPIO on this board: fall back to the software reset command.
     writeCommand(0x01);
     digitalWrite(PIN_LCD_CS, HIGH);
-    SPI.endTransaction();
+    LCD_SPI.endTransaction();
     delay(120);
-    SPI.beginTransaction(spiSettings);
+    LCD_SPI.beginTransaction(spiSettings);
     digitalWrite(PIN_LCD_CS, LOW);
   }
 
+#if defined(PANEL_ILI9341)
+  // Minimal ILI9341 bring-up, verified on the CYD: inversion off, 16bpp.
+  writeCommand(0x01); // software reset (the reset pin is shared with the LED)
+  digitalWrite(PIN_LCD_CS, HIGH);
+  LCD_SPI.endTransaction();
+  delay(150);
+  LCD_SPI.beginTransaction(spiSettings);
+  digitalWrite(PIN_LCD_CS, LOW);
+  writeCommand(0x3A); writeData(0x55); // COLMOD: 16bpp RGB565
+  writeCommand(0x20); // inversion off
+#else
   // GC9A01 vendor register-init sequence (see gc9a01.h header comment for provenance).
   writeCommand(0xEF);
   writeCommand(0xEB); writeData(0x14);
@@ -145,63 +165,91 @@ void GC9A01Display::begin() {
   writeCommand(0x98); writeData(0x3E); writeData(0x07);
   writeCommand(0x35);
   writeCommand(0x21);
+#endif
   writeCommand(0x11); // sleep out
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
   delay(120);
 
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
   writeCommand(0x29); // display on
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
   delay(20);
 
   setRotation(0);
+#if PANEL_W != 240 || PANEL_H != 240
+  clearPanel(); // the bars beside the 240x240 canvas are never drawn again
+#endif
 }
+
+#if PANEL_W != 240 || PANEL_H != 240
+void GC9A01Display::clearPanel() {
+  static uint16_t zero[PANEL_W];
+  LCD_SPI.beginTransaction(spiSettings);
+  digitalWrite(PIN_LCD_CS, LOW);
+  writeCommand(0x2A); writeData(0); writeData(0); writeData((PANEL_W - 1) >> 8); writeData((PANEL_W - 1) & 0xFF);
+  writeCommand(0x2B); writeData(0); writeData(0); writeData((PANEL_H - 1) >> 8); writeData((PANEL_H - 1) & 0xFF);
+  writeCommand(0x2C);
+  digitalWrite(PIN_LCD_DC, HIGH);
+  for (int y = 0; y < PANEL_H; y++) LCD_SPI.transferBytes(reinterpret_cast<const uint8_t *>(zero), nullptr, PANEL_W * 2);
+  digitalWrite(PIN_LCD_CS, HIGH);
+  LCD_SPI.endTransaction();
+}
+#endif
 
 void GC9A01Display::setRotation(uint8_t r) {
   rotation = r % 4;
   _width = WIDTH;
   _height = HEIGHT;
 
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
   writeCommand(0x36); // MADCTL
+#if defined(PANEL_ILI9341)
+  switch (rotation) { // landscape (MV), RGB order
+    case 0: writeData(0x60); break;              // verified upright on the CYD (MX|MV)
+    case 1: writeData(0xE0); break;
+    case 2: writeData(0xA0); break;              // 180 degrees (both mirror bits flipped)
+    case 3: writeData(0x20); break;
+  }
+#else
   switch (rotation) {
     case 0: writeData(0x08); break;              // normal (BGR)
     case 1: writeData(0x68); break;               // 90 degree
     case 2: writeData(0xC8); break;               // 180 degree
     case 3: writeData(0xA8); break;               // 270 degree
   }
+#endif
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
 }
 
 void GC9A01Display::drawPixel(int16_t x, int16_t y, uint16_t color) {
   if (x < 0 || y < 0 || x >= _width || y >= _height) return;
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
   setAddrWindow(x, y, x, y);
   digitalWrite(PIN_LCD_DC, HIGH);
-  SPI.transfer16(color);
+  LCD_SPI.transfer16(color);
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
 }
 
 void GC9A01Display::pushRect(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *data, int16_t srcStride) {
   if (w <= 0 || h <= 0) return;
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
   setAddrWindow(x, y, x + w - 1, y + h - 1);
   digitalWrite(PIN_LCD_DC, HIGH);
   writeRectData(w, h, data, srcStride);
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
 }
 
 void GC9A01Display::beginBatch() {
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
 }
 
@@ -214,19 +262,19 @@ void GC9A01Display::pushRectBatched(int16_t x, int16_t y, int16_t w, int16_t h, 
 
 void GC9A01Display::endBatch() {
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
 }
 
 void GC9A01Display::fillScreenFast(uint16_t color) {
   static uint16_t rowBuf[240];
   for (int i = 0; i < 240; i++) rowBuf[i] = (color >> 8) | (color << 8); // pre-swap once
-  SPI.beginTransaction(spiSettings);
+  LCD_SPI.beginTransaction(spiSettings);
   digitalWrite(PIN_LCD_CS, LOW);
   setAddrWindow(0, 0, _width - 1, _height - 1);
   digitalWrite(PIN_LCD_DC, HIGH);
   for (int y = 0; y < _height; y++) {
-    SPI.transferBytes(reinterpret_cast<const uint8_t *>(rowBuf), nullptr, _width * 2);
+    LCD_SPI.transferBytes(reinterpret_cast<const uint8_t *>(rowBuf), nullptr, _width * 2);
   }
   digitalWrite(PIN_LCD_CS, HIGH);
-  SPI.endTransaction();
+  LCD_SPI.endTransaction();
 }

@@ -19,6 +19,7 @@
 #define RUN_SELF_TEST false
 
 void setup() {
+  display_prealloc();
   crumb_init();
   // protocol_init() runs before display_init() so "ttyrdy;" goes out as
   // early as possible. Note: moving it earlier does NOT change how much

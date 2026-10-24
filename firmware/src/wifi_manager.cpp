@@ -148,7 +148,7 @@ void enterConnected() {
   // picker wants to show. Same port as "ws".
   MDNS.addService("tty2oled", "tcp", 81);
   MDNS.addServiceTxt("tty2oled", "tcp", "ver", FW_VERSION);
-  MDNS.addServiceTxt("tty2oled", "tcp", "hw", "HWGC9A01C");
+  MDNS.addServiceTxt("tty2oled", "tcp", "hw", HW_ID);
 
   portal.begin(&configStore, false);
   mqttConfigStore.begin();

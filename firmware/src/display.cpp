@@ -9,6 +9,9 @@
 #include <qrcode.h>
 #include <cmath>
 #include <cstring>
+#if defined(BOARD_CYD)
+#include "esp_bt.h"
+#endif
 
 namespace {
 
@@ -54,7 +57,34 @@ constexpr int LEDC_CHANNEL_BL = 0;
 // C3's ~320KB usable DRAM alongside JPEGDEC's own (much smaller) working
 // buffers. Colors are stored byte-swapped (big-endian on the wire) ready
 // for GC9A01Display::pushRect(), which writes bytes as-is over SPI.
+#if defined(BOARD_CYD)
+// The classic ESP32's static DRAM is ~160KB, and no single free heap block is big enough for
+// 115,200 bytes (the largest is 110,580), so on the CYD the frame lives on the heap as
+// 48-row bands. frameRow()/pushFrame() hide that; on the other boards they are the plain
+// array. display_prealloc() takes the bands first thing in setup(), before anything
+// fragments the heap further.
+constexpr int FRAME_BAND = 48;
+constexpr int FRAME_BANDS = DISP_H / FRAME_BAND;
+static_assert(DISP_H % FRAME_BAND == 0, "bands must tile the frame");
+uint16_t *g_bands[FRAME_BANDS];
+inline uint16_t *frameRow(int y) { return g_bands[y / FRAME_BAND] + (y % FRAME_BAND) * DISP_W; }
+// Pushes the (x, y, w, h) part of the frame, one band at a time.
+void pushFrame(int x, int y, int w, int h) {
+  while (h > 0) {
+    int n = min(h, FRAME_BAND - y % FRAME_BAND);
+    gfx.pushRect(x, y, w, n, frameRow(y) + x, DISP_W);
+    y += n;
+    h -= n;
+  }
+}
+#else
 uint16_t g_frame[DISP_W * DISP_H];
+inline uint16_t *frameRow(int y) { return &g_frame[y * DISP_W]; }
+inline void pushFrame(int x, int y, int w, int h) { gfx.pushRect(x, y, w, h, &g_frame[y * DISP_W + x], DISP_W); }
+#endif
+void clearFrame() {
+  for (int y = 0; y < DISP_H; y++) memset(frameRow(y), 0, DISP_W * sizeof(uint16_t));
+}
 
 inline uint16_t swap16(uint16_t v) {
   return (v >> 8) | (v << 8);
@@ -109,7 +139,7 @@ int jpegDrawCallback(JPEGDRAW *pDraw) {
     if (x0 < 0) rowLen += x0, x0 = 0; // clip left overhang
     if (x0 + rowLen > DISP_W) rowLen = DISP_W - x0; // clip right overhang
     if (rowLen <= 0) continue;
-    memcpy(&g_frame[y * DISP_W + x0], &pDraw->pPixels[row * pDraw->iWidth + (x0 - pDraw->x)], rowLen * sizeof(uint16_t));
+    memcpy(&frameRow(y)[x0], &pDraw->pPixels[row * pDraw->iWidth + (x0 - pDraw->x)], rowLen * sizeof(uint16_t));
   }
   return 1;
 }
@@ -139,7 +169,7 @@ void stepDelay(uint32_t stepStart, uint16_t targetStepMs) {
 // enough at 240x240.
 void transitionReveal(uint8_t effect, uint16_t durationMs) {
   if (effect == 0 || durationMs == 0) {
-    gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+    pushFrame(0, 0, DISP_W, DISP_H);
     return;
   }
 
@@ -155,7 +185,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         // is wider than this partial-width slice (w), so each row after
         // the first must skip the leftover (240-w) pixels to stay
         // aligned - omitting it was a real bug (see CLAUDE.md).
-        gfx.pushRect(0, 0, w, DISP_H, g_frame, DISP_W);
+        pushFrame(0, 0, w, DISP_H);
         stepDelay(t0, stepMs);
       }
       break;
@@ -169,7 +199,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         // of which used to pay a full SPI transaction's setup/teardown
         // cost) - same fix as case 1, plus the performance fix that
         // stopped this effect from stalling on real hardware.
-        gfx.pushRect(x0, 0, w, DISP_H, &g_frame[x0], DISP_W);
+        pushFrame(x0, 0, w, DISP_H);
         stepDelay(t0, stepMs);
       }
       break;
@@ -178,7 +208,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
       for (int s = 1; s <= steps; s++) {
         uint32_t t0 = millis();
         int h = (DISP_H * s) / steps;
-        gfx.pushRect(0, 0, DISP_W, h, g_frame, DISP_W); // w==DISP_W already, but explicit for clarity
+        pushFrame(0, 0, DISP_W, h); // w==DISP_W already, but explicit for clarity
         stepDelay(t0, stepMs);
       }
       break;
@@ -205,7 +235,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
           int x0 = max(0, (int)(cx - dxf));
           int x1 = min(DISP_W - 1, (int)(cx + dxf));
           int w = x1 - x0 + 1;
-          if (w > 0) gfx.pushRectBatched(x0, y, w, 1, &g_frame[y * DISP_W + x0]);
+          if (w > 0) gfx.pushRectBatched(x0, y, w, 1, &frameRow(y)[x0]);
         }
         gfx.endBatch();
         stepDelay(t0, stepMs);
@@ -234,7 +264,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         int t256 = (256 * s) / fadeSteps; // fixed-point 0..256 blend factor
         gfx.beginBatch();
         for (int y = 0; y < DISP_H; y++) {
-          const uint16_t *srcRow = &g_frame[y * DISP_W];
+          const uint16_t *srcRow = frameRow(y);
           for (int x = 0; x < DISP_W; x++) {
             uint16_t c = swap16(srcRow[x]); // unswap to compute, reswap to store
             uint8_t r = ((c >> 11) & 0x1F) * t256 / 256;
@@ -251,7 +281,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
     }
 
     default:
-      gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+      pushFrame(0, 0, DISP_W, DISP_H);
       break;
   }
 }
@@ -319,7 +349,24 @@ void drawLegacyScaled(const uint8_t *buf, uint8_t effect, bool isGsc,
 
 } // namespace
 
+void display_prealloc() {
+#if defined(BOARD_CYD)
+  if (g_bands[0]) return;
+  esp_bt_mem_release(ESP_BT_MODE_BTDM); // Bluetooth is never used: hand its reserved RAM to the heap
+  for (int i = 0; i < FRAME_BANDS; i++) g_bands[i] = static_cast<uint16_t *>(malloc(FRAME_BAND * DISP_W * sizeof(uint16_t)));
+#endif
+}
+
 void display_init() {
+#if defined(BOARD_CYD)
+  display_prealloc();
+  for (int i = 0; i < FRAME_BANDS; i++) {
+    if (!g_bands[i]) { // nothing can be shown without the frame; say so on the serial line
+      Serial.println("FATAL: no memory for the frame buffer");
+      return;
+    }
+  }
+#endif
   pinMode(PIN_LCD_BL, OUTPUT);
   ledcSetup(LEDC_CHANNEL_BL, 5000, 8); // 5kHz, 8-bit duty
   ledcAttachPin(PIN_LCD_BL, LEDC_CHANNEL_BL);
@@ -327,6 +374,12 @@ void display_init() {
 
   gfx.begin();
   gfx.fillScreenFast(0x0000);
+#if defined(BOARD_CYD)
+  // The RGB LED is active low and lit by the floating pins at power-up: switch it off.
+  pinMode(PIN_LED_G, OUTPUT); digitalWrite(PIN_LED_G, HIGH);
+  pinMode(PIN_LED_B, OUTPUT); digitalWrite(PIN_LED_B, HIGH);
+  pinMode(PIN_LCD_RST, OUTPUT); digitalWrite(PIN_LCD_RST, HIGH);
+#endif
 }
 
 void display_clear() {
@@ -524,24 +577,27 @@ void display_draw_legacy_gsc_small(const uint8_t *buf) {
 // recolour it by brightness like the legacy pictures. Real colour art is left alone.
 static void tintGrayFrame() {
   if (!g_tintMode) return;
-  for (int i = 0; i < DISP_W * DISP_H; i++) {
-    uint16_t c = swap16(g_frame[i]);
-    int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
-    if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) return;
+  for (int y = 0; y < DISP_H; y++) {
+    const uint16_t *row = frameRow(y);
+    for (int x = 0; x < DISP_W; x++) {
+      uint16_t c = swap16(row[x]);
+      int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+      if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) return;
+    }
   }
   for (int y = 0; y < DISP_H; y++) {
     for (int x = 0; x < DISP_W; x++) {
-      uint16_t c = swap16(g_frame[y * DISP_W + x]);
+      uint16_t c = swap16(frameRow(y)[x]);
       int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
       uint8_t gray = (uint8_t)((r * 30 + g * 59 + b * 11) / 100);
-      g_frame[y * DISP_W + x] = swap16(tintedColor(gray, x, y, DISP_W, DISP_H));
+      frameRow(y)[x] = swap16(tintedColor(gray, x, y, DISP_W, DISP_H));
     }
   }
 }
 
 void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t durationMs) {
   display_new_picture(); // random tint: a new colour per picture
-  memset(g_frame, 0, sizeof(g_frame));
+  clearFrame();
   if (!jpeg.openRAM(const_cast<uint8_t *>(buf), len, jpegDrawCallback)) {
     display_show_error("JPEG decode failed");
     return;
@@ -596,7 +652,7 @@ void display_draw_jpeg_small() {
     int16_t srcY = y * 2;
     for (int16_t x = 0; x < w; x++) {
       int16_t srcX = x * 2;
-      uint16_t c = swap16(g_frame[srcY * DISP_W + srcX]); // g_frame is byte-swapped, see its declaration comment
+      uint16_t c = swap16(frameRow(srcY)[srcX]); // the frame is byte-swapped, see its declaration comment
       gfx.drawPixel(dstX + x, dstY + y, c);
     }
   }
@@ -717,9 +773,9 @@ void drawWifiQrScreen() {
   int ox = DISP_CX - qrPx / 2;
   int oy = DISP_CY - qrPx / 2;
 
-  memset(g_frame, 0, sizeof(g_frame));
+  clearFrame();
   for (int y = 0; y < qrPx; y++) {
-    uint16_t *row = &g_frame[(oy + y) * DISP_W + ox];
+    uint16_t *row = &frameRow(oy + y)[ox];
     for (int x = 0; x < qrPx; x++) {
       // 0x0000/0xFFFF are byte-swap invariant, so no swap16() needed here
       // unlike g_frame's usual JPEG-decoded content.
@@ -728,7 +784,7 @@ void drawWifiQrScreen() {
   }
 
   gfx.fillScreenFast(0x0000);
-  gfx.pushRect(ox, oy, qrPx, qrPx, &g_frame[oy * DISP_W + ox], DISP_W);
+  pushFrame(ox, oy, qrPx, qrPx);
 
   gfx.setTextColor(0xFFFF);
   gfx.setTextSize(1);
@@ -856,8 +912,9 @@ void display_self_test() {
       // Also exercise the exact pushRect() path used for real JPEG frames
       // (not just fillScreenFast's per-row loop), same buffer size as a
       // full 240x240 frame.
-      for (int p = 0; p < DISP_W * DISP_H; p++) g_frame[p] = colors[i];
-      gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+      for (int y = 0; y < DISP_H; y++)
+        for (int x = 0; x < DISP_W; x++) frameRow(y)[x] = colors[i];
+      pushFrame(0, 0, DISP_W, DISP_H);
       delay(600);
     }
     cycle++;

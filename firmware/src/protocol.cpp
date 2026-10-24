@@ -363,7 +363,7 @@ void protocol_dispatch_line(const String &cmd) {
     // tty2oled.sh itself (confirmed against reference/), so an unknown id
     // is safe. No trailing newline: web/src/serial.ts tokenizes on ";",
     // not "\n", matching how ttyack;/ttyrdy; are already sent.
-    Serial.print("HWGC9A01C;");
+    Serial.print(HW_ID ";");
     Serial.print(FW_VERSION);
     Serial.print(";");
   } else if (cmd.startsWith("CMDCLST")) {

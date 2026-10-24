@@ -63,4 +63,5 @@ class GC9A01Display : public Adafruit_GFX {
   void writeCommand(uint8_t cmd);
   void writeData(uint8_t data);
   void setAddrWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
+  void clearPanel();
 };
