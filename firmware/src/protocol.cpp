@@ -4,6 +4,7 @@
 #include "protocol.h"
 #include "display.h"
 #include "auto_brightness.h"
+#include "touch.h"
 #include "oled_status.h"
 #include "pins.h"
 #include "version.h"
@@ -536,6 +537,15 @@ constexpr unsigned long FACTORY_RESET_HOLD_MS = 10000;
 constexpr unsigned long FACTORY_RESET_UI_DELAY_MS = 1500; // don't flash the countdown on ordinary short presses
 
 void protocol_button_check() {
+  // Touch (CYD) wakes the display like the BOOT button does, and flips the AP-mode QR on a
+  // press edge. It deliberately takes no part in the factory-reset hold below: a palm resting
+  // on the screen must never wipe the device.
+  bool touched = touch_pressed();
+  static bool wasTouched = false;
+  if (touched) lastWakeMs = millis();
+  if (touched && !wasTouched && wifi_manager_is_ap_mode()) display_toggle_wifi_qr();
+  wasTouched = touched;
+
   bool pressed = (digitalRead(PIN_WAKE_BTN) == LOW);
 
   // Level-based touch of lastWakeMs is unchanged and still idempotent

@@ -40,6 +40,12 @@
 #define PIN_LED_G    16   // RGB LED is active low: drive high to switch it off
 #define PIN_LED_B    17
 #define PIN_LDR      34   // photoresistor divider, ADC1 (input only)
+// XPT2046 resistive touch on its own pins (read with software SPI, see touch.cpp)
+#define PIN_TOUCH_CS   33
+#define PIN_TOUCH_CLK  25
+#define PIN_TOUCH_MOSI 32
+#define PIN_TOUCH_MISO 39
+#define PIN_TOUCH_IRQ  36
 #elif defined(BOARD_2424S012)
 // Sunton ESP32-2424S012C (1.28" round, all-in-one ESP32-C3-MINI-1U board).
 // Display is soldered on, pins fixed by the board. RST is not routed to a

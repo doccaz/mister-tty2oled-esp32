@@ -443,8 +443,8 @@ UART serial, not native USB). Panel settings were found with a probe sketch on t
 assumed: ILI9341-style minimal init (SWRESET, COLMOD 0x55, inversion off), RGB order, MADCTL `0x60` upright
 (`0x20`/`0xE0` came out rotated/mirrored), HSPI at 40 MHz on SCLK 14 / MOSI 13 / MISO 12 / CS 15 / DC 2,
 backlight 21 (PWM), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the floating
-pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0; the XPT2046 touch (33/36/25/32/39)
-is meant to take over as the wake input later, and the settings screen with touch support after that. The light
+pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0; the XPT2046 touch (33/36/25/32/39) wakes the display too (see "Touch wake"); a
+settings screen with touch support is still to do. The light
 sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
 
 - **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
@@ -476,6 +476,14 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   boards) and `ldr` (CYD). Verified on the real CYD: covering the sensor faded 250 -> 19 in ~8 s and uncovering faded back
   up in ~12 s, no flicker in the logged levels. The anchors came from three lighting conditions only; the middle of the
   curve (indoors with the lamp on vs off) is the part most worth re-tuning.
+- **Touch wake (2026-10-24, CYD only).** `touch.*` reads the XPT2046 pressure (Z1/Z2 commands, software SPI on the touch
+  pins so it never shares the display's or the SD card's bus), polled every 25 ms and debounced to two hits in a row. Only
+  "is the screen pressed" is used, not coordinates. Measured threshold: idle reads 0 (a stray 17), a resting fingertip
+  stays under ~30 (a resistive screen needs real pressure), any real press reads 2,700-6,400, so `kPressThreshold` is 250.
+  `protocol_button_check()` treats a press like the BOOT button for waking (refreshes `lastWakeMs`, so the idle clock/blank
+  stage ends and the picture is redrawn) and flips the AP-mode QR on a press edge, but takes NO part in the 10 s
+  factory-reset hold: a palm on the screen must never wipe the device. `/status` reports `touch` (the raw pressure).
+  Verified on the real CYD: blank after 5 s idle, a touch woke it in ~1.3 s and the logo came back intact, three cycles.
 - **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
   `esp_sha()` object references (only SHA-1 is ever used).
 - **Dev WiFi shortcut:** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your WiFi,
@@ -485,7 +493,7 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** MQTT, the touch wake and settings screen, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
+  **Not done:** MQTT, the settings screen with touch, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
   `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
   published by accident). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
