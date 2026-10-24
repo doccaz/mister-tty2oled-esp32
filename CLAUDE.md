@@ -492,14 +492,17 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   owner ("all fine"). Leak check: 40 notifications 3 s apart (mixed text and images, including overlapping ones) left free
   heap between 144.4 and 145.2KB, settled at the pre-burst level, largest block constant at 86,004, MQTT stayed connected,
   no reset. The rig was torn down afterwards and MQTT switched back off on the CYD.
-- **Daemon with the CYD (2026-10-24, PC run of the repo's `t2o-wifi`, not a MiSTer).** `-list` finds the CYD through
+- **Daemon with the CYD (2026-10-24; first a PC run of the repo's `t2o-wifi`, then the owner's MiSTer, see the end of this bullet).** `-list` finds the CYD through
   `_tty2oled._tcp` (name, address, fw 0.5.8). A live run against `tty2oled-4108.local` resolved the name, connected,
   and sent six core changes (7-15 KB each, all accepted) plus an unknown core, which went as a bare name; the CYD never
   reset and kept ~145KB free. With `WIFI_SEND_SETTINGS="yes"` the daemon's start-up `CMDCON,60` held the backlight at 60
   while the light sensor swung 316 -> 690, i.e. a MiSTer-driven brightness overrides auto brightness as intended; saving
   the settings page re-enables auto. Note: `-once` skips the start-up handshake, so it never sends settings (use the
   real loop to test those). One `-once` run got no mDNS answer for the `.local` name (multicast on WiFi is lossy; the
-  long-running daemon caches the address), the IP address worked.
+  long-running daemon caches the address), the IP address worked. **On the owner's MiSTer (same day, daemon v0.6.0 updated
+  through the menu):** `HOST` holds three displays (`tty2oled-4108.local` = the CYD, B610, CD20; three is the daemon's
+  maximum), all three connected and got MENU at start-up, and opening the Apple II core sent `Apple-II.jpg` (9,435 bytes) to
+  all three within a second; the owner confirmed the logo looked right on every display.
 - **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
   `esp_sha()` object references (only SHA-1 is ever used).
 - **Dev WiFi shortcut (opt-in):** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your
@@ -512,7 +515,7 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** the settings screen with touch, the daemon on a real MiSTer (only a PC run was done), and flashing the CYD
+  **Not done:** the settings screen with touch, and flashing the CYD
   from the web flasher page in a browser (Web Serial can't be run headlessly; see "Release plumbing for the CYD" below
   for what was verified instead). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`

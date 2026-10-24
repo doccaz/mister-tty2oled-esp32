@@ -214,7 +214,8 @@ BOOT 0. They are selected by the `BOARD_CYD` flag in `firmware/src/pins.h`.
 
 Verified on real hardware with this board: pictures over USB and WiFi with every transition, the setup network and
 saved-WiFi rejoin, backlight and auto brightness, touch wake, MQTT text and image notifications, and the
-daemon driving it from a PC. Not yet run on a MiSTer.
+daemon driving it from a PC and from a real MiSTer (v0.6.0, together with two other displays; the Apple II logo
+looked right on all three).
 
 ### Case (Sunton ESP32-2424S012C)
 
