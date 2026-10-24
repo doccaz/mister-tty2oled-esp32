@@ -515,9 +515,9 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** the settings screen with touch, and flashing the CYD
-  from the web flasher page in a browser (Web Serial can't be run headlessly; see "Release plumbing for the CYD" below
-  for what was verified instead). The Sunton was re-flashed with this code and works.
+  **Not done:** the settings screen with touch. The CYD has been flashed from the live web flasher page in a browser (owner,
+  after the v0.6.0 release: "web flasher works for CYD"), and runs on the owner's MiSTer. The Sunton was re-flashed with
+  this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
   within 6 s, on the released v0.5.8 as well (1/96 vs 4/144 on the new code; TMNT with the iris failed in both).
   Not investigated.
@@ -770,8 +770,9 @@ ones keep `tty2oled-gc9a01-*`.
   site built from that release dir has every file byte-identical to its release asset, the C3 files are still the C3 ones,
   and the old-release path drops the CYD; the CYD's separate parts, taken from the dry-run release, were written to the real
   board with esptool at exactly the manifest's offsets: it booted, kept its saved WiFi/settings (NVS untouched) and answered
-  `HWCYD28;0.5.9;`. **Not verified:** the ESP Web Tools page itself in a browser with the CYD manifest (no headless Web
-  Serial), and the Pages deploy (nothing was published).
+  `HWCYD28;0.5.9;`. The ESP Web Tools page itself could not be tried
+  headlessly (no Web Serial); the owner then flashed a CYD from the live page after the v0.6.0 release and it worked, so
+  the whole released path (manifest, chip family `ESP32`, offsets, the CYD-specific instructions) is now verified.
 - Gotcha: the dry run writes `release/<FW_VERSION>/`, which would overwrite the local copy of an already-published release,
   so rehearse with a temporarily bumped `FW_VERSION`.
 
