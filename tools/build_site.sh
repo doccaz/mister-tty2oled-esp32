@@ -16,7 +16,12 @@
 #                        version from FIRMWARE_VERSION (default: FW_VERSION in
 #                        version.h)
 #   (unset)              the local PlatformIO builds
-#                        (pio run -e esp32c3 / esp32c3_nooled / esp32c3_2424s012)
+#                        (pio run -e esp32c3 / esp32c3_nooled / esp32c3_2424s012, and
+#                        esp32_cyd for the classic-ESP32 CYD board)
+#
+# The CYD is a different chip (bootloader at 0x1000, chip family ESP32, its own bootloader and
+# partition table), so its parts are separate (tty2oled-ili9341-*) and OPTIONAL: a release made
+# before the CYD existed has none, and the site is then built without the CYD entry.
 #
 # Why separate parts and not one merged image: a merged image fills the gaps
 # between partitions with 0xFF, which overwrites the NVS partition (0x9000) and
@@ -49,9 +54,9 @@ pick() {
 
 # The three shared parts (identical for every board).
 if [ -n "${FIRMWARE_DIR:-}" ]; then
-  cp "$(pick '*-bootloader.bin')" "${SITE}/firmware/bootloader.bin"
-  cp "$(pick '*-partitions.bin')" "${SITE}/firmware/partitions.bin"
-  cp "$(pick '*-boot_app0.bin')" "${SITE}/firmware/boot_app0.bin"
+  cp "$(pick 'tty2oled-gc9a01-*-bootloader.bin')" "${SITE}/firmware/bootloader.bin"
+  cp "$(pick 'tty2oled-gc9a01-*-partitions.bin')" "${SITE}/firmware/partitions.bin"
+  cp "$(pick 'tty2oled-gc9a01-*-boot_app0.bin')" "${SITE}/firmware/boot_app0.bin"
 else
   B0="${ROOT}/firmware/.pio/build/esp32c3"
   BOOT_APP0="$(find "${HOME}/.platformio/packages" -path '*framework-arduinoespressif32*' -name boot_app0.bin | head -1)"
@@ -89,7 +94,49 @@ for entry in "${BOARDS[@]}"; do
 EOF
 done
 
+# ---- classic-ESP32 (CYD) ----------------------------------------------------------------
+HAVE_CYD=0
+if [ -n "${FIRMWARE_DIR:-}" ]; then
+  ls "${FIRMWARE_DIR}"/tty2oled-ili9341-*-esp32_cyd-app.bin >/dev/null 2>&1 && HAVE_CYD=1
+else
+  [ -f "${ROOT}/firmware/.pio/build/esp32_cyd/firmware.bin" ] && HAVE_CYD=1
+fi
+if [ "${HAVE_CYD}" = 1 ]; then
+  if [ -n "${FIRMWARE_DIR:-}" ]; then
+    cp "$(pick 'tty2oled-ili9341-*-bootloader.bin')" "${SITE}/firmware/bootloader-esp32.bin"
+    cp "$(pick 'tty2oled-ili9341-*-partitions.bin')" "${SITE}/firmware/partitions-esp32.bin"
+    cp "$(pick 'tty2oled-ili9341-*-esp32_cyd-app.bin')" "${SITE}/firmware/app-esp32_cyd.bin"
+  else
+    CB="${ROOT}/firmware/.pio/build/esp32_cyd"
+    cp "${CB}/bootloader.bin" "${SITE}/firmware/bootloader-esp32.bin"
+    cp "${CB}/partitions.bin" "${SITE}/firmware/partitions-esp32.bin"
+    cp "${CB}/firmware.bin" "${SITE}/firmware/app-esp32_cyd.bin"
+  fi
+  # boot_app0.bin is the same for every chip, so the shared copy is reused.
+  cat > "${SITE}/firmware/manifest-esp32_cyd.json" <<EOF
+{
+  "name": "tty2oled-ili9341 - CYD ESP32-2432S028 (2.8 inch, 320x240)",
+  "version": "${VERSION}",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "bootloader-esp32.bin", "offset": 4096 },
+        { "path": "partitions-esp32.bin", "offset": 32768 },
+        { "path": "boot_app0.bin", "offset": 57344 },
+        { "path": "app-esp32_cyd.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}
+EOF
+else
+  echo "note: no CYD (classic ESP32) images for ${VERSION}; the site is built without the CYD entry" >&2
+fi
+
 cp "${ROOT}/flasher/index.html" "${SITE}/index.html"
+[ "${HAVE_CYD}" = 1 ] || sed -i '/data-cyd="1"/d' "${SITE}/index.html"
 sed -i "s/__FW_VERSION__/${VERSION}/g" "${SITE}/index.html"
 cp "${ROOT}/web/public/favicon.svg" "${SITE}/favicon.svg"
 mkdir -p "${SITE}/img"

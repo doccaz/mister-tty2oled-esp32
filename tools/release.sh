@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Erico Mendonca
 #
-# Release checklist: builds the three firmware variants, merges each into a
+# Release checklist: builds the four firmware variants (three ESP32-C3 boards and the
+# classic-ESP32 CYD), merges each into a
 # single flash image, verifies them, tags the commit and creates the GitHub
 # release with the images attached, then dispatches the Pages workflow, which
 # puts these exact images on the web flasher.
@@ -107,6 +108,25 @@ for env in "${ENVS[@]}"; do
   cp "firmware/.pio/build/${env}/firmware.bin" "${OUT}/tty2oled-gc9a01-${VERSION}-${env}-app.bin"
 done
 
+echo "-- 3a. Build the classic-ESP32 variant (CYD)"
+# A different chip: its own bootloader (written at 0x1000, not 0x0) and partition table, so it
+# gets a full set of parts under its own prefix instead of sharing the C3 ones. boot_app0.bin is
+# the same file for every chip.
+CYD_ENV=esp32_cyd
+CYD_PFX="tty2oled-ili9341-${VERSION}"
+echo "   building ${CYD_ENV}"
+log="$( cd firmware && pio run -e "${CYD_ENV}" 2>&1 )" || { echo "${log}" | tail -20; die "build failed: ${CYD_ENV}"; }
+echo "${log}" | grep -E "^PLATFORM:|^ - framework-arduinoespressif32|^RAM:|^Flash:" | sed 's/^/     /'
+b="firmware/.pio/build/${CYD_ENV}"
+python3 "${ESPTOOL}" --chip esp32 merge_bin -o "${OUT}/${CYD_PFX}-${CYD_ENV}-full.bin" \
+  --flash_mode dio --flash_freq 40m --flash_size 4MB \
+  0x1000 "${b}/bootloader.bin" 0x8000 "${b}/partitions.bin" \
+  0xe000 "${BOOT_APP0}" 0x10000 "${b}/firmware.bin" >/dev/null
+cp "${b}/bootloader.bin" "${OUT}/${CYD_PFX}-bootloader.bin"
+cp "${b}/partitions.bin" "${OUT}/${CYD_PFX}-partitions.bin"
+cp "${BOOT_APP0}" "${OUT}/${CYD_PFX}-boot_app0.bin"
+cp "${b}/firmware.bin" "${OUT}/${CYD_PFX}-${CYD_ENV}-app.bin"
+
 echo "-- 3b. Build the MiSTer WiFi daemon"
 # Pin VERSION to the tag so the binary reports it (build.sh otherwise uses git describe),
 # and so its MD5 matches what -update/update_all will serve. Asset names are plain
@@ -138,6 +158,33 @@ for env in "${ENVS[@]}"; do
   rm -f "${tmp}"
 done
 echo "   ok: parts reproduce each full image"
+f="${OUT}/${CYD_PFX}-${CYD_ENV}-full.bin"
+size="$(stat -c %s "${f}")"
+[ "${size}" -gt 500000 ] && [ "${size}" -lt 1500000 ] || die "${f}: implausible size ${size}"
+# Not grep -x like the C3 images: the Xtensa linker merges a standalone "0.5.9" into the tail of
+# a longer string ("GC9A01  v0.5.9"), so look for the CMDHWINF reply instead ("HWCYD28;0.5.9;").
+[ "$(strings -a "${f}" | grep -c -F -- ";${VERSION};")" -ge 1 ] || die "${f}: version string ${VERSION} not found inside"
+echo "   ok: $(basename "${f}") (${size} bytes)"
+tmp="$(mktemp)"
+python3 "${ESPTOOL}" --chip esp32 merge_bin -o "${tmp}" --flash_mode dio --flash_freq 40m --flash_size 4MB \
+  0x1000 "${OUT}/${CYD_PFX}-bootloader.bin" 0x8000 "${OUT}/${CYD_PFX}-partitions.bin" \
+  0xe000 "${OUT}/${CYD_PFX}-boot_app0.bin" 0x10000 "${OUT}/${CYD_PFX}-${CYD_ENV}-app.bin" >/dev/null
+cmp -s "${tmp}" "${f}" || { rm -f "${tmp}"; die "parts don't reproduce the ${CYD_ENV} full image"; }
+rm -f "${tmp}"
+echo "   ok: ${CYD_ENV} parts reproduce its full image"
+# The development WiFi shortcut (firmware/src/wifi_dev.h) is opt-in, but be certain: if the
+# header exists, none of the images may contain its credentials.
+DEVHDR="${ROOT}/firmware/src/wifi_dev.h"
+if [ -f "${DEVHDR}" ]; then
+  for key in DEV_WIFI_SSID DEV_WIFI_PASS; do
+    val="$(awk -F'"' -v k="${key}" '$0 ~ "#define " k {print $2}' "${DEVHDR}")"
+    [ -n "${val}" ] || continue
+    for img in "${OUT}"/*.bin; do
+      if grep -q -a -F -- "${val}" "${img}"; then die "$(basename "${img}") contains the ${key} from wifi_dev.h - refusing to release"; fi
+    done
+  done
+  echo "   ok: no image contains the development WiFi credentials"
+fi
 # Rehearse the MiSTer daemon database here (so --dry-run exercises it too). The live copy
 # is generated and published by tools/build_site.sh in the Pages workflow, from these same
 # uploaded assets; this one just proves the generator works and the files are complete.

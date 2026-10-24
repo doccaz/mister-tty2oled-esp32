@@ -502,16 +502,19 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   long-running daemon caches the address), the IP address worked.
 - **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
   `esp_sha()` object references (only SHA-1 is ever used).
-- **Dev WiFi shortcut:** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your WiFi,
-  rebuild: a device with no saved network then joins it at boot, in memory only (never written to NVS). Define
-  `CYD_NO_DEV_WIFI` to ignore the header and test the real setup flow.
+- **Dev WiFi shortcut (opt-in):** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your
+  WiFi, and build with `PLATFORMIO_BUILD_FLAGS="-DUSE_DEV_WIFI=1" pio run -e <env> -t upload`: a device with no saved
+  network then joins it at boot, in memory only (never written to NVS). It is NEVER compiled just because the header
+  exists: the first version was automatic, which would have put the owner's real WiFi password into any release built on
+  that machine (caught before a release was made); `tools/release.sh` now also greps every built image for the header's
+  credentials and refuses to release if any is found (negative-tested with an opt-in build).
 - **Verified on the real CYD:** boot splash, rotation, sysinfo, LED off, USB and WebSocket pictures with all five
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** the settings screen with touch, the daemon on a real MiSTer (only a PC run was done), and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
-  `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
-  published by accident). The Sunton was re-flashed with this code and works.
+  **Not done:** the settings screen with touch, the daemon on a real MiSTer (only a PC run was done), and flashing the CYD
+  from the web flasher page in a browser (Web Serial can't be run headlessly; see "Release plumbing for the CYD" below
+  for what was verified instead). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
   within 6 s, on the released v0.5.8 as well (1/96 vs 4/144 on the new code; TMNT with the iris failed in both).
   Not investigated.
@@ -700,8 +703,8 @@ the GC9A01 behaves identically either way.
 
 `flasher/index.html` is a static [ESP Web Tools](https://esphome.github.io/esp-web-tools/)
 page (pinned `esp-web-tools@10.0.1` from unpkg) with a board picker that
-swaps the `manifest` attribute between three manifests, one per PlatformIO
-env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`). `tools/build_site.sh`
+swaps the `manifest` attribute between four manifests, one per PlatformIO
+env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`, and the classic-ESP32 `esp32_cyd`, see "Release plumbing for the CYD"). `tools/build_site.sh`
 assembles `site/` (gitignored): the flash parts (bootloader, partition
 table, boot_app0, one app image per board), the generated manifests (each
 writes the four parts at 0x0/0x8000/0xe000/0x10000), the flasher at `/`, and the Vite-built web app at `/app/`
@@ -717,7 +720,7 @@ main and works. Setup is Settings -> Pages -> Source: GitHub Actions.
 
 **The workflow publishes a release's attached `.bin` files; it does not
 build firmware.** Releases are cut with `tools/release.sh` (checklist prompts,
-builds the three envs, merges, verifies the version string and sizes,
+builds the four envs, merges, verifies the version string and sizes,
 tags, `gh release create`; `--dry-run` rehearses without publishing - a
 fresh local rebuild reproduces the released images byte-for-byte). By hand
 it's: build the three envs locally,
@@ -737,6 +740,37 @@ MB, a different core, and was never run on hardware. Pinning to the Tasmota
 platform (tried, reverted) makes clean machines fail with `WiFiClientSecure.h
 not found`. If the firmware is ever moved to a reproducible toolchain,
 re-verify everything in this file on hardware first, then CI can build it.
+
+### Release plumbing for the CYD (2026-10-24)
+
+The CYD is a different chip, so it does not share the C3 parts: the classic ESP32's bootloader sits at **0x1000** (not
+0x0), the manifest chip family is `ESP32`, and its bootloader and partition table differ from the C3's (`boot_app0.bin`
+is byte-identical across every framework copy, so the shared copy is reused). Its assets use their own prefix,
+`tty2oled-ili9341-<ver>-{bootloader,partitions,boot_app0}.bin`, `-esp32_cyd-app.bin` and `-esp32_cyd-full.bin`; the C3
+ones keep `tty2oled-gc9a01-*`.
+
+- `tools/release.sh`, block "3a": builds `esp32_cyd`, merges its full image with `--chip esp32 --flash_freq 40m` at
+  0x1000/0x8000/0xe000/0x10000, copies the four parts, and verifies it like the others (size; parts reproduce the full image
+  byte for byte). The version check differs on purpose: a standalone `0.5.9` string is NOT in the CYD image (the Xtensa
+  linker merges it into the tail of "GC9A01  v0.5.9", the RISC-V one used for the C3 does not), so it greps for the
+  CMDHWINF reply `;<ver>;` ("HWCYD28;0.5.9;") instead. The checklist prompt "flashed THIS build to a real board" now means
+  the CYD too.
+- **Credential guard:** if `firmware/src/wifi_dev.h` exists, no `.bin` in the release may contain its SSID or password.
+- `tools/build_site.sh`: the C3 `pick` patterns are now `tty2oled-gc9a01-*` (a bare `*-bootloader.bin` would also match the
+  CYD's); the CYD writes `bootloader-esp32.bin`, `partitions-esp32.bin`, `app-esp32_cyd.bin` and `manifest-esp32_cyd.json`
+  (offsets 4096/32768/57344/65536). The CYD is **optional**: a release made before it existed (e.g. re-dispatching Pages for
+  v0.5.8) has no `tty2oled-ili9341-*` assets, and the site is then built without the CYD manifest and without its `<option
+  data-cyd="1">` in the page, so the old-tag path still works (tested).
+- `flasher/index.html`: a CYD entry; the "hold BOOT" step and port name are C3-only (`.c3-only` / `.cyd-only` toggled by
+  the picker; the CYD's CH340 resets it into download mode itself), plus a `[hidden]{display:none!important}` rule.
+- **Verified:** `release.sh --dry-run` with a temporary 0.5.9 (all four builds, daemon, database, credential check); the
+  site built from that release dir has every file byte-identical to its release asset, the C3 files are still the C3 ones,
+  and the old-release path drops the CYD; the CYD's separate parts, taken from the dry-run release, were written to the real
+  board with esptool at exactly the manifest's offsets: it booted, kept its saved WiFi/settings (NVS untouched) and answered
+  `HWCYD28;0.5.9;`. **Not verified:** the ESP Web Tools page itself in a browser with the CYD manifest (no headless Web
+  Serial), and the Pages deploy (nothing was published).
+- Gotcha: the dry run writes `release/<FW_VERSION>/`, which would overwrite the local copy of an already-published release,
+  so rehearse with a temporarily bumped `FW_VERSION`.
 
 First real flash from the page (2026-10-13, Super Mini): "Failed to
 initialize" until BOOT was held while plugging in. `esptool.py` from the CLI

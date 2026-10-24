@@ -184,9 +184,12 @@ void wifi_manager_init() {
   WiFi.onEvent(onWifiEvent);
   configStore.begin();
   deviceName = buildDeviceName();
-#if __has_include("wifi_dev.h") && !defined(CYD_NO_DEV_WIFI)
+#if defined(USE_DEV_WIFI) && __has_include("wifi_dev.h")
   // Development shortcut (see wifi_dev.h.example): a git-ignored header with your own WiFi,
   // used while the device has no saved network. Held in memory only, never written to NVS.
+  // OPT-IN: it is only compiled with -DUSE_DEV_WIFI=1, never just because the header exists,
+  // so a release build made on a machine that has the header can not embed the credentials
+  // (tools/release.sh also checks the built images for them).
 #include "wifi_dev.h"
 #if defined(DEV_WIFI_SSID)
   if (!configStore.cfg.configured && DEV_WIFI_SSID[0] != '\0') {
