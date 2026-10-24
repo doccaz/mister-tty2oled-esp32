@@ -9,6 +9,7 @@
 // heap, building it as one String would be asking for trouble.
 
 #include "web_portal.h"
+#include "light_sensor.h"
 #include "web_portal_common.h"
 #include "device_settings.h"
 #include "protocol.h"
@@ -189,8 +190,24 @@ void WebPortal::handleSettingsPart() {
   out(String(c.contrast));
   out(F("</b></label><input type='range' name='contrast' min='0' max='255' value='"));
   out(String(c.contrast));
-  out(F("' oninput=\"cv.textContent=this.value\">"
-                        "<label>Orientation</label><select name='rotation'><option value='0'"));
+  out(F("' oninput=\"cv.textContent=this.value\">"));
+  if (light_sensor_present()) {
+    out(F("<label><input type='checkbox' name='autoBright'"));
+    out(c.autoBright ? " checked" : "");
+    out(F("> Follow the room light (light sensor)</label>"
+          "<label>Darkest: <b id='amn'>"));
+    out(String(c.autoMin));
+    out(F("</b></label><input type='range' name='autoMin' min='0' max='255' value='"));
+    out(String(c.autoMin));
+    out(F("' oninput=\"amn.textContent=this.value\"><label>Brightest: <b id='amx'>"));
+    out(String(c.autoMax));
+    out(F("</b></label><input type='range' name='autoMax' min='0' max='255' value='"));
+    out(String(c.autoMax));
+    out(F("' oninput=\"amx.textContent=this.value\">"
+          "<p class='muted'>With this on, brightness follows the light between the two limits; "
+          "the slider above is used when it is off.</p>"));
+  }
+  out(F("<label>Orientation</label><select name='rotation'><option value='0'"));
   out(c.rotation == 0 ? " selected" : "");
   out(F(">Normal</option><option value='1'"));
   out(c.rotation == 1 ? " selected" : "");
@@ -317,6 +334,12 @@ void WebPortal::handleSettingsSave() {
   DeviceSettings &c = settingsStore.cfg;
 
   c.contrast = (uint8_t)clampArg(_server.arg("contrast"), 0, 255, c.contrast);
+  if (light_sensor_present()) { // the form only carries these on boards with a sensor
+    c.autoBright = _server.hasArg("autoBright");
+    c.autoMin = (uint8_t)clampArg(_server.arg("autoMin"), 0, 255, c.autoMin);
+    c.autoMax = (uint8_t)clampArg(_server.arg("autoMax"), 0, 255, c.autoMax);
+    if (c.autoMax < c.autoMin) c.autoMax = c.autoMin;
+  }
   c.rotation = (uint8_t)clampArg(_server.arg("rotation"), 0, 3, c.rotation);
   c.clockIdleMin = clampArg(_server.arg("clockMin"), 0, 1440, c.clockIdleMin);
   c.blankMin = clampArg(_server.arg("blankMin"), 0, 1440, c.blankMin);

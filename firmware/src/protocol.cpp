@@ -3,6 +3,7 @@
 
 #include "protocol.h"
 #include "display.h"
+#include "auto_brightness.h"
 #include "oled_status.h"
 #include "pins.h"
 #include "version.h"
@@ -340,6 +341,7 @@ void protocol_dispatch_line(const String &cmd) {
   } else if (cmd.startsWith("CMDAPD") || cmd.startsWith("CMDCOR")) {
     handleLegacyPicture(cmd, 6);
   } else if (cmd.startsWith("CMDCON")) {
+    auto_brightness_override(); // a live CMDCON wins over the light sensor until the next reboot
     display_set_contrast((uint8_t)splitField(cmd, 1).toInt());
   } else if (cmd.startsWith("CMDROT")) {
     display_set_rotation((uint8_t)splitField(cmd, 1).toInt());
@@ -672,6 +674,7 @@ const char *protocol_idle_stage() {
 void protocol_apply_settings() {
   const DeviceSettings &c = settingsStore.cfg;
   display_set_contrast(c.contrast);
+  auto_brightness_apply_settings();
   display_set_orientation(c.rotation);
   display_set_tint(c.tintMode, c.tintColor1, c.tintColor2, c.tintDir);
   oled_status_set_idle_sec(c.oledIdleSec);

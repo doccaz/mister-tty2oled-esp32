@@ -37,6 +37,7 @@ GC9A01Display gfx;
 JPEGDEC jpeg;
 
 uint8_t g_contrast = 127;
+bool g_displayOn = true; // false while display_off() has the backlight at 0
 uint8_t g_rotation = 0;
 
 // State for display_toggle_wifi_qr(): remembers the AP-status screen's
@@ -420,11 +421,20 @@ void display_set_contrast(uint8_t level) {
   ledcWrite(LEDC_CHANNEL_BL, g_contrast);
 }
 
+uint8_t display_get_contrast() { return g_contrast; }
+
+void display_set_contrast_auto(uint8_t level) {
+  g_contrast = level;
+  if (g_displayOn) ledcWrite(LEDC_CHANNEL_BL, g_contrast); // never relight a blanked screen
+}
+
 void display_on() {
+  g_displayOn = true;
   ledcWrite(LEDC_CHANNEL_BL, g_contrast);
 }
 
 void display_off() {
+  g_displayOn = false;
   ledcWrite(LEDC_CHANNEL_BL, 0);
   // Backlight PWM alone is confirmed (on real hardware, 2026-08-13) to
   // have no visible effect on at least one GC9A01 module variant - almost

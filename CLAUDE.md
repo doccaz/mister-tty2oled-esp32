@@ -445,8 +445,7 @@ assumed: ILI9341-style minimal init (SWRESET, COLMOD 0x55, inversion off), RGB o
 backlight 21 (PWM), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the floating
 pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0; the XPT2046 touch (33/36/25/32/39)
 is meant to take over as the wake input later, and the settings screen with touch support after that. The light
-sensor is an analog photoresistor on GPIO34 (from the ASCII-Aquarium projects), unused so far: an auto-brightness
-option would need calibrating. HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
+sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
 
 - **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
   bars once. Existing art is shown as is; wide art would be a later, separate step.
@@ -465,6 +464,18 @@ option would need calibrating. HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 b
   decides once per new picture whether it is all gray). The QR screen pushes one row at a time. Free heap with
   WiFi up and everything running: ~144-149KB. `display_prealloc()` runs first in `setup()`; the C3 builds keep
   the 240x240 static array unchanged (`frameRow()`/`pushFrame()` helpers).
+- **Auto brightness (2026-10-24, CYD only).** `light_sensor.*` reads the GPIO34 photoresistor (ADC1, 11 dB, 16-sample
+  average); boards without `PIN_LDR` report no sensor and never see the option. Measured on the owner's board: **higher
+  reading = darker**; a lit room and a phone flashlight both read 0 (below the ADC floor, also at 0 dB, so the bright end
+  can't be told apart), the room at dusk with the lamp off ~170, the sensor covered ~700-790. `auto_brightness.*` smooths
+  the reading (~2.5 s), maps it through anchors 0 -> 100%, 170 -> 50%, 650 -> 0% of the saved range, and fades the backlight
+  3 levels per 50 ms with a 6-level dead-band (so it settles at about 19/250 instead of exactly 16/255). Settings:
+  `autoBright` (default off), `autoMin` (16), `autoMax` (255) in NVS, on the `/settings` page only when a sensor exists.
+  A live `CMDCON` calls `auto_brightness_override()` and wins until reboot; saving the settings page re-enables it.
+  `display_set_contrast_auto()` never relights a screensaver-blanked backlight. `/status` now reports `contrast` (all
+  boards) and `ldr` (CYD). Verified on the real CYD: covering the sensor faded 250 -> 19 in ~8 s and uncovering faded back
+  up in ~12 s, no flicker in the logged levels. The anchors came from three lighting conditions only; the middle of the
+  curve (indoors with the lamp on vs off) is the part most worth re-tuning.
 - **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
   `esp_sha()` object references (only SHA-1 is ever used).
 - **Dev WiFi shortcut:** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your WiFi,
@@ -474,7 +485,7 @@ option would need calibrating. HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 b
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** MQTT, the touch wake and settings screen, auto-brightness, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
+  **Not done:** MQTT, the touch wake and settings screen, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
   `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
   published by accident). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
