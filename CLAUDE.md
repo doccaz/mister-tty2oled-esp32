@@ -473,8 +473,8 @@ option would need calibrating. HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 b
 - **Verified on the real CYD:** boot splash, rotation, sysinfo, LED off, USB and WebSocket pictures with all five
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
-  **Not done:** brightness steps (`CMDCON`) were sent but not confirmed visually, MQTT, the touch wake and settings
-  screen, auto-brightness, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
+  Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
+  **Not done:** MQTT, the touch wake and settings screen, auto-brightness, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
   `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
   published by accident). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
