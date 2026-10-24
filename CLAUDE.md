@@ -484,6 +484,14 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   stage ends and the picture is redrawn) and flips the AP-mode QR on a press edge, but takes NO part in the 10 s
   factory-reset hold: a palm on the screen must never wipe the device. `/status` reports `touch` (the raw pressure).
   Verified on the real CYD: blank after 5 s idle, a touch woke it in ~1.3 s and the logo came back intact, three cycles.
+- **MQTT on the CYD (2026-10-24, verified).** With a throwaway `eclipse-mosquitto:2` broker (anonymous, bound to the PC's LAN
+  address) and a tiny allow-listed HTTP server for the pictures, configured through the CYD's own `/mqtt-save` form: the
+  CYD connected, a text notification showed a banner and reverted, and image notifications (fetched over plain HTTP into
+  `colorBuf`, shown through `display_draw_jpeg_transient()`) showed and then reverted to the previous picture, which on
+  the CYD is a re-decode of the stored JPEG (`g_lastJpeg`; the transient path never touches it). Confirmed by eye by the
+  owner ("all fine"). Leak check: 40 notifications 3 s apart (mixed text and images, including overlapping ones) left free
+  heap between 144.4 and 145.2KB, settled at the pre-burst level, largest block constant at 86,004, MQTT stayed connected,
+  no reset. The rig was torn down afterwards and MQTT switched back off on the CYD.
 - **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
   `esp_sha()` object references (only SHA-1 is ever used).
 - **Dev WiFi shortcut:** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your WiFi,
@@ -493,7 +501,7 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
   rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
   Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
-  **Not done:** MQTT, the settings screen with touch, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
+  **Not done:** the settings screen with touch, and the classic-ESP32 release plumbing (bootloader at 0x1000, chipFamily ESP32;
   `release.sh`/`build_site.sh`/the flasher still list only the C3 envs on purpose, so a CYD image can't be
   published by accident). The Sunton was re-flashed with this code and works.
 - **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
