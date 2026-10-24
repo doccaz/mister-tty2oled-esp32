@@ -9,7 +9,7 @@
   <img src="docs/hw-gc9a01-connected.jpg" alt="The round display showing Connected and its network name" width="280" />
 </p>
 
-**Turn an ESP32-C3 and a round GC9A01 screen into a full-colour MiSTer marquee.**
+**Turn an ESP32 and a colour screen into a full-colour MiSTer marquee.** (An ESP32-C3 with a round GC9A01, the Sunton all-in-one, or the 2.8" "Cheap Yellow Display".)
 Flash it straight from the browser, no tools to install. USB or WiFi, full-colour
 art, and it works with the stock tty2oled.
 
@@ -188,6 +188,33 @@ Verified on real hardware with this board:
 Not yet tested on this board: sending art through the web app's WebSerial
 path (the `CMDCORC` check above used a script speaking the same protocol),
 and the WiFi/MQTT features.
+
+### Cheap Yellow Display: ESP32-2432S028 ("CYD")
+
+Also supported: the 2.8" **ESP32-2432S028** "Cheap Yellow Display" (a classic ESP32 with a 320×240
+ILI9341 screen, resistive touch, a light sensor and an RGB LED). Nothing to wire. It shows the same
+round-native art as the other displays, centred on the wider screen. Flash it from the
+[web flasher](https://doccaz.github.io/mister-tty2oled-esp32/) (pick the CYD entry; its USB-serial chip
+resets it into download mode by itself, so there is no BOOT-button step), or build it with
+`pio run -e esp32_cyd --target upload --upload-port /dev/ttyUSB0`. Its hardware id is `HWCYD28`.
+
+What is different from the other boards:
+
+- **Touch wakes the display** (a firm tap; it's a resistive screen) and, in setup mode, shows the join QR.
+  The BOOT button works too. Touch cannot trigger the 10-second factory reset.
+- **Auto brightness:** on the device's `/settings` page, tick "Follow the room light" to let the light sensor set the
+  backlight between a darkest and a brightest limit. A brightness sent by the MiSTer overrides it until the next reboot.
+- It keeps no decoded picture in RAM (the classic ESP32's WiFi stack needs ~80 KB of free heap to work at all);
+  it stores the JPEG and decodes it for every transition step, so transitions are a little coarser (8 to 13
+  steps) than on the C3 boards.
+
+Pins (from the board's silkscreen and verified with a probe on real hardware): display SCLK 14, MOSI 13,
+MISO 12, CS 15, DC 2, backlight 21 (PWM), reset 4; touch CS 33, CLK 25, MOSI 32, MISO 39; light sensor 34;
+BOOT 0. They are selected by the `BOARD_CYD` flag in `firmware/src/pins.h`.
+
+Verified on real hardware with this board: pictures over USB and WiFi with every transition, the setup network and
+saved-WiFi rejoin, backlight and auto brightness, touch wake, MQTT text and image notifications, and the
+daemon driving it from a PC. Not yet run on a MiSTer.
 
 ### Case (Sunton ESP32-2424S012C)
 
