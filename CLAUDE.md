@@ -436,6 +436,89 @@ the refresh tick). Tested in tmux with arrow keys only and a real send to a disp
 joystick users: "Type an address by hand" in the display picker (the found-displays list works without
 it); Options' contrast already has Left/Right steps.
 
+### CYD (ESP32-2432S028) support (branch `cyd-support`, 2026-10-24)
+
+`env:esp32_cyd` (`-DBOARD_CYD=1`): the 2.8" 320x240 ILI9341 "Cheap Yellow Display" on a classic ESP32 (CH340
+UART serial, not native USB). Panel settings were found with a probe sketch on the owner's real board, not
+assumed: ILI9341-style minimal init (SWRESET, COLMOD 0x55, inversion off), RGB order, MADCTL `0x60` upright
+(`0x20`/`0xE0` came out rotated/mirrored), HSPI at 40 MHz on SCLK 14 / MOSI 13 / MISO 12 / CS 15 / DC 2,
+backlight 21 (PWM), RST on GPIO4 (shared with the red LED). The RGB LED is active low and lit by the floating
+pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0; the XPT2046 touch (33/36/25/32/39) wakes the display too (see "Touch wake"); a
+settings screen with touch support is still to do. The light
+sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
+
+- **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
+  bars once. Existing art is shown as is; wide art would be a later, separate step.
+- **Memory is the constraint (measured, 2026-10-24).** The classic ESP32 has ~160KB static DRAM, no free heap
+  block of 115,200 bytes (largest 110,580 even after `esp_bt_mem_release()`), and, decisively, **its WiFi/TCP
+  stack needs about 80KB of free heap to serve anything**: a minimal WiFi + WebServer sketch passed 40/40 requests
+  at ~80KB free and above, 17/40 at ~70KB, 0/40 at ~60KB (heap burned down with filler allocations). A first
+  version kept the frame in five 48-row heap bands (the C3 design) and left ~60KB: the setup AP's DHCP was
+  intermittent and TCP dead after ~10 requests. So the CYD keeps **no decoded frame**: `display_draw_jpeg()` copies the
+  JPEG (<=20KB) into a heap buffer and every draw, transition step, replay (`CMDSPIC`), half-size view
+  (`CMDSSCP`, JPEGDEC `JPEG_SCALE_HALF`) and notification revert decodes it straight to the glass. Transitions
+  re-decode once per step (~55-70 ms) with a mask (wipes, iris) or a brightness scale (fade) applied to each
+  block in the draw callback, driven by elapsed time and always ending on a full draw, so a 600 ms effect gets
+  8-13 steps and finishes within ~100 ms of the request. The iris reaches full radius at 85% of the duration
+  so the corners are part of the animation. The gray tint is applied in the callback (a check-only decode pass
+  decides once per new picture whether it is all gray). The QR screen pushes one row at a time. Free heap with
+  WiFi up and everything running: ~144-149KB. `display_prealloc()` runs first in `setup()`; the C3 builds keep
+  the 240x240 static array unchanged (`frameRow()`/`pushFrame()` helpers).
+- **Auto brightness (2026-10-24, CYD only).** `light_sensor.*` reads the GPIO34 photoresistor (ADC1, 11 dB, 16-sample
+  average); boards without `PIN_LDR` report no sensor and never see the option. Measured on the owner's board: **higher
+  reading = darker**; a lit room and a phone flashlight both read 0 (below the ADC floor, also at 0 dB, so the bright end
+  can't be told apart), the room at dusk with the lamp off ~170, the sensor covered ~700-790. `auto_brightness.*` smooths
+  the reading (~2.5 s), maps it through anchors 0 -> 100%, 170 -> 50%, 650 -> 0% of the saved range, and fades the backlight
+  3 levels per 50 ms with a 6-level dead-band (so it settles at about 19/250 instead of exactly 16/255). Settings:
+  `autoBright` (default off), `autoMin` (16), `autoMax` (255) in NVS, on the `/settings` page only when a sensor exists.
+  A live `CMDCON` calls `auto_brightness_override()` and wins until reboot; saving the settings page re-enables it.
+  `display_set_contrast_auto()` never relights a screensaver-blanked backlight. `/status` now reports `contrast` (all
+  boards) and `ldr` (CYD). Verified on the real CYD: covering the sensor faded 250 -> 19 in ~8 s and uncovering faded back
+  up in ~12 s, no flicker in the logged levels. The anchors came from three lighting conditions only; the middle of the
+  curve (indoors with the lamp on vs off) is the part most worth re-tuning.
+- **Touch wake (2026-10-24, CYD only).** `touch.*` reads the XPT2046 pressure (Z1/Z2 commands, software SPI on the touch
+  pins so it never shares the display's or the SD card's bus), polled every 25 ms and debounced to two hits in a row. Only
+  "is the screen pressed" is used, not coordinates. Measured threshold: idle reads 0 (a stray 17), a resting fingertip
+  stays under ~30 (a resistive screen needs real pressure), any real press reads 2,700-6,400, so `kPressThreshold` is 250.
+  `protocol_button_check()` treats a press like the BOOT button for waking (refreshes `lastWakeMs`, so the idle clock/blank
+  stage ends and the picture is redrawn) and flips the AP-mode QR on a press edge, but takes NO part in the 10 s
+  factory-reset hold: a palm on the screen must never wipe the device. `/status` reports `touch` (the raw pressure).
+  Verified on the real CYD: blank after 5 s idle, a touch woke it in ~1.3 s and the logo came back intact, three cycles.
+- **MQTT on the CYD (2026-10-24, verified).** With a throwaway `eclipse-mosquitto:2` broker (anonymous, bound to the PC's LAN
+  address) and a tiny allow-listed HTTP server for the pictures, configured through the CYD's own `/mqtt-save` form: the
+  CYD connected, a text notification showed a banner and reverted, and image notifications (fetched over plain HTTP into
+  `colorBuf`, shown through `display_draw_jpeg_transient()`) showed and then reverted to the previous picture, which on
+  the CYD is a re-decode of the stored JPEG (`g_lastJpeg`; the transient path never touches it). Confirmed by eye by the
+  owner ("all fine"). Leak check: 40 notifications 3 s apart (mixed text and images, including overlapping ones) left free
+  heap between 144.4 and 145.2KB, settled at the pre-burst level, largest block constant at 86,004, MQTT stayed connected,
+  no reset. The rig was torn down afterwards and MQTT switched back off on the CYD.
+- **Daemon with the CYD (2026-10-24, PC run of the repo's `t2o-wifi`, not a MiSTer).** `-list` finds the CYD through
+  `_tty2oled._tcp` (name, address, fw 0.5.8). A live run against `tty2oled-4108.local` resolved the name, connected,
+  and sent six core changes (7-15 KB each, all accepted) plus an unknown core, which went as a bare name; the CYD never
+  reset and kept ~145KB free. With `WIFI_SEND_SETTINGS="yes"` the daemon's start-up `CMDCON,60` held the backlight at 60
+  while the light sensor swung 316 -> 690, i.e. a MiSTer-driven brightness overrides auto brightness as intended; saving
+  the settings page re-enables auto. Note: `-once` skips the start-up handshake, so it never sends settings (use the
+  real loop to test those). One `-once` run got no mDNS answer for the `.local` name (multicast on WiFi is lossy; the
+  long-running daemon caches the address), the IP address worked.
+- **Link fix:** `cyd_stubs.cpp` stubs `mbedtls_sha512_*`, which the framework's libmbedcrypto lacks but WebSockets'
+  `esp_sha()` object references (only SHA-1 is ever used).
+- **Dev WiFi shortcut (opt-in):** copy `firmware/src/wifi_dev.h.example` to `wifi_dev.h` (git-ignored), fill in your
+  WiFi, and build with `PLATFORMIO_BUILD_FLAGS="-DUSE_DEV_WIFI=1" pio run -e <env> -t upload`: a device with no saved
+  network then joins it at boot, in memory only (never written to NVS). It is NEVER compiled just because the header
+  exists: the first version was automatic, which would have put the owner's real WiFi password into any release built on
+  that machine (caught before a release was made); `tools/release.sh` now also greps every built image for the header's
+  credentials and refuses to release if any is found (negative-tested with an opt-in build).
+- **Verified on the real CYD:** boot splash, rotation, sysinfo, LED off, USB and WebSocket pictures with all five
+  transitions (looked fine), replay and half-size, the setup AP (join, DHCP, captive page, entering the home WiFi,
+  rejoin from the saved settings), and 30/30 HTTP, 15/15 WebSocket connects, 16/16 pictures over WiFi in one run.
+  Backlight PWM (`CMDCON` 255..0 over WiFi) confirmed by eye: small even steps, 0 almost completely dark, 127 comfortable.
+  **Not done:** the settings screen with touch, the daemon on a real MiSTer (only a PC run was done), and flashing the CYD
+  from the web flasher page in a browser (Web Serial can't be run headlessly; see "Release plumbing for the CYD" below
+  for what was verified instead). The Sunton was re-flashed with this code and works.
+- **Pre-existing flake, found while A/B testing the Sunton:** about 1-3% of `CMDCORC` sends over USB get no `ttyack;`
+  within 6 s, on the released v0.5.8 as well (1/96 vs 4/144 on the new code; TMNT with the iris failed in both).
+  Not investigated.
+
 ### Onboard status OLED
 
 `firmware/src/oled_status.h`/`.cpp` drives this board's built-in 0.42"
@@ -620,8 +703,8 @@ the GC9A01 behaves identically either way.
 
 `flasher/index.html` is a static [ESP Web Tools](https://esphome.github.io/esp-web-tools/)
 page (pinned `esp-web-tools@10.0.1` from unpkg) with a board picker that
-swaps the `manifest` attribute between three manifests, one per PlatformIO
-env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`). `tools/build_site.sh`
+swaps the `manifest` attribute between four manifests, one per PlatformIO
+env (`esp32c3`, `esp32c3_nooled`, `esp32c3_2424s012`, and the classic-ESP32 `esp32_cyd`, see "Release plumbing for the CYD"). `tools/build_site.sh`
 assembles `site/` (gitignored): the flash parts (bootloader, partition
 table, boot_app0, one app image per board), the generated manifests (each
 writes the four parts at 0x0/0x8000/0xe000/0x10000), the flasher at `/`, and the Vite-built web app at `/app/`
@@ -637,7 +720,7 @@ main and works. Setup is Settings -> Pages -> Source: GitHub Actions.
 
 **The workflow publishes a release's attached `.bin` files; it does not
 build firmware.** Releases are cut with `tools/release.sh` (checklist prompts,
-builds the three envs, merges, verifies the version string and sizes,
+builds the four envs, merges, verifies the version string and sizes,
 tags, `gh release create`; `--dry-run` rehearses without publishing - a
 fresh local rebuild reproduces the released images byte-for-byte). By hand
 it's: build the three envs locally,
@@ -657,6 +740,37 @@ MB, a different core, and was never run on hardware. Pinning to the Tasmota
 platform (tried, reverted) makes clean machines fail with `WiFiClientSecure.h
 not found`. If the firmware is ever moved to a reproducible toolchain,
 re-verify everything in this file on hardware first, then CI can build it.
+
+### Release plumbing for the CYD (2026-10-24)
+
+The CYD is a different chip, so it does not share the C3 parts: the classic ESP32's bootloader sits at **0x1000** (not
+0x0), the manifest chip family is `ESP32`, and its bootloader and partition table differ from the C3's (`boot_app0.bin`
+is byte-identical across every framework copy, so the shared copy is reused). Its assets use their own prefix,
+`tty2oled-ili9341-<ver>-{bootloader,partitions,boot_app0}.bin`, `-esp32_cyd-app.bin` and `-esp32_cyd-full.bin`; the C3
+ones keep `tty2oled-gc9a01-*`.
+
+- `tools/release.sh`, block "3a": builds `esp32_cyd`, merges its full image with `--chip esp32 --flash_freq 40m` at
+  0x1000/0x8000/0xe000/0x10000, copies the four parts, and verifies it like the others (size; parts reproduce the full image
+  byte for byte). The version check differs on purpose: a standalone `0.5.9` string is NOT in the CYD image (the Xtensa
+  linker merges it into the tail of "GC9A01  v0.5.9", the RISC-V one used for the C3 does not), so it greps for the
+  CMDHWINF reply `;<ver>;` ("HWCYD28;0.5.9;") instead. The checklist prompt "flashed THIS build to a real board" now means
+  the CYD too.
+- **Credential guard:** if `firmware/src/wifi_dev.h` exists, no `.bin` in the release may contain its SSID or password.
+- `tools/build_site.sh`: the C3 `pick` patterns are now `tty2oled-gc9a01-*` (a bare `*-bootloader.bin` would also match the
+  CYD's); the CYD writes `bootloader-esp32.bin`, `partitions-esp32.bin`, `app-esp32_cyd.bin` and `manifest-esp32_cyd.json`
+  (offsets 4096/32768/57344/65536). The CYD is **optional**: a release made before it existed (e.g. re-dispatching Pages for
+  v0.5.8) has no `tty2oled-ili9341-*` assets, and the site is then built without the CYD manifest and without its `<option
+  data-cyd="1">` in the page, so the old-tag path still works (tested).
+- `flasher/index.html`: a CYD entry; the "hold BOOT" step and port name are C3-only (`.c3-only` / `.cyd-only` toggled by
+  the picker; the CYD's CH340 resets it into download mode itself), plus a `[hidden]{display:none!important}` rule.
+- **Verified:** `release.sh --dry-run` with a temporary 0.5.9 (all four builds, daemon, database, credential check); the
+  site built from that release dir has every file byte-identical to its release asset, the C3 files are still the C3 ones,
+  and the old-release path drops the CYD; the CYD's separate parts, taken from the dry-run release, were written to the real
+  board with esptool at exactly the manifest's offsets: it booted, kept its saved WiFi/settings (NVS untouched) and answered
+  `HWCYD28;0.5.9;`. **Not verified:** the ESP Web Tools page itself in a browser with the CYD manifest (no headless Web
+  Serial), and the Pages deploy (nothing was published).
+- Gotcha: the dry run writes `release/<FW_VERSION>/`, which would overwrite the local copy of an already-published release,
+  so rehearse with a temporarily bumped `FW_VERSION`.
 
 First real flash from the page (2026-10-13, Super Mini): "Failed to
 initialize" until BOOT was held while plugging in. `esptool.py` from the CLI

@@ -11,12 +11,19 @@
 // web app and is drawn centered/cropped to the full 240x240 circle.
 
 void display_init();
+// Takes the frame buffer on boards that keep it on the heap (CYD); no-op elsewhere. Call it
+// first thing in setup(), before anything else allocates.
+void display_prealloc();
 
 void display_clear();
 void display_flush();                      // no-op placeholder (GFX draws immediately); kept for CMDDUPD compat
 void display_set_orientation(uint8_t quarterTurns); // 0-3 = 0/90/180/270 degrees (settings page)
 void display_set_rotation(uint8_t rot);     // 0 = normal, 1 = 180 degrees (mirrors CMDROT semantics)
 void display_set_contrast(uint8_t level);   // 0..255 -> backlight PWM
+// Same, for auto brightness: records the level but leaves the backlight off while the screen
+// is blanked, so the light sensor can never relight a screensaver-blanked display.
+void display_set_contrast_auto(uint8_t level);
+uint8_t display_get_contrast(); // the level last applied (manual, saved or auto)
 // Tint for the legacy monochrome pictures (see display.cpp). mode: 0 off,
 // 1 fixed (color1), 2 gradient (color1 -> color2, dir 0 top-to-bottom / 1
 // left-to-right), 3 random per picture. Colours are 0xRRGGBB.

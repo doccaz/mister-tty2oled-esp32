@@ -16,7 +16,37 @@
 // UART (see protocol.cpp's DBG_ENABLED).
 // -----------------------------------------------------------------------
 
-#if defined(BOARD_2424S012)
+// Panel geometry and bus. Every board but the CYD drives a 240x240 round GC9A01 over the
+// global SPI; the CYD is a 320x240 ILI9341 on HSPI. The firmware always draws a 240x240
+// canvas, which the driver places PANEL_OFF_X/Y into the panel.
+#if defined(BOARD_CYD)
+// ESP32-2432S028 "Cheap Yellow Display" (classic ESP32). Pins from the ASCII-Aquarium
+// projects; colour settings (inversion off, RGB order, landscape) and the pins confirmed
+// by a probe on the owner's board (2026-10-24).
+#define PANEL_ILI9341 1
+#define PANEL_W      320
+#define PANEL_H      240
+#define PANEL_OFF_X  40
+#define PANEL_OFF_Y  0
+#define LCD_SPI      lcdSpi
+#define LCD_SPI_HZ   40000000
+#define PIN_LCD_SCLK 14
+#define PIN_LCD_MOSI 13
+#define PIN_LCD_MISO 12
+#define PIN_LCD_CS   15
+#define PIN_LCD_DC   2
+#define PIN_LCD_RST  4    // also the red LED; pulsed at boot, then held high (LED off)
+#define PIN_LCD_BL   21   // PWM works
+#define PIN_LED_G    16   // RGB LED is active low: drive high to switch it off
+#define PIN_LED_B    17
+#define PIN_LDR      34   // photoresistor divider, ADC1 (input only)
+// XPT2046 resistive touch on its own pins (read with software SPI, see touch.cpp)
+#define PIN_TOUCH_CS   33
+#define PIN_TOUCH_CLK  25
+#define PIN_TOUCH_MOSI 32
+#define PIN_TOUCH_MISO 39
+#define PIN_TOUCH_IRQ  36
+#elif defined(BOARD_2424S012)
 // Sunton ESP32-2424S012C (1.28" round, all-in-one ESP32-C3-MINI-1U board).
 // Display is soldered on, pins fixed by the board. RST is not routed to a
 // GPIO (tied to the board reset), so PIN_LCD_RST is -1 and gc9a01.cpp
@@ -37,6 +67,15 @@
 #define PIN_LCD_BL   3   // backlight, must be PWM (LEDC) capable
 #endif
 
+#ifndef PANEL_W
+#define PANEL_W      240
+#define PANEL_H      240
+#define PANEL_OFF_X  0
+#define PANEL_OFF_Y  0
+#define LCD_SPI      SPI
+#define LCD_SPI_HZ   10000000
+#endif
+
 // GC9A01 panels are write-only in this design; no MISO wiring needed.
 
 // Onboard 0.42" SSD1306 OLED (72x40 visible, 128x64 controller RAM),
@@ -54,4 +93,8 @@
 // power-cycle/reset (holding it low through reset puts the ROM
 // bootloader into UART download mode instead of running the app at all).
 // Active-low: pressed = LOW.
+#if defined(BOARD_CYD)
+#define PIN_WAKE_BTN 0   // BOOT button; touch can take over later
+#else
 #define PIN_WAKE_BTN 9
+#endif

@@ -33,3 +33,6 @@ __pycache__/
 
 # Public-domain-only colour set (tools/build_pd_set.py), built locally, not published yet
 library/pd-set/
+
+# Development WiFi credentials for the dev shortcut in wifi_manager.cpp
+firmware/src/wifi_dev.h

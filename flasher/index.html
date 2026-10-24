@@ -140,6 +140,7 @@
       .gallery figcaption { color: var(--muted); font-size: 0.82rem; margin-top: 6px; }
       @media (max-width: 620px) { .gallery { grid-template-columns: 1fr; } .gallery img { aspect-ratio: 16/10; } }
       button.install { font-size: 1.05rem; padding: 14px 16px; box-shadow: 0 4px 14px rgba(47,95,208,0.35); }
+      [hidden] { display: none !important; }
       footer { color: var(--muted); font-size: 0.88rem; text-align: center; margin-top: 24px; }
     </style>
   </head>
@@ -148,7 +149,7 @@
       <header class="hero">
         <div>
           <h1>tty2oled<span>-esp32</span><br />web flasher</h1>
-          <p>Turn an ESP32-C3 and a round GC9A01 screen into a full-colour MiSTer marquee. Flash it straight from the browser, no tools to install.</p>
+          <p>Turn an ESP32 and a colour screen (a round GC9A01 or the 2.8&quot; "Cheap Yellow Display") into a full-colour MiSTer marquee. Flash it straight from the browser, no tools to install.</p>
           <div class="badges"><b>USB or WiFi</b><b>Full-colour art</b><b>Works with tty2oled</b></div>
         </div>
         <img class="shot" src="img/hw-gc9a01-connected.jpg" alt="The round display showing Connected and its network name" />
@@ -165,6 +166,7 @@
           <option value="esp32c3">ESP32-C3 Super Mini with onboard OLED + GC9A01</option>
           <option value="esp32c3_nooled">ESP32-C3 Super Mini without OLED + GC9A01</option>
           <option value="esp32c3_2424s012">Sunton ESP32-2424S012C all-in-one</option>
+          <option value="esp32_cyd" data-cyd="1">CYD ESP32-2432S028 (2.8&quot; 320x240 touch)</option>
         </select>
         <p class="desc" id="desc"></p>
 
@@ -184,27 +186,41 @@
       <div class="card">
         <h2>How it works</h2>
         <ol>
-          <li><b>Hold the BOOT button</b> on the board, plug it into this computer with a
+          <li class="c3-only"><b>Hold the BOOT button</b> on the board, plug it into this computer with a
               data-capable USB cable, then let go. (The browser usually can't reset these
               boards into download mode by itself; this step is what makes it connect.)</li>
+          <li class="cyd-only" hidden>Plug the CYD into this computer with a data-capable USB cable.
+              Its USB-serial chip resets it into download mode automatically, so there is no BOOT
+              button step. (If it ever fails to connect, hold BOOT while plugging in.)</li>
           <li>Pick your board above, press <b>Connect and install</b>, then choose the serial port
-              (it shows up as "USB JTAG/serial debug unit").</li>
+              (<span class="c3-only">it shows up as "USB JTAG/serial debug unit"</span><span class="cyd-only" hidden>it shows up as
+              a CH340 / "USB Serial" device</span>).</li>
           <li>Wait for the flash to finish, then unplug and replug the board normally.</li>
         </ol>
       </div>
 
-      <div class="note" style="margin-bottom:16px">
+      <div class="note c3-only" style="margin-bottom:16px">
         <b>"Failed to initialize" or the port isn't listed?</b> The board isn't in download mode:
         unplug it and repeat step 1 with BOOT held. Also close anything else using the port
         (serial monitors, the marquee web app) and make sure you picked "USB JTAG/serial debug unit",
         not another serial device.
+      </div>
+      <div class="note cyd-only" style="margin-bottom:16px" hidden>
+        <b>"Failed to initialize" or the port isn't listed?</b> Close anything else using the port
+        (serial monitors, the marquee web app), try another data-capable USB cable, and pick the
+        CH340 / "USB Serial" port. Some systems need the CH340 driver. If it still won't connect, hold
+        BOOT while plugging the CYD in.
       </div>
 
       <div class="card">
         <h2>After flashing</h2>
         <ul>
           <li>With no saved WiFi, the display starts an open <code>tty2oled-XXXX</code> network with a
-              setup page. Press the BOOT button to show a QR code that joins it.</li>
+              setup page. <span class="c3-only">Press the BOOT button</span><span class="cyd-only" hidden>Tap the screen
+              (or press BOOT)</span> to show a QR code that joins it.</li>
+          <li class="cyd-only" hidden>On the CYD, a tap also wakes the display, and the settings page has an
+              option to follow the room light with the built-in light sensor. It shows the same round-native art,
+              centred on the wider screen.</li>
           <li>Manage the marquee art from the <a href="app/">marquee web app</a> over USB (WiFi works when you run the app locally, see the README).</li>
           <li>Flashing keeps your saved WiFi and settings. When the installer asks, leave <b>Erase device</b> unticked; ticking it wipes them.</li>
         </ul>
@@ -230,6 +246,7 @@
         esp32c3: "The Super Mini variant with the built-in 0.42\" status OLED, wired to a separate GC9A01 module.",
         esp32c3_nooled: "The same Super Mini board sold without the built-in OLED, wired to a GC9A01 module.",
         esp32c3_2424s012: "The Sunton 1.28\" round display with the ESP32-C3 built onto the back. Nothing to wire.",
+        esp32_cyd: "The 2.8\" Cheap Yellow Display (ESP32-2432S028, ILI9341, resistive touch, light sensor). Nothing to wire.",
       };
       const select = document.getElementById("board");
       const installer = document.getElementById("installer");
@@ -237,6 +254,9 @@
       function update() {
         installer.setAttribute("manifest", `firmware/manifest-${select.value}.json`);
         desc.textContent = descriptions[select.value];
+        const cyd = select.value === "esp32_cyd";
+        document.querySelectorAll(".cyd-only").forEach((e) => (e.hidden = !cyd));
+        document.querySelectorAll(".c3-only").forEach((e) => (e.hidden = cyd));
       }
       select.addEventListener("change", update);
       update();

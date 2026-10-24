@@ -10,6 +10,9 @@
 #include "protocol.h"
 #include "diag.h"
 #include "time_manager.h"
+#include "light_sensor.h"
+#include "touch.h"
+#include "display.h"
 #include <WiFi.h>
 
 // Shared with web_portal_settings.cpp via web_portal_common.h.
@@ -394,6 +397,9 @@ void WebPortal::handleStatus() {
   json += "," + wifi_manager_diag_json();
   json += ",\"ver\":\"" FW_VERSION "\",\"name\":\"" + wifi_manager_device_name() + "\"";
   json += ",\"uptime\":" + String(millis() / 1000);
+  json += ",\"contrast\":" + String(display_get_contrast());
+  if (light_sensor_present()) json += ",\"ldr\":" + String(light_sensor_raw());
+  if (touch_present()) json += ",\"touch\":" + String(touch_pressure());
   json += ",\"heap\":" + String(ESP.getFreeHeap()) + ",\"heap_max\":" + String(ESP.getMaxAllocHeap());
   String hm, date;
   json += ",\"time\":\"" + (time_get_strings(hm, date) ? hm + " " + date : String("")) + "\"";

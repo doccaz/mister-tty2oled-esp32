@@ -9,6 +9,9 @@
 #include <qrcode.h>
 #include <cmath>
 #include <cstring>
+#if defined(BOARD_CYD)
+#include "esp_bt.h"
+#endif
 
 namespace {
 
@@ -34,6 +37,7 @@ GC9A01Display gfx;
 JPEGDEC jpeg;
 
 uint8_t g_contrast = 127;
+bool g_displayOn = true; // false while display_off() has the backlight at 0
 uint8_t g_rotation = 0;
 
 // State for display_toggle_wifi_qr(): remembers the AP-status screen's
@@ -54,7 +58,22 @@ constexpr int LEDC_CHANNEL_BL = 0;
 // C3's ~320KB usable DRAM alongside JPEGDEC's own (much smaller) working
 // buffers. Colors are stored byte-swapped (big-endian on the wire) ready
 // for GC9A01Display::pushRect(), which writes bytes as-is over SPI.
+#if !defined(BOARD_CYD)
 uint16_t g_frame[DISP_W * DISP_H];
+inline uint16_t *frameRow(int y) { return &g_frame[y * DISP_W]; }
+inline void pushFrame(int x, int y, int w, int h) { gfx.pushRect(x, y, w, h, &g_frame[y * DISP_W + x], DISP_W); }
+void clearFrame() {
+  for (int y = 0; y < DISP_H; y++) memset(frameRow(y), 0, DISP_W * sizeof(uint16_t));
+}
+#endif
+// The CYD (classic ESP32) has no decoded frame at all: the stack needs ~80KB of free heap to
+// serve TCP at all and a 115KB frame leaves ~60KB. It keeps the last picture's JPEG instead
+// and decodes it straight to the glass; see the CYD block before display_draw_jpeg().
+#if defined(BOARD_CYD)
+constexpr size_t LAST_JPEG_MAX = 20000; // the device's picture limit (COLOR_BUF_MAX)
+uint8_t *g_lastJpeg = nullptr;
+size_t g_lastJpegLen = 0;
+#endif
 
 inline uint16_t swap16(uint16_t v) {
   return (v >> 8) | (v << 8);
@@ -100,6 +119,7 @@ int jpegDrawCallbackTransient(JPEGDRAW *pDraw) {
   return 1;
 }
 
+#if !defined(BOARD_CYD)
 int jpegDrawCallback(JPEGDRAW *pDraw) {
   for (int row = 0; row < pDraw->iHeight; row++) {
     int y = pDraw->y + row;
@@ -109,11 +129,14 @@ int jpegDrawCallback(JPEGDRAW *pDraw) {
     if (x0 < 0) rowLen += x0, x0 = 0; // clip left overhang
     if (x0 + rowLen > DISP_W) rowLen = DISP_W - x0; // clip right overhang
     if (rowLen <= 0) continue;
-    memcpy(&g_frame[y * DISP_W + x0], &pDraw->pPixels[row * pDraw->iWidth + (x0 - pDraw->x)], rowLen * sizeof(uint16_t));
+    memcpy(&frameRow(y)[x0], &pDraw->pPixels[row * pDraw->iWidth + (x0 - pDraw->x)], rowLen * sizeof(uint16_t));
   }
   return 1;
 }
 
+#endif
+
+#if !defined(BOARD_CYD)
 // delay(stepDelay) on its own assumes the pushRect()/compute work above it
 // is free, which it isn't - a full-frame pushRect() alone costs ~92ms at
 // the driver's 10MHz SPI clock (240*240*2 bytes), so a naive per-step
@@ -139,7 +162,7 @@ void stepDelay(uint32_t stepStart, uint16_t targetStepMs) {
 // enough at 240x240.
 void transitionReveal(uint8_t effect, uint16_t durationMs) {
   if (effect == 0 || durationMs == 0) {
-    gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+    pushFrame(0, 0, DISP_W, DISP_H);
     return;
   }
 
@@ -155,7 +178,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         // is wider than this partial-width slice (w), so each row after
         // the first must skip the leftover (240-w) pixels to stay
         // aligned - omitting it was a real bug (see CLAUDE.md).
-        gfx.pushRect(0, 0, w, DISP_H, g_frame, DISP_W);
+        pushFrame(0, 0, w, DISP_H);
         stepDelay(t0, stepMs);
       }
       break;
@@ -169,7 +192,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         // of which used to pay a full SPI transaction's setup/teardown
         // cost) - same fix as case 1, plus the performance fix that
         // stopped this effect from stalling on real hardware.
-        gfx.pushRect(x0, 0, w, DISP_H, &g_frame[x0], DISP_W);
+        pushFrame(x0, 0, w, DISP_H);
         stepDelay(t0, stepMs);
       }
       break;
@@ -178,7 +201,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
       for (int s = 1; s <= steps; s++) {
         uint32_t t0 = millis();
         int h = (DISP_H * s) / steps;
-        gfx.pushRect(0, 0, DISP_W, h, g_frame, DISP_W); // w==DISP_W already, but explicit for clarity
+        pushFrame(0, 0, DISP_W, h); // w==DISP_W already, but explicit for clarity
         stepDelay(t0, stepMs);
       }
       break;
@@ -205,7 +228,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
           int x0 = max(0, (int)(cx - dxf));
           int x1 = min(DISP_W - 1, (int)(cx + dxf));
           int w = x1 - x0 + 1;
-          if (w > 0) gfx.pushRectBatched(x0, y, w, 1, &g_frame[y * DISP_W + x0]);
+          if (w > 0) gfx.pushRectBatched(x0, y, w, 1, &frameRow(y)[x0]);
         }
         gfx.endBatch();
         stepDelay(t0, stepMs);
@@ -234,7 +257,7 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
         int t256 = (256 * s) / fadeSteps; // fixed-point 0..256 blend factor
         gfx.beginBatch();
         for (int y = 0; y < DISP_H; y++) {
-          const uint16_t *srcRow = &g_frame[y * DISP_W];
+          const uint16_t *srcRow = frameRow(y);
           for (int x = 0; x < DISP_W; x++) {
             uint16_t c = swap16(srcRow[x]); // unswap to compute, reswap to store
             uint8_t r = ((c >> 11) & 0x1F) * t256 / 256;
@@ -251,10 +274,12 @@ void transitionReveal(uint8_t effect, uint16_t durationMs) {
     }
 
     default:
-      gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+      pushFrame(0, 0, DISP_W, DISP_H);
       break;
   }
 }
+
+#endif
 
 // Shared nearest-neighbor scaler behind display_draw_legacy_xbm/gsc and
 // their CMDSSCP "_small" counterparts - same loop, parameterized by
@@ -319,7 +344,19 @@ void drawLegacyScaled(const uint8_t *buf, uint8_t effect, bool isGsc,
 
 } // namespace
 
+void display_prealloc() {
+#if defined(BOARD_CYD)
+  if (g_lastJpeg) return;
+  esp_bt_mem_release(ESP_BT_MODE_BTDM); // Bluetooth is never used: hand its reserved RAM to the heap
+  g_lastJpeg = static_cast<uint8_t *>(malloc(LAST_JPEG_MAX));
+#endif
+}
+
 void display_init() {
+#if defined(BOARD_CYD)
+  display_prealloc();
+  if (!g_lastJpeg) Serial.println("FATAL: no memory for the picture copy");
+#endif
   pinMode(PIN_LCD_BL, OUTPUT);
   ledcSetup(LEDC_CHANNEL_BL, 5000, 8); // 5kHz, 8-bit duty
   ledcAttachPin(PIN_LCD_BL, LEDC_CHANNEL_BL);
@@ -327,6 +364,12 @@ void display_init() {
 
   gfx.begin();
   gfx.fillScreenFast(0x0000);
+#if defined(BOARD_CYD)
+  // The RGB LED is active low and lit by the floating pins at power-up: switch it off.
+  pinMode(PIN_LED_G, OUTPUT); digitalWrite(PIN_LED_G, HIGH);
+  pinMode(PIN_LED_B, OUTPUT); digitalWrite(PIN_LED_B, HIGH);
+  pinMode(PIN_LCD_RST, OUTPUT); digitalWrite(PIN_LCD_RST, HIGH);
+#endif
 }
 
 void display_clear() {
@@ -378,11 +421,20 @@ void display_set_contrast(uint8_t level) {
   ledcWrite(LEDC_CHANNEL_BL, g_contrast);
 }
 
+uint8_t display_get_contrast() { return g_contrast; }
+
+void display_set_contrast_auto(uint8_t level) {
+  g_contrast = level;
+  if (g_displayOn) ledcWrite(LEDC_CHANNEL_BL, g_contrast); // never relight a blanked screen
+}
+
 void display_on() {
+  g_displayOn = true;
   ledcWrite(LEDC_CHANNEL_BL, g_contrast);
 }
 
 void display_off() {
+  g_displayOn = false;
   ledcWrite(LEDC_CHANNEL_BL, 0);
   // Backlight PWM alone is confirmed (on real hardware, 2026-08-13) to
   // have no visible effect on at least one GC9A01 module variant - almost
@@ -519,29 +571,189 @@ void display_draw_legacy_gsc_small(const uint8_t *buf) {
   drawLegacyScaled(buf, 0, true, w, h, DISP_CX - w / 2, DISP_CY - h / 2);
 }
 
+#if defined(BOARD_CYD)
+// ---- CYD: no decoded frame; the last picture's JPEG is decoded straight to the glass ----------
+// Transitions re-decode the stored JPEG once per step, with a mask (wipes, iris) or a brightness
+// scale (fade) applied to each decoded block before it is pushed. Steps follow elapsed time, not
+// a fixed count, so a slow decode just means fewer steps and the total stays near durationMs.
+bool g_lastGray = false;  // the last picture is all grayscale (decided once, only when tint is on)
+bool g_grayBad = false;
+
+enum RenderMode : uint8_t { R_FULL, R_WIPE_LR, R_WIPE_RL, R_WIPE_TB, R_IRIS, R_FADE };
+struct RenderCtx {
+  RenderMode mode = R_FULL;
+  int limit = 0;      // wipes: the revealed column/row limit
+  float radius = 0;   // iris
+  int t256 = 256;     // fade: 0..256
+  bool tint = false;
+} g_rc;
+
+// Pushes the part of a decoded block that lies inside [cx0,cx1) x [cy0,cy1) and on the display.
+void pushClipped(const uint16_t *px, int x0, int y0, int w, int h, int cx0, int cy0, int cx1, int cy1) {
+  int ax0 = max(max(x0, cx0), 0), ay0 = max(max(y0, cy0), 0);
+  int ax1 = min(min(x0 + w, cx1), (int)DISP_W), ay1 = min(min(y0 + h, cy1), (int)DISP_H);
+  if (ax1 <= ax0 || ay1 <= ay0) return;
+  gfx.pushRect(ax0, ay0, ax1 - ax0, ay1 - ay0, px + (ay0 - y0) * w + (ax0 - x0), w);
+}
+
+int jpegGrayCheckCallback(JPEGDRAW *pDraw) {
+  int n = pDraw->iWidth * pDraw->iHeight;
+  for (int i = 0; i < n; i++) {
+    uint16_t c = swap16(pDraw->pPixels[i]);
+    int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+    if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) {
+      g_grayBad = true;
+      return 0; // stop decoding
+    }
+  }
+  return 1;
+}
+
+int jpegDrawCallbackCyd(JPEGDRAW *pDraw) {
+  const int x0 = pDraw->x, y0 = pDraw->y, w = pDraw->iWidth, h = pDraw->iHeight;
+  uint16_t *px = pDraw->pPixels; // the decoder's buffer: ours to modify until it is reused
+  if (g_rc.tint) {
+    for (int i = 0; i < w * h; i++) {
+      uint16_t c = swap16(px[i]);
+      int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+      uint8_t gray = (uint8_t)((r * 30 + g * 59 + b * 11) / 100);
+      px[i] = swap16(tintedColor(gray, x0 + i % w, y0 + i / w, DISP_W, DISP_H));
+    }
+  }
+  switch (g_rc.mode) {
+    case R_FULL:
+      pushClipped(px, x0, y0, w, h, 0, 0, DISP_W, DISP_H);
+      break;
+    case R_FADE:
+      for (int i = 0; i < w * h; i++) {
+        uint16_t c = swap16(px[i]);
+        uint8_t r = ((c >> 11) & 0x1F) * g_rc.t256 / 256;
+        uint8_t g = ((c >> 5) & 0x3F) * g_rc.t256 / 256;
+        uint8_t b = (c & 0x1F) * g_rc.t256 / 256;
+        px[i] = swap16((r << 11) | (g << 5) | b);
+      }
+      pushClipped(px, x0, y0, w, h, 0, 0, DISP_W, DISP_H);
+      break;
+    case R_WIPE_LR:
+      pushClipped(px, x0, y0, w, h, 0, 0, g_rc.limit, DISP_H);
+      break;
+    case R_WIPE_RL:
+      pushClipped(px, x0, y0, w, h, DISP_W - g_rc.limit, 0, DISP_W, DISP_H);
+      break;
+    case R_WIPE_TB:
+      pushClipped(px, x0, y0, w, h, 0, 0, DISP_W, g_rc.limit);
+      break;
+    case R_IRIS:
+      for (int row = 0; row < h; row++) {
+        int y = y0 + row;
+        float dy = y - DISP_CY;
+        float dxf = sqrtf(max(0.0f, g_rc.radius * g_rc.radius - dy * dy));
+        pushClipped(px + row * w, x0, y, w, 1, (int)(DISP_CX - dxf), 0, (int)(DISP_CX + dxf) + 1, DISP_H);
+      }
+      break;
+  }
+  return 1;
+}
+
+// One full decode of the stored picture through jpegDrawCallbackCyd, with an optional scale.
+bool renderLastJpeg(int scaleOpt = 0, int dstX = 0, int dstY = 0) {
+  if (!g_lastJpeg || g_lastJpegLen == 0) return false;
+  if (!jpeg.openRAM(g_lastJpeg, g_lastJpegLen, jpegDrawCallbackCyd)) return false;
+  jpeg.setPixelType(RGB565_BIG_ENDIAN);
+  int offX = scaleOpt ? dstX : (DISP_W - jpeg.getWidth()) / 2;
+  int offY = scaleOpt ? dstY : (DISP_H - jpeg.getHeight()) / 2;
+  jpeg.decode(offX, offY, scaleOpt);
+  jpeg.close();
+  return true;
+}
+
+void cydReveal(uint8_t effect, uint16_t durationMs) {
+  g_rc.tint = g_tintMode && g_lastGray;
+  if (effect == 0 || durationMs == 0 || effect > 5) {
+    g_rc.mode = R_FULL;
+    renderLastJpeg();
+    return;
+  }
+  const float maxR = sqrtf((float)(DISP_CX * DISP_CX + DISP_CY * DISP_CY));
+  const uint32_t t0 = millis();
+  for (;;) {
+    uint32_t el = millis() - t0;
+    float p = el >= durationMs ? 1.0f : (float)el / durationMs;
+    if (p >= 1.0f) { // always finish on the whole picture
+      g_rc.mode = R_FULL;
+      renderLastJpeg();
+      return;
+    }
+    switch (effect) {
+      case 1: g_rc.mode = R_WIPE_LR; g_rc.limit = (int)(DISP_W * p); break;
+      case 2: g_rc.mode = R_WIPE_RL; g_rc.limit = (int)(DISP_W * p); break;
+      case 3: g_rc.mode = R_WIPE_TB; g_rc.limit = (int)(DISP_H * p); break;
+      case 4: // the circle must cover the corners before the end, or they pop in with the final draw
+        g_rc.mode = R_IRIS;
+        g_rc.radius = maxR * p / 0.85f;
+        if (g_rc.radius >= maxR) { // fully open already: skip straight to the final full draw
+          g_rc.mode = R_FULL;
+          renderLastJpeg();
+          return;
+        }
+        break;
+      default: g_rc.mode = R_FADE; g_rc.t256 = (int)(256 * p); break;
+    }
+    renderLastJpeg();
+  }
+}
+
+void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t durationMs) {
+  if (!g_lastJpeg || len == 0 || len > LAST_JPEG_MAX) {
+    display_show_error("Picture too big");
+    return;
+  }
+  display_new_picture(); // random tint: a new colour per picture
+  memcpy(g_lastJpeg, buf, len);
+  g_lastJpegLen = len;
+  g_lastGray = false;
+  if (g_tintMode && jpeg.openRAM(g_lastJpeg, len, jpegGrayCheckCallback)) {
+    g_grayBad = false;
+    jpeg.setPixelType(RGB565_BIG_ENDIAN);
+    jpeg.decode(0, 0, 0);
+    jpeg.close();
+    g_lastGray = !g_grayBad;
+  }
+  if (!jpeg.openRAM(g_lastJpeg, len, jpegDrawCallbackCyd)) {
+    display_show_error("JPEG decode failed");
+    g_lastJpegLen = 0;
+    return;
+  }
+  jpeg.close();
+  cydReveal(effect, durationMs);
+}
+#else
 // If the tint is on and the decoded picture is grayscale (every pixel has
 // R~=G~=B, which is what the marquee app's black-and-white library images are),
 // recolour it by brightness like the legacy pictures. Real colour art is left alone.
 static void tintGrayFrame() {
   if (!g_tintMode) return;
-  for (int i = 0; i < DISP_W * DISP_H; i++) {
-    uint16_t c = swap16(g_frame[i]);
-    int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
-    if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) return;
+  for (int y = 0; y < DISP_H; y++) {
+    const uint16_t *row = frameRow(y);
+    for (int x = 0; x < DISP_W; x++) {
+      uint16_t c = swap16(row[x]);
+      int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
+      if (abs(r - g) > 20 || abs(g - b) > 20 || abs(r - b) > 20) return;
+    }
   }
   for (int y = 0; y < DISP_H; y++) {
     for (int x = 0; x < DISP_W; x++) {
-      uint16_t c = swap16(g_frame[y * DISP_W + x]);
+      uint16_t c = swap16(frameRow(y)[x]);
       int r = (c >> 11) << 3, g = ((c >> 5) & 0x3F) << 2, b = (c & 0x1F) << 3;
       uint8_t gray = (uint8_t)((r * 30 + g * 59 + b * 11) / 100);
-      g_frame[y * DISP_W + x] = swap16(tintedColor(gray, x, y, DISP_W, DISP_H));
+      frameRow(y)[x] = swap16(tintedColor(gray, x, y, DISP_W, DISP_H));
     }
   }
 }
 
 void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t durationMs) {
   display_new_picture(); // random tint: a new colour per picture
-  memset(g_frame, 0, sizeof(g_frame));
+  clearFrame();
   if (!jpeg.openRAM(const_cast<uint8_t *>(buf), len, jpegDrawCallback)) {
     display_show_error("JPEG decode failed");
     return;
@@ -560,6 +772,8 @@ void display_draw_jpeg(const uint8_t *buf, size_t len, uint8_t effect, uint16_t 
   transitionReveal(effect, durationMs);
 }
 
+#endif
+
 void display_draw_jpeg_transient(const uint8_t *buf, size_t len) {
   if (!jpeg.openRAM(const_cast<uint8_t *>(buf), len, jpegDrawCallbackTransient)) {
     display_show_error("JPEG decode failed");
@@ -574,6 +788,19 @@ void display_draw_jpeg_transient(const uint8_t *buf, size_t len) {
   jpeg.close();
 }
 
+#if defined(BOARD_CYD)
+void display_replay_jpeg(uint8_t effect, uint16_t durationMs) {
+  cydReveal(effect, durationMs); // re-decodes the stored picture; the tint colour stays as it was
+}
+
+void display_draw_jpeg_small() {
+  constexpr int16_t w = DISP_W / 2, h = DISP_H / 2;
+  gfx.fillScreenFast(0x0000);
+  g_rc.mode = R_FULL;
+  g_rc.tint = g_tintMode && g_lastGray;
+  renderLastJpeg(JPEG_SCALE_HALF, (DISP_W - w) / 2, (DISP_H - h) / 2);
+}
+#else
 void display_replay_jpeg(uint8_t effect, uint16_t durationMs) {
   // g_frame already holds the last-decoded CMDCORC frame - no redecode
   // needed. Matches the reference's own CMDSPIC, which also just re-runs
@@ -596,11 +823,12 @@ void display_draw_jpeg_small() {
     int16_t srcY = y * 2;
     for (int16_t x = 0; x < w; x++) {
       int16_t srcX = x * 2;
-      uint16_t c = swap16(g_frame[srcY * DISP_W + srcX]); // g_frame is byte-swapped, see its declaration comment
+      uint16_t c = swap16(frameRow(srcY)[srcX]); // the frame is byte-swapped, see its declaration comment
       gfx.drawPixel(dstX + x, dstY + y, c);
     }
   }
 }
+#endif
 
 void display_show_bye() {
   gfx.fillScreenFast(0x0000);
@@ -717,9 +945,18 @@ void drawWifiQrScreen() {
   int ox = DISP_CX - qrPx / 2;
   int oy = DISP_CY - qrPx / 2;
 
-  memset(g_frame, 0, sizeof(g_frame));
+#if defined(BOARD_CYD)
+  // No frame buffer here: build and push one row at a time.
+  gfx.fillScreenFast(0x0000);
+  static uint16_t qrRow[DISP_W];
   for (int y = 0; y < qrPx; y++) {
-    uint16_t *row = &g_frame[(oy + y) * DISP_W + ox];
+    for (int x = 0; x < qrPx; x++) qrRow[x] = qrcode_getModule(&qrcode, x / scale, y / scale) ? 0xFFFF : 0x0000;
+    gfx.pushRect(ox, oy + y, qrPx, 1, qrRow);
+  }
+#else
+  clearFrame();
+  for (int y = 0; y < qrPx; y++) {
+    uint16_t *row = &frameRow(oy + y)[ox];
     for (int x = 0; x < qrPx; x++) {
       // 0x0000/0xFFFF are byte-swap invariant, so no swap16() needed here
       // unlike g_frame's usual JPEG-decoded content.
@@ -728,7 +965,8 @@ void drawWifiQrScreen() {
   }
 
   gfx.fillScreenFast(0x0000);
-  gfx.pushRect(ox, oy, qrPx, qrPx, &g_frame[oy * DISP_W + ox], DISP_W);
+  pushFrame(ox, oy, qrPx, qrPx);
+#endif
 
   gfx.setTextColor(0xFFFF);
   gfx.setTextSize(1);
@@ -856,8 +1094,11 @@ void display_self_test() {
       // Also exercise the exact pushRect() path used for real JPEG frames
       // (not just fillScreenFast's per-row loop), same buffer size as a
       // full 240x240 frame.
-      for (int p = 0; p < DISP_W * DISP_H; p++) g_frame[p] = colors[i];
-      gfx.pushRect(0, 0, DISP_W, DISP_H, g_frame);
+#if !defined(BOARD_CYD)
+      for (int y = 0; y < DISP_H; y++)
+        for (int x = 0; x < DISP_W; x++) frameRow(y)[x] = colors[i];
+      pushFrame(0, 0, DISP_W, DISP_H);
+#endif
       delay(600);
     }
     cycle++;

@@ -148,7 +148,7 @@ void enterConnected() {
   // picker wants to show. Same port as "ws".
   MDNS.addService("tty2oled", "tcp", 81);
   MDNS.addServiceTxt("tty2oled", "tcp", "ver", FW_VERSION);
-  MDNS.addServiceTxt("tty2oled", "tcp", "hw", "HWGC9A01C");
+  MDNS.addServiceTxt("tty2oled", "tcp", "hw", HW_ID);
 
   portal.begin(&configStore, false);
   mqttConfigStore.begin();
@@ -184,6 +184,21 @@ void wifi_manager_init() {
   WiFi.onEvent(onWifiEvent);
   configStore.begin();
   deviceName = buildDeviceName();
+#if defined(USE_DEV_WIFI) && __has_include("wifi_dev.h")
+  // Development shortcut (see wifi_dev.h.example): a git-ignored header with your own WiFi,
+  // used while the device has no saved network. Held in memory only, never written to NVS.
+  // OPT-IN: it is only compiled with -DUSE_DEV_WIFI=1, never just because the header exists,
+  // so a release build made on a machine that has the header can not embed the credentials
+  // (tools/release.sh also checks the built images for them).
+#include "wifi_dev.h"
+#if defined(DEV_WIFI_SSID)
+  if (!configStore.cfg.configured && DEV_WIFI_SSID[0] != '\0') {
+    strlcpy(configStore.cfg.wifiSsid, DEV_WIFI_SSID, sizeof(configStore.cfg.wifiSsid));
+    strlcpy(configStore.cfg.wifiPass, DEV_WIFI_PASS, sizeof(configStore.cfg.wifiPass));
+    configStore.cfg.configured = true;
+  }
+#endif
+#endif
 
   if (!configStore.cfg.configured || configStore.cfg.wifiSsid[0] == '\0') {
     enterApMode();

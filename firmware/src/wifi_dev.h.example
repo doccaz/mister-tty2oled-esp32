@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erico Mendonca
+
+// Development shortcut: copy this file to wifi_dev.h (git-ignored), fill in your own WiFi, and
+// build with
+//   PLATFORMIO_BUILD_FLAGS="-DUSE_DEV_WIFI=1" pio run -e <env> -t upload
+// It is opt-in: a plain build, and every release build, ignores this file. A device with no
+// saved network then joins this one at boot instead of opening its setup access point. The
+// values are kept in memory only (never written to the device's NVS), so a "forget WiFi" still
+// brings back the setup network.
+#pragma once
+#define DEV_WIFI_SSID ""
+#define DEV_WIFI_PASS ""

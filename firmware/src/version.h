@@ -11,3 +11,10 @@
 // 6px/char font) is wider than the display itself; this shorter form
 // still reads as a findable repo path.
 #define REPO_URL "doccaz/mister-tty2oled-esp32"
+
+// Hardware id answered to CMDHWINF, advertised over mDNS and sent on the WebSocket.
+#if defined(BOARD_CYD)
+#define HW_ID "HWCYD28"
+#else
+#define HW_ID "HWGC9A01C"
+#endif

@@ -10,6 +10,7 @@
 #include "mqtt_client.h"
 #include "device_settings.h"
 #include "diag.h"
+#include "auto_brightness.h"
 
 // TEMP: hardware stability self-test - cycles solid colors + text via the
 // same fillScreenFast()/pushRect() code paths used by real rendering,
@@ -19,6 +20,7 @@
 #define RUN_SELF_TEST false
 
 void setup() {
+  display_prealloc();
   crumb_init();
   // protocol_init() runs before display_init() so "ttyrdy;" goes out as
   // early as possible. Note: moving it earlier does NOT change how much
@@ -64,5 +66,6 @@ void loop() {
   ws_protocol_loop();
   crumb(C_LOOP_MQTT);
   mqtt_client_loop();
+  auto_brightness_loop();
 #endif
 }

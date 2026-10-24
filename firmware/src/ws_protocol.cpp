@@ -58,7 +58,7 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
     // going through protocol_dispatch_line(), which would write the
     // reply to Serial (the wrong transport for a WS client). Same
     // grammar as the serial reply, see protocol.cpp.
-    wsServer.sendTXT(num, "HWGC9A01C;" FW_VERSION ";");
+    wsServer.sendTXT(num, HW_ID ";" FW_VERSION ";");
     protocol_note_activity();
     return;
   }

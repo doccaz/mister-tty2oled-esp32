@@ -3,6 +3,8 @@
 
 #include "protocol.h"
 #include "display.h"
+#include "auto_brightness.h"
+#include "touch.h"
 #include "oled_status.h"
 #include "pins.h"
 #include "version.h"
@@ -340,6 +342,7 @@ void protocol_dispatch_line(const String &cmd) {
   } else if (cmd.startsWith("CMDAPD") || cmd.startsWith("CMDCOR")) {
     handleLegacyPicture(cmd, 6);
   } else if (cmd.startsWith("CMDCON")) {
+    auto_brightness_override(); // a live CMDCON wins over the light sensor until the next reboot
     display_set_contrast((uint8_t)splitField(cmd, 1).toInt());
   } else if (cmd.startsWith("CMDROT")) {
     display_set_rotation((uint8_t)splitField(cmd, 1).toInt());
@@ -363,7 +366,7 @@ void protocol_dispatch_line(const String &cmd) {
     // tty2oled.sh itself (confirmed against reference/), so an unknown id
     // is safe. No trailing newline: web/src/serial.ts tokenizes on ";",
     // not "\n", matching how ttyack;/ttyrdy; are already sent.
-    Serial.print("HWGC9A01C;");
+    Serial.print(HW_ID ";");
     Serial.print(FW_VERSION);
     Serial.print(";");
   } else if (cmd.startsWith("CMDCLST")) {
@@ -534,6 +537,15 @@ constexpr unsigned long FACTORY_RESET_HOLD_MS = 10000;
 constexpr unsigned long FACTORY_RESET_UI_DELAY_MS = 1500; // don't flash the countdown on ordinary short presses
 
 void protocol_button_check() {
+  // Touch (CYD) wakes the display like the BOOT button does, and flips the AP-mode QR on a
+  // press edge. It deliberately takes no part in the factory-reset hold below: a palm resting
+  // on the screen must never wipe the device.
+  bool touched = touch_pressed();
+  static bool wasTouched = false;
+  if (touched) lastWakeMs = millis();
+  if (touched && !wasTouched && wifi_manager_is_ap_mode()) display_toggle_wifi_qr();
+  wasTouched = touched;
+
   bool pressed = (digitalRead(PIN_WAKE_BTN) == LOW);
 
   // Level-based touch of lastWakeMs is unchanged and still idempotent
@@ -672,6 +684,7 @@ const char *protocol_idle_stage() {
 void protocol_apply_settings() {
   const DeviceSettings &c = settingsStore.cfg;
   display_set_contrast(c.contrast);
+  auto_brightness_apply_settings();
   display_set_orientation(c.rotation);
   display_set_tint(c.tintMode, c.tintColor1, c.tintColor2, c.tintDir);
   oled_status_set_idle_sec(c.oledIdleSec);
