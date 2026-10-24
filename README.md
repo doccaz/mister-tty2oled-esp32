@@ -61,9 +61,10 @@ Full-color art (the extended `CMDCORC` command, sent by hand):
 
 ## What's in this repo
 
-- **`firmware/`** — PlatformIO project for the ESP32-C3. Speaks the wire
+- **`firmware/`** — PlatformIO project for the ESP32-C3 boards and the
+  classic-ESP32 "Cheap Yellow Display". Speaks the wire
   protocol below (over USB serial *and* WiFi), decodes JPEGs on-device,
-  drives the GC9A01 panel with a small hand-rolled SPI driver (see [Why a
+  drives the GC9A01 (and, on the CYD, ILI9341) panel with a small hand-rolled SPI driver (see [Why a
   custom display driver](#why-a-custom-gc9a01-driver)), and optionally
   drives an onboard 0.42" status OLED.
 - **`web/`** — a Vite + TypeScript single-page app. Lets you browse a
@@ -83,6 +84,22 @@ Full-color art (the extended `CMDCORC` command, sent by hand):
 
 ## Hardware
 
+Four boards are supported. All of them speak the same protocol and show the same
+round-native 240×240 art (centred on the CYD's wider screen):
+
+| Board | MCU | Display | Also on board | Build env | `CMDHWINF` id |
+|---|---|---|---|---|---|
+| [ESP32-C3 Super Mini](#discrete-build-esp32-c3-super-mini--gc9a01-module), with OLED | ESP32-C3 (RISC-V, native USB-CDC) | separate GC9A01 1.28" round, 240×240 | 0.42" SSD1306 status OLED, BOOT button | `esp32c3` | `HWGC9A01C` |
+| ESP32-C3 Super Mini, no OLED | ESP32-C3 | separate GC9A01 module | BOOT button | `esp32c3_nooled` | `HWGC9A01C` |
+| [Sunton ESP32-2424S012C](#all-in-one-board-sunton-esp32-2424s012c) | ESP32-C3 | 1.28" round GC9A01, soldered on | BOOT button, USB-C | `esp32c3_2424s012` | `HWGC9A01C` |
+| [CYD ESP32-2432S028](#cheap-yellow-display-esp32-2432s028-cyd) | ESP32 (classic, dual core, CH340 USB-serial) | 2.8" 320×240 ILI9341 | resistive touch, light sensor, RGB LED, BOOT button, microSD slot (unused by the firmware) | `esp32_cyd` | `HWCYD28` |
+
+The Super Mini is sold both with and without the built-in 0.42" OLED — the
+firmware has a build-time flag for each variant (see
+[Build & flash](#build--flash-the-firmware)). The pin tables below are board-specific.
+
+### Reference build: Super Mini + GC9A01 module
+
 | Component | Detail |
 |---|---|
 | MCU | ESP32-C3-mini (RISC-V, WiFi, native USB-CDC) |
@@ -90,11 +107,7 @@ Full-color art (the extended `CMDCORC` command, sent by hand):
 | Status display (optional) | Onboard 0.42" SSD1306 OLED, 72×40 visible |
 | Wake button | Onboard "BOOT" pushbutton (GPIO9), repurposed at runtime |
 
-The same ESP32-C3-mini board is sold both with and without the built-in
-0.42" OLED — the firmware has a build-time flag for each variant (see
-[Build & flash](#build--flash-the-firmware)).
-
-### Pins
+### Pins (Super Mini + GC9A01 module)
 
 Edit `firmware/src/pins.h` to match your wiring — it's the single place
 all display pins are defined. Verified working on real hardware:
@@ -297,10 +310,12 @@ verifies the download, and swaps the binary in place. See
 No toolchain needed: the **[web flasher](https://doccaz.github.io/mister-tty2oled-esp32/)**
 writes the latest release to the board over USB (Chrome, Edge or Opera on
 a desktop; it uses WebSerial and [ESP Web Tools](https://esphome.github.io/esp-web-tools/)).
-First hold BOOT while plugging the board in (the browser can't reset the
+For the ESP32-C3 boards, first hold BOOT while plugging the board in (the browser can't reset the
 C3's native USB into download mode on its own; without this the page says
 "Failed to initialize"), then pick your board, press "Connect and install"
-and choose the serial port ("USB JTAG/serial debug unit"). Flashing
+and choose the serial port ("USB JTAG/serial debug unit"). The CYD needs no
+BOOT step (its CH340 USB-serial chip resets it by itself); choose the CH340 /
+"USB Serial" port. Flashing
 keeps your saved WiFi and MQTT settings (the page writes the firmware's four
 parts separately and never touches the settings area). The same site hosts the
 [marquee web app](https://doccaz.github.io/mister-tty2oled-esp32/app/)
@@ -318,6 +333,17 @@ esptool.py --chip esp32c3 --port /dev/ttyACM0 write_flash \
   0x10000 tty2oled-gc9a01-<ver>-<board>-app.bin   # board: esp32c3, esp32c3_nooled or esp32c3_2424s012
 ```
 
+The CYD is a different chip (classic ESP32), so it has its own parts, with the bootloader at
+`0x1000` instead of `0x0`:
+
+```bash
+esptool.py --chip esp32 --port /dev/ttyUSB0 write_flash \
+  0x1000  tty2oled-ili9341-<ver>-bootloader.bin \
+  0x8000  tty2oled-ili9341-<ver>-partitions.bin \
+  0xe000  tty2oled-ili9341-<ver>-boot_app0.bin \
+  0x10000 tty2oled-ili9341-<ver>-esp32_cyd-app.bin
+```
+
 The release also has one full-chip image per board (`…-<board>-full.bin` from
 0.4.3 on, `…-<board>.bin` before). Those are for a brand-new device only:
 they fill the space between partitions, so **writing one erases the saved
@@ -330,6 +356,7 @@ cd firmware
 pio run -e esp32c3 --target upload          # default: includes the onboard OLED
 pio run -e esp32c3_nooled --target upload   # board variant without the OLED
 pio run -e esp32c3_2424s012 --target upload # Sunton ESP32-2424S012C all-in-one board
+pio run -e esp32_cyd --target upload --upload-port /dev/ttyUSB0   # CYD ESP32-2432S028 (classic ESP32)
 pio device monitor          # 115200 baud, watch for "ttyrdy;"
 ```
 
@@ -338,7 +365,7 @@ extension). All dependencies (`JPEGDEC`, `Adafruit GFX Library`,
 `ricmoo/QRCode`, `links2004/WebSockets`, `knolleary/PubSubClient`, plus
 `U8g2` in the OLED variant) are pulled automatically via `platformio.ini`.
 
-Maintainers: `tools/release.sh` builds the three variants, verifies them, tags
+Maintainers: `tools/release.sh` builds the four variants, verifies them, tags
 the commit, publishes the GitHub release and updates the web flasher with the
 same images (see `CLAUDE.md`).
 
@@ -469,7 +496,7 @@ bare line with no `CMD` prefix (legacy plain-corename fallback).
 **Also implemented, new but original-protocol-shaped**: `CMDBYE`,
 `CMDTEST`, `CMDSHSYSHW` (cosmetic/diagnostic screens built from
 primitives, not the original's bitmap assets), `CMDHWINF` (replies
-`HWGC9A01C;<version>;`), `CMDCLST,<transition>,<color>` (solid-color
+`HW<id>;<version>;`: `HWGC9A01C`, or `HWCYD28` on the CYD), `CMDCLST,<transition>,<color>` (solid-color
 fill), `CMDSPIC[,<effect>]` (redisplay the last picture with a new
 transition), `CMDSSCP` (redisplay at reduced size), `CMDSETTIME,<epoch>`
 (sets the device clock; `tty2oled.sh` sends it at startup) and `CMDSHTIME`
@@ -553,7 +580,12 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
   completed" without flashing anything; since
   [venice1200/MiSTer_tty2oled#43](https://github.com/venice1200/MiSTer_tty2oled/pull/43)
   (merged 2026-10-13) it prints a short notice pointing here and exits.
-  Update firmware with PlatformIO, not the MiSTer installer.
+  Update firmware with PlatformIO, not the MiSTer installer. **The CYD answers
+  `HWCYD28`, which upstream's `installer.sh` does not know yet**, so with a CYD attached
+  by USB the installer would behave the way it used to for any unrecognised id (claim
+  success without flashing). Flash a CYD with the web flasher or PlatformIO, never with
+  the MiSTer installer; an upstream notice for `HWCYD28` would be the same one-line change
+  as the `HWGC9A01C` one.
 - **Zaparoo's NFC reader probe.** Zaparoo's PN532 auto-detect opens every
   `/dev/ttyACM*` (including this display) after each core change and
   writes a PN532 wake-up preamble (`0x55 0x55 0x00 …`). An older build drew
@@ -562,17 +594,22 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
   needs changing on the MiSTer. If you'd rather stop the probing at the
   source, give the `pn532` entry in `/media/fat/zaparoo/config.toml` an
   explicit reader path instead of relying on `auto_detect`.
-- **Device path matters.** This firmware uses the ESP32-C3's native
+- **Device path matters.** The ESP32-C3 boards use the chip's native
   USB-CDC peripheral, which Linux enumerates as `/dev/ttyACM*` — the
   original hardware used a CP2102/FTDI-style chip, enumerating as
-  `/dev/ttyUSB*`. Point `TTYDEV` at the right one in
+  `/dev/ttyUSB*` (so does the CYD, through its CH340). Point `TTYDEV` at the right one in
   `tty2oled-system.ini`, and make sure `USBMODE="yes"` (otherwise the
   daemon only ever sends plain core names, no picture data).
-- `CMDSETTIME`, sent once at daemon startup, isn't implemented — it
-  falls through to the bare-line fallback and briefly flashes as garbled
-  "core name" text before the first real core name overwrites it.
-  Cosmetic only. (`CMDSAVER` *is* implemented, see [Wire
-  protocol](#wire-protocol) above — this note used to say otherwise.)
+- `CMDSETTIME`, which `tty2oled.sh` sends once at daemon startup, **is
+  implemented** (since 2026-10-10; this note used to say it wasn't, and that it
+  flashed as garbled "core name" text). The MiSTer sends its local time as epoch
+  seconds already shifted by the timezone offset, and the firmware keeps it as
+  the clock for the idle clock screen (`CMDSHTIME`). It isn't saved across
+  power cycles (there's no battery-backed RTC), but the script re-sends it
+  at every start, and once the device has synced with an NTP server (the default
+  once it's on WiFi, see [Device settings](#device-settings-v050)) the NTP time wins
+  and `CMDSETTIME` is ignored. `CMDSAVER` is implemented too, see [Wire
+  protocol](#wire-protocol) above.
 
 ## Why a custom GC9A01 driver
 
