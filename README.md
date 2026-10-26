@@ -1,5 +1,4 @@
-# tty2oled-gc9a01
-
+# mister-tty2oled-esp32
 **[⚡ Flash the firmware](https://doccaz.github.io/mister-tty2oled-esp32/)** ·
 **[🎨 Open the marquee web app](https://doccaz.github.io/mister-tty2oled-esp32/app/)** ·
 [Releases](https://github.com/doccaz/mister-tty2oled-esp32/releases) ·
