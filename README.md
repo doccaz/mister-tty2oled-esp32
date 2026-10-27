@@ -598,16 +598,53 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
 
   **On the CYD this is required, not optional.** It is wired through a CH340
   on `/dev/ttyUSB*`, and a picture takes about 0.7 s at 115200 baud (a C3's
-  USB-CDC finishes in milliseconds). The probe can land in the middle of a
-  picture transfer and its bytes end up inside the picture: the logo comes out
-  sheared or wrapped sideways, worse in the lower rows, and the same file may
-  draw fine the next time. Seen on a MiSTer with the CYD plugged in and
-  `[readers] auto_detect = true`; the daemon was sending exactly 8192 correct
-  bytes. Fix: set `auto_detect = false` under `[readers]` in
-  `/media/fat/zaparoo/config.toml` (or configure only the readers you really use)
-  and restart Zaparoo (`/media/fat/Scripts/zaparoo.sh -service restart`).
-  Pictures were clean afterwards. Setting it to false disables NFC
-  auto-detection, so only do it if no PN532 reader is plugged into that MiSTer.
+  USB-CDC finishes in milliseconds). Zaparoo reacts to a core change within
+  about half a second, so its probe can land in the middle of a picture
+  transfer. The logo then comes out sheared or shifted sideways (a few extra
+  bytes pushed into the 8192-byte picture), and the same file may draw fine the
+  next time. Seen on a MiSTer with `[readers] auto_detect = true`, with and
+  without an NFC reader plugged in; the daemon was sending exactly 8192 correct
+  bytes. The inserted bytes were not captured; the cause rests on the timing
+  (Zaparoo's log shows a PN532 probe of the display's port inside the transfer
+  window) and on the fix below, which made every picture clean.
+
+  Fix: turn auto-detection off and connect the reader explicitly, so Zaparoo
+  never opens the display's port. In `/media/fat/zaparoo/config.toml`:
+
+  ```toml
+  [readers]
+  auto_detect = false
+
+  [[readers.connect]]
+  driver = 'pn532uart'
+  path = '/dev/serial/by-path/platform-ffb40000.usb-usb-0:1.1:1.0-port0'
+  ```
+
+  then `/media/fat/Scripts/zaparoo.sh -service restart`. Verified on a real MiSTer
+  with the CYD and a PN532 reader both plugged in: the reader connected and
+  scanned a tag, Zaparoo's log showed no further probes of the display's port,
+  and 12 rapid core changes all drew clean. With no NFC reader at all,
+  `auto_detect = false` alone is enough. Zaparoo's docs have no per-port
+  exclusion, only the global and per-driver `auto_detect`, so an explicit entry
+  is the way to keep a reader and protect the display.
+- **Two USB-serial adapters: use `by-path`.** The CYD and many NFC readers are
+  both CH340 (`1a86`) devices. They get `/dev/ttyUSB0`/`ttyUSB1` in whatever
+  order they enumerate, so a replug or reboot can swap them, and then the stock
+  daemon (`TTYDEV="/dev/ttyUSB0"`) sends pictures to the reader. A replugged port
+  also loses the `stty` settings the daemon applied once at start-up (back to
+  9600 baud) until the daemon restarts. `/dev/serial/by-id` can't help (identical
+  ids, so only one link appears); `/dev/serial/by-path/platform-…-usb-0:1.2:1.0-port0`
+  is distinct per physical USB port. Set `TTYDEV` in `tty2oled-system.ini` to it
+  (list yours with `ls -l /dev/serial/by-path`) and restart the daemon
+  (`/media/fat/tty2oled/S60tty2oled restart`); keep each device in the same port.
+- Related Zaparoo issues: [#89 "Conflict with tty2oled"](https://github.com/ZaparooProject/zaparoo-core/issues/89)
+  (closed; a maintainer said the cause was identified, no confirmed fix in the
+  thread; the tty2oled author's workaround is in the
+  [tty2oled wiki](https://github.com/venice1200/MiSTer_tty2oled/wiki/Troubleshooting)
+  under "tapto recommendation") and
+  [#99 "Launching cores causes UART reader to disconnect"](https://github.com/ZaparooProject/zaparoo-core/issues/99)
+  (closed; also a tty2oled conflict). Zaparoo's reader options are documented at
+  [zaparoo.org/docs/core/config/readers](https://zaparoo.org/docs/core/config/readers/).
 - **Device path matters.** The ESP32-C3 boards use the chip's native
   USB-CDC peripheral, which Linux enumerates as `/dev/ttyACM*` — the
   original hardware used a CP2102/FTDI-style chip, enumerating as
