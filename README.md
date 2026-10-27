@@ -627,6 +627,13 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
   `auto_detect = false` alone is enough. Zaparoo's docs have no per-port
   exclusion, only the global and per-driver `auto_detect`, so an explicit entry
   is the way to keep a reader and protect the display.
+
+  **None of this applies over WiFi.** A display driven by the `t2o-wifi` daemon
+  (see "MiSTer daemon over WiFi") gets its pictures over a WebSocket, not a
+  serial port, and the daemon never opens a `/dev/tty*` device, so there is
+  nothing for Zaparoo's probe to interfere with. This follows from how the
+  transport works; the corruption was only ever seen on the wired path, and I
+  didn't specifically test the WiFi path against an active probe.
 - **Two USB-serial adapters: use `by-path`.** The CYD and many NFC readers are
   both CH340 (`1a86`) devices. They get `/dev/ttyUSB0`/`ttyUSB1` in whatever
   order they enumerate, so a replug or reboot can swap them, and then the stock
