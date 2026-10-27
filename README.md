@@ -210,6 +210,8 @@ round-native art as the other displays, centred on the wider screen. Flash it fr
 resets it into download mode by itself, so there is no BOOT-button step), or build it with
 `pio run -e esp32_cyd --target upload --upload-port /dev/ttyUSB0`. Its hardware id is `HWCYD28`.
 
+[![The CYD in a 3D-printed case showing the MiSTer logo, driven by a real MiSTer](docs/cyd-photo.jpg)](docs/cyd-photo.jpg)
+
 What is different from the other boards:
 
 - **Touch wakes the display** (a firm tap; it's a resistive screen) and, in setup mode, shows the join QR.
@@ -593,6 +595,19 @@ This firmware was checked against the actual `tty2oled.sh` daemon script
   needs changing on the MiSTer. If you'd rather stop the probing at the
   source, give the `pn532` entry in `/media/fat/zaparoo/config.toml` an
   explicit reader path instead of relying on `auto_detect`.
+
+  **On the CYD this is required, not optional.** It is wired through a CH340
+  on `/dev/ttyUSB*`, and a picture takes about 0.7 s at 115200 baud (a C3's
+  USB-CDC finishes in milliseconds). The probe can land in the middle of a
+  picture transfer and its bytes end up inside the picture: the logo comes out
+  sheared or wrapped sideways, worse in the lower rows, and the same file may
+  draw fine the next time. Seen on a MiSTer with the CYD plugged in and
+  `[readers] auto_detect = true`; the daemon was sending exactly 8192 correct
+  bytes. Fix: set `auto_detect = false` under `[readers]` in
+  `/media/fat/zaparoo/config.toml` (or configure only the readers you really use)
+  and restart Zaparoo (`/media/fat/Scripts/zaparoo.sh -service restart`).
+  Pictures were clean afterwards. Setting it to false disables NFC
+  auto-detection, so only do it if no PN532 reader is plugged into that MiSTer.
 - **Device path matters.** The ESP32-C3 boards use the chip's native
   USB-CDC peripheral, which Linux enumerates as `/dev/ttyACM*` — the
   original hardware used a CP2102/FTDI-style chip, enumerating as
