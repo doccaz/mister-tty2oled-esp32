@@ -214,6 +214,9 @@ resets it into download mode by itself, so there is no BOOT-button step), or bui
 
 What is different from the other boards:
 
+- **Transfer LED** (on by default; checkbox on `/settings`): the RGB LED is solid blue while a picture is being
+  received, flashes green once when it arrives and cyan twice if the transfer failed. Serial, WiFi and MQTT
+  transfers all use it. Red is never used: GPIO4 is shared with the panel reset.
 - **Touch wakes the display** (a firm tap; it's a resistive screen) and, in setup mode, shows the join QR.
   The BOOT button works too. Touch cannot trigger the 10-second factory reset.
 - **Auto brightness:** on the device's `/settings` page, tick "Follow the room light" to let the light sensor set the

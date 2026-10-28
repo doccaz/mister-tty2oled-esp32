@@ -4,6 +4,7 @@
 #include "protocol.h"
 #include "display.h"
 #include "auto_brightness.h"
+#include "led_status.h"
 #include "touch.h"
 #include "oled_status.h"
 #include "pins.h"
@@ -236,7 +237,9 @@ void handleLegacyPicture(const String &cmd, int prefixLen) {
   }
 
   oled_status_suspend();
+  led_transfer_begin();
   size_t n = readFixed(legacyBuf, LEGACY_BUF_SIZE);
+  led_transfer_end(n == 2048 || n == 8192);
   oled_status_resume();
   if (n == 2048 || n == 8192) display_new_picture(); // new art: pick this picture's tint
   if (n == 2048) {
@@ -273,7 +276,9 @@ void handleColorPicture(const String &cmd) {
 
   DBG("calling readExact...\n");
   oled_status_suspend();
+  led_transfer_begin();
   bool ok = readExact(colorBuf, (size_t)length);
+  led_transfer_end(ok);
   oled_status_resume();
   DBG("readExact returned %d\n", ok);
   if (!ok) {
@@ -685,6 +690,7 @@ void protocol_apply_settings() {
   const DeviceSettings &c = settingsStore.cfg;
   display_set_contrast(c.contrast);
   auto_brightness_apply_settings();
+  led_status_set_enabled(c.transferLed);
   display_set_orientation(c.rotation);
   display_set_tint(c.tintMode, c.tintColor1, c.tintColor2, c.tintDir);
   oled_status_set_idle_sec(c.oledIdleSec);
@@ -710,6 +716,7 @@ bool protocol_ws_xfer_begin(const String &name, uint8_t effect,
   wsXferDurationMs = durationMs;
   wsXferTotal = totalLen;
   wsXferReceived = 0;
+  led_transfer_begin();
   return true;
 }
 
@@ -729,6 +736,7 @@ bool protocol_ws_xfer_complete() {
 
 void protocol_ws_xfer_finish() {
   if (!wsXferActive) return;
+  led_transfer_end(true);
   actCorename = wsXferName;
   display_draw_jpeg(colorBuf, wsXferTotal, wsXferEffect, wsXferDurationMs);
   lastPictureKind = PictureKind::JPEG;
@@ -737,11 +745,13 @@ void protocol_ws_xfer_finish() {
 
 void protocol_ws_xfer_finish_transient() {
   if (!wsXferActive) return;
+  led_transfer_end(true);
   display_draw_jpeg_transient(colorBuf, wsXferTotal);
   wsXferActive = false;
 }
 
 void protocol_ws_xfer_abort() {
+  if (wsXferActive) led_transfer_end(false); // an abort after finish (wsXferActive already false) is not a failure
   wsXferActive = false;
 }
 

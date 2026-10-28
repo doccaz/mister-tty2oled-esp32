@@ -10,6 +10,7 @@
 
 #include "web_portal.h"
 #include "light_sensor.h"
+#include "led_status.h"
 #include "web_portal_common.h"
 #include "device_settings.h"
 #include "protocol.h"
@@ -207,6 +208,11 @@ void WebPortal::handleSettingsPart() {
           "<p class='muted'>With this on, brightness follows the light between the two limits; "
           "the slider above is used when it is off.</p>"));
   }
+  if (led_status_present()) {
+    out(F("<label><input type='checkbox' name='transferLed'"));
+    out(c.transferLed ? " checked" : "");
+    out(F("> Transfer LED (blue while a picture arrives, green when done, cyan on failure)</label>"));
+  }
   out(F("<label>Orientation</label><select name='rotation'><option value='0'"));
   out(c.rotation == 0 ? " selected" : "");
   out(F(">Normal</option><option value='1'"));
@@ -340,6 +346,7 @@ void WebPortal::handleSettingsSave() {
     c.autoMax = (uint8_t)clampArg(_server.arg("autoMax"), 0, 255, c.autoMax);
     if (c.autoMax < c.autoMin) c.autoMax = c.autoMin;
   }
+  if (led_status_present()) c.transferLed = _server.hasArg("transferLed"); // only on boards with the LED
   c.rotation = (uint8_t)clampArg(_server.arg("rotation"), 0, 3, c.rotation);
   c.clockIdleMin = clampArg(_server.arg("clockMin"), 0, 1440, c.clockIdleMin);
   c.blankMin = clampArg(_server.arg("blankMin"), 0, 1440, c.blankMin);

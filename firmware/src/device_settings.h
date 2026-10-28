@@ -25,6 +25,7 @@ struct DeviceSettings {
   bool autoBright;       // follow the room light (boards with a light sensor only)
   uint8_t autoMin;       // auto brightness range
   uint8_t autoMax;
+  bool transferLed;      // RGB LED shows picture transfers (boards with the LED only)
   uint8_t rotation;      // quarter turns: 0 normal, 1 = 90, 2 = 180, 3 = 270 degrees
 
   uint16_t clockIdleMin; // minutes idle before the clock replaces the picture (0 = never)
@@ -47,6 +48,7 @@ struct DeviceSettings {
     autoBright = false;
     autoMin = 16;
     autoMax = 255;
+    transferLed = true;
     rotation = 0;
     clockIdleMin = 0;
     blankMin = 0;
@@ -77,6 +79,7 @@ class DeviceSettingsStore {
     cfg.autoBright = _prefs.getBool("s_abr", cfg.autoBright);
     cfg.autoMin = _prefs.getUChar("s_amin", cfg.autoMin);
     cfg.autoMax = _prefs.getUChar("s_amax", cfg.autoMax);
+    cfg.transferLed = _prefs.getBool("s_led", cfg.transferLed);
     // "s_rot4" holds quarter turns 0-3. Older firmware stored only "s_rot" (0/1,
     // where 1 meant 180 degrees), so fall back to that and map 1 -> 2.
     if (_prefs.isKey("s_rot4")) cfg.rotation = _prefs.getUChar("s_rot4", 0) & 3;
@@ -99,6 +102,7 @@ class DeviceSettingsStore {
     _prefs.putBool("s_abr", cfg.autoBright);
     _prefs.putUChar("s_amin", cfg.autoMin);
     _prefs.putUChar("s_amax", cfg.autoMax);
+    _prefs.putBool("s_led", cfg.transferLed);
     _prefs.putUChar("s_rot4", cfg.rotation);
     _prefs.putUShort("s_clockMin", cfg.clockIdleMin);
     _prefs.putUShort("s_blankMin", cfg.blankMin);

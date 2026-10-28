@@ -476,6 +476,17 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   boards) and `ldr` (CYD). Verified on the real CYD: covering the sensor faded 250 -> 19 in ~8 s and uncovering faded back
   up in ~12 s, no flicker in the logged levels. The anchors came from three lighting conditions only; the middle of the
   curve (indoors with the lamp on vs off) is the part most worth re-tuning.
+- **Transfer LED (2026-10-27, CYD only).** `led_status.*` drives the active-low RGB LED (G=16, B=17; red is GPIO4 = panel RST,
+  never touched): solid blue while a picture arrives, one 150 ms green flash on success, a cyan double flash on failure, a 15 s
+  receive timeout counts as failure. Hooks: `handleLegacyPicture`/`handleColorPicture` and `protocol_ws_xfer_*` (WS and MQTT; the
+  abort hook is guarded by `wsXferActive` because MQTT aborts after finishing). `transferLed` setting (NVS `s_led`, default on) on
+  `/settings`. Verified on the real CYD over serial: blue/green on a good picture, blue/cyan-cyan on a truncated one. Not tested
+  over WiFi/MQTT. Note a serial read gives up ~1 s after the last byte, so a failure flash is short.
+- **Build on the current toolchain (2026-10-27).** `platform = espressif32` now resolves to Tasmota's Arduino-ESP32 3.3.8, which has
+  no `WiFiClientSecure.h` and no classic `mbedtls_sha1_*`. Fixed without pinning, so 2.x and 3.x both build: `lib/WiFiClientSecureShim/`
+  (inert stand-in; no wss:// is used), `ws_sha_shim.cpp` (own SHA-1 for WebSockets' `esp_sha`), `backlightBegin/Write()` in
+  `display.cpp` (ledc API differs) and an `esp_sntp_*` guard in `time_manager.cpp`. All four envs build; only the CYD was run on
+  hardware, and its WebSocket handshake (the SHA-1 shim) is NOT yet verified. Treat released-image claims above as for the old toolchain.
 - **Touch wake (2026-10-24, CYD only).** `touch.*` reads the XPT2046 pressure (Z1/Z2 commands, software SPI on the touch
   pins so it never shares the display's or the SD card's bus), polled every 25 ms and debounced to two hits in a row. Only
   "is the screen pressed" is used, not coordinates. Measured threshold: idle reads 0 (a stray 17), a resting fingertip

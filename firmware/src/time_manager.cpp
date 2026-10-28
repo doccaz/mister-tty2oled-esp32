@@ -30,7 +30,11 @@ void time_apply_settings() {
   tzset();
 
   if (!s.ntpEnabled) {
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+    if (esp_sntp_enabled()) esp_sntp_stop();
+#else
     if (sntp_enabled()) sntp_stop();
+#endif
     return;
   }
   sntp_set_time_sync_notification_cb(onSync);

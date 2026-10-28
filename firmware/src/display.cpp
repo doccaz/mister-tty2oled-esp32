@@ -47,10 +47,19 @@ String g_apSsid;
 String g_apIp;
 bool g_qrShown = false;
 
-// LEDC backlight PWM channel. Using the legacy ledcSetup/ledcAttachPin/
-// ledcWrite(channel,...) API (not the newer ledcAttach(pin,...) API) since
-// this targets arduino-esp32 core 2.0.x, which doesn't have the latter.
+// LEDC backlight PWM. Core 2.0.x uses ledcSetup/ledcAttachPin/ledcWrite(channel,...);
+// core 3.x replaced them with ledcAttach(pin,...)/ledcWrite(pin,...). Wrapped so both build.
 constexpr int LEDC_CHANNEL_BL = 0;
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+inline void backlightBegin() { ledcAttach(PIN_LCD_BL, 5000, 8); }
+inline void backlightWrite(uint32_t duty) { ledcWrite(PIN_LCD_BL, duty); }
+#else
+inline void backlightBegin() {
+  ledcSetup(LEDC_CHANNEL_BL, 5000, 8); // 5kHz, 8-bit duty
+  ledcAttachPin(PIN_LCD_BL, LEDC_CHANNEL_BL);
+}
+inline void backlightWrite(uint32_t duty) { ledcWrite(LEDC_CHANNEL_BL, duty); }
+#endif
 
 // Full-frame decode target for CMDCORC JPEGs, so a transition effect can
 // reveal it onto the glass in a pattern other than JPEG's natural
@@ -358,9 +367,8 @@ void display_init() {
   if (!g_lastJpeg) Serial.println("FATAL: no memory for the picture copy");
 #endif
   pinMode(PIN_LCD_BL, OUTPUT);
-  ledcSetup(LEDC_CHANNEL_BL, 5000, 8); // 5kHz, 8-bit duty
-  ledcAttachPin(PIN_LCD_BL, LEDC_CHANNEL_BL);
-  ledcWrite(LEDC_CHANNEL_BL, g_contrast);
+  backlightBegin();
+  backlightWrite(g_contrast);
 
   gfx.begin();
   gfx.fillScreenFast(0x0000);
@@ -418,24 +426,24 @@ void display_new_picture() {
 
 void display_set_contrast(uint8_t level) {
   g_contrast = level;
-  ledcWrite(LEDC_CHANNEL_BL, g_contrast);
+  backlightWrite(g_contrast);
 }
 
 uint8_t display_get_contrast() { return g_contrast; }
 
 void display_set_contrast_auto(uint8_t level) {
   g_contrast = level;
-  if (g_displayOn) ledcWrite(LEDC_CHANNEL_BL, g_contrast); // never relight a blanked screen
+  if (g_displayOn) backlightWrite(g_contrast); // never relight a blanked screen
 }
 
 void display_on() {
   g_displayOn = true;
-  ledcWrite(LEDC_CHANNEL_BL, g_contrast);
+  backlightWrite(g_contrast);
 }
 
 void display_off() {
   g_displayOn = false;
-  ledcWrite(LEDC_CHANNEL_BL, 0);
+  backlightWrite(0);
   // Backlight PWM alone is confirmed (on real hardware, 2026-08-13) to
   // have no visible effect on at least one GC9A01 module variant - almost
   // certainly BL wired straight to VCC rather than through a
