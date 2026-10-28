@@ -257,6 +257,8 @@ thing everywhere.
 
 ### Backlight PWM has no effect on at least one real GC9A01 module
 
+> **Root cause found 2026-10-27:** the module is the seven-pin `M128-240240-RGB-7-V1.0`, which has no BL pin at all (RST, CS, DC, SDA, SCL, GND, VCC; seen in the owner's photos of B610). Nothing is miswired; there is no backlight signal to drive. README documents it.
+
 Discovered 2026-08-13 while testing `CMDSAVER`: `CMDDOFF`/`CMDCON,0`
 (both drive the same `ledcWrite()` PWM call on `PIN_LCD_BL`) were
 confirmed on real hardware to have **zero visible effect**, even after a

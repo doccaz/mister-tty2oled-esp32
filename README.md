@@ -118,10 +118,18 @@ all display pins are defined. Verified working on real hardware:
 | CS | 7 |
 | DC | 1 |
 | RST | 10 |
-| BL (backlight, PWM) | 3 |
+| BL (backlight, PWM) | 3 (see the note below: the `M128-240240-RGB-7` module has no BL pin) |
 | OLED SDA | 5 (fixed on boards with the onboard OLED) |
 | OLED SCL | 6 (fixed on boards with the onboard OLED) |
 | Wake button | 9 |
+
+**No brightness control on this module.** The seven-pin `M128-240240-RGB-7-V1.0` GC9A01 module used in the
+discrete build exposes only RST, CS, DC, SDA, SCL, GND and VCC: it has no BL/BLK pin, so its backlight is
+permanently on and GPIO3 goes nowhere. The firmware still sets the PWM duty (`CMDCON` and the brightness setting
+are accepted and reported), but nothing on the screen changes. The screensaver is unaffected, because it blanks
+the picture itself as well. Modules that do break out a BL pin, and the Sunton and CYD boards, dim normally. If
+you want dimming on this module, the backlight supply on the board would have to be cut and switched through a
+small MOSFET from GPIO3 (not tried).
 
 Avoid the C3's strapping pins (GPIO2, 8, 9 — GPIO9 is deliberately used
 anyway for the wake button, safe post-boot) and whatever pins your
