@@ -7,7 +7,16 @@
 #include "version.h"
 #include <WebSocketsServer.h>
 
+// Opt-in diagnostics for transfer failures: build with PLATFORMIO_BUILD_FLAGS="-DWS_DIAG=1".
+// Prints to the serial port (the CYD's USB serial is also the picture channel, so never ship it on).
+#if defined(WS_DIAG)
+#define DIAG(...) Serial.printf("[ws] %lu ", millis()), Serial.printf(__VA_ARGS__)
+#else
+#define DIAG(...) ((void)0)
+#endif
+
 namespace {
+size_t g_diagRx = 0; // bytes of the current transfer received (diagnostics)
 
 WebSocketsServer wsServer(81);
 bool wsReady = false;
@@ -36,6 +45,8 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
   if (line.length() == 0) return;
 
   if (line.startsWith("CMDCORC")) {
+    g_diagRx = 0;
+    DIAG("CMDCORC begin %.60s heap=%u max=%u\n", line.c_str(), (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
     protocol_note_command(line);
     protocol_note_activity(); // a long picture transfer must keep the displays awake, not just its final ack
     String name = field(line, 1);
@@ -63,12 +74,15 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
     return;
   }
 
+  DIAG("text '%.40s' heap=%u max=%u\n", line.c_str(), (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
+  g_diagRx = 0;
   protocol_dispatch_line(line);
   protocol_note_activity();
   wsServer.sendTXT(num, "ttyack;");
 }
 
 void handleBinary(uint8_t num, uint8_t *payload, size_t length) {
+  DIAG("bin %u in_progress=%d total=%u\n", (unsigned)length, protocol_ws_xfer_in_progress(), (unsigned)(g_diagRx += length));
   if (!protocol_ws_xfer_in_progress()) return; // no transfer pending - malformed client, ignore
 
   // Same hazard as the serial picture path: an I2C sendBuffer() (~20ms)
@@ -98,7 +112,11 @@ void onWsEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length) {
     case WStype_BIN:
       handleBinary(num, payload, length);
       break;
+    case WStype_CONNECTED:
+      DIAG("client %u connected\n", num);
+      break;
     case WStype_DISCONNECTED:
+      DIAG("client %u disconnected in_progress=%d got=%u\n", num, protocol_ws_xfer_in_progress(), (unsigned)g_diagRx);
       // Don't leave a half-received transfer stuck waiting for chunks
       // that will never arrive from a client that's gone. Only one
       // transfer is ever in flight at a time (protocol_ws_xfer_begin()
