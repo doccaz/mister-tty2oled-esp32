@@ -410,8 +410,8 @@ connected to it. `http://<device>/status` shows the signal strength
 
 Once the device is on your network, `http://tty2oled-XXXX.local/settings` has a
 settings page: status (firmware, signal, time, free memory), brightness and
-orientation defaults, an **idle clock** (show the time after X minutes idle,
-optionally blank after a further Y minutes; any command or the BOOT button
+orientation defaults, an **idle clock** (on by default: the time replaces the picture after 15 minutes idle,
+once the time is known; set 0 to turn it off; optionally blank after a further Y minutes; any command or the BOOT button
 brings the picture back), the status-OLED idle blank, **NTP** time with a
 timezone list (or a custom POSIX TZ string), an optional admin password
 (user `admin`) and **tint for monochrome pictures**: the MiSTer's black-and-white

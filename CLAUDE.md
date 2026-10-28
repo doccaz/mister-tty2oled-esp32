@@ -1248,7 +1248,7 @@ still override live until the next reboot.
 
 - **Default brightness is 127** (2026-10-23; was 255, too bright on the Sunton board). Only a device
   that never saved a value (or a fresh flash) gets it; one that saved brightness on `/settings` keeps its own.
-- **Idle stages** (`protocol_saver_check()`): clock after X min idle, then blank
+- **Idle stages** (`protocol_saver_check()`): clock after X min idle (default 15 since 2026-10-27, all boards; only a device that never saved the settings page gets it, one that saved 0 keeps 0; the clock is skipped until the time is known), then blank
   after a further Y min (0 = never); any command or the BOOT button wakes. The
   clock redraws each minute and never paints over an MQTT notification.
 - **Time** (`time_manager.*`): NTP via `configTzTime`; `CMDSETTIME` is ignored

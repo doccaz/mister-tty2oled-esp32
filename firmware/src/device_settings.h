@@ -50,7 +50,7 @@ struct DeviceSettings {
     autoMax = 255;
     transferLed = true;
     rotation = 0;
-    clockIdleMin = 0;
+    clockIdleMin = 15; // idle clock after 15 min (only shown once the time is known); 0 = never
     blankMin = 0;
     oledIdleSec = 60;
     ntpEnabled = true;
