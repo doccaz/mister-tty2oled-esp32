@@ -489,6 +489,7 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   It now remembers the client that began the transfer (`g_xferOwner`) and only that client's disconnect aborts it; binary frames from
   other clients are ignored. Tested on the CYD: client A sent half a picture, client B connected and disconnected, A finished and got
   its ack. Not A/B-tested against the old behaviour. `-DWS_DIAG=1` (opt-in) prints transfer events to the serial port.
+- **0.7.0 was the first release built on the 3.x core** (Espressif 32 2026.5.50, Arduino-ESP32 3.3.8). `release.sh` needs PlatformIO's own Python (`~/.platformio/penv`) first on PATH for `esptool` (`rich_click`). The partition tables are byte-identical to 0.6.0's (NVS stays at 0x9000), so updating keeps saved settings. Flash-tested on the CYD, Sunton and Super Mini+OLED; `esp32c3_nooled` was built only.
 - **Build on the current toolchain (2026-10-27).** `platform = espressif32` now resolves to Tasmota's Arduino-ESP32 3.3.8, which has
   no `WiFiClientSecure.h` and no classic `mbedtls_sha1_*`. Fixed without pinning, so 2.x and 3.x both build: `lib/WiFiClientSecureShim/`
   (inert stand-in; no wss:// is used), `ws_sha_shim.cpp` (own SHA-1 for WebSockets' `esp_sha`), `backlightBegin/Write()` in

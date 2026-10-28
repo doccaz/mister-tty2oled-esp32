@@ -193,7 +193,7 @@ python3 -c "import json; d=json.load(open('${OUT}/t2o-wifi-db.json')); assert d[
   || die "the generated MiSTer database looks wrong"
 echo "   ok: MiSTer daemon database generates and parses"
 ( cd "${OUT}" && sha256sum ./*.bin t2o-wifi S60t2o-wifi t2o-wifi.ini t2o_wifi.sh | sed 's# \./# #' > SHA256SUMS )
-echo "   toolchain lines above should be: Espressif 32 (2024.6.0), framework 2.0.18 - if not, this isn't the tested build"
+echo "   toolchain lines above should be the platform/framework you flashed and tested (0.7.0 and later: Espressif 32 2026.5.50, Arduino-ESP32 3.3.8; 0.6.0 and earlier: 2024.6.0 / 2.0.18) - if not, this isn't the tested build"
 
 if [ "${DRY_RUN}" = 1 ]; then
   echo "== dry run: images are in ${OUT}; nothing tagged or published"
