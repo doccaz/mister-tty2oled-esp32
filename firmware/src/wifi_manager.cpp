@@ -2,6 +2,10 @@
 // Copyright (C) 2026 Erico Mendonca
 
 #include "wifi_manager.h"
+#if __has_include(<esp_mac.h>)
+#include <esp_mac.h> // IDF 5+ (core 3.x); on 2.x esp_read_mac is in esp_system.h
+#endif
+#include <esp_system.h>
 #include "wifi_config.h"
 #include "mqtt_config.h"
 #include "web_portal.h"
@@ -80,7 +84,9 @@ void onWifiEvent(arduino_event_id_t event, arduino_event_info_t info) {
 
 String buildDeviceName() {
   uint8_t mac[6];
-  WiFi.macAddress(mac);
+  // Not WiFi.macAddress(): on Arduino-ESP32 3.x it returns zeros until the WiFi driver is up,
+  // and this runs before that (every device became tty2oled-0000).
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
   char buf[24];
   snprintf(buf, sizeof(buf), "tty2oled-%02X%02X", mac[4], mac[5]);
   return String(buf);
