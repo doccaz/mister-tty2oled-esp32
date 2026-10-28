@@ -482,6 +482,11 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   abort hook is guarded by `wsXferActive` because MQTT aborts after finishing). `transferLed` setting (NVS `s_led`, default on) on
   `/settings`. Verified on the real CYD over serial: blue/green on a good picture, blue/cyan-cyan on a truncated one. Not tested
   over WiFi/MQTT. Note a serial read gives up ~1 s after the last byte, so a failure flash is short.
+- **WS transfer owner (2026-10-27).** `ws_protocol.cpp` used to abort the in-flight picture when ANY WebSocket client disconnected, so
+  the menu's "Send a test picture" (or a web app tab) coming and going could kill the daemon's transfer (a cyan flash, a lost picture).
+  It now remembers the client that began the transfer (`g_xferOwner`) and only that client's disconnect aborts it; binary frames from
+  other clients are ignored. Tested on the CYD: client A sent half a picture, client B connected and disconnected, A finished and got
+  its ack. Not A/B-tested against the old behaviour. `-DWS_DIAG=1` (opt-in) prints transfer events to the serial port.
 - **Build on the current toolchain (2026-10-27).** `platform = espressif32` now resolves to Tasmota's Arduino-ESP32 3.3.8, which has
   no `WiFiClientSecure.h` and no classic `mbedtls_sha1_*`. Fixed without pinning, so 2.x and 3.x both build: `lib/WiFiClientSecureShim/`
   (inert stand-in; no wss:// is used), `ws_sha_shim.cpp` (own SHA-1 for WebSockets' `esp_sha`), `backlightBegin/Write()` in

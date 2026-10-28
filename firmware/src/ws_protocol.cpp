@@ -17,6 +17,10 @@
 
 namespace {
 size_t g_diagRx = 0; // bytes of the current transfer received (diagnostics)
+// Client that began the transfer in flight, -1 when none. A disconnect of any OTHER client
+// (the menu's test sender, a web app tab) must not abort someone else's picture, and a
+// transfer owned by MQTT (never claimed here) is never aborted by a WebSocket disconnect.
+int g_xferOwner = -1;
 
 WebSocketsServer wsServer(81);
 bool wsReady = false;
@@ -57,6 +61,7 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
       wsServer.sendTXT(num, "ERR CMDCORC;");
       return;
     }
+    g_xferOwner = num;
     // No ttyack here - one is sent once the chunked binary transfer
     // completes (see handleBinary()), matching the serial path's "ack
     // after the whole picture is drawn" behavior.
@@ -83,7 +88,7 @@ void handleText(uint8_t num, uint8_t *payload, size_t length) {
 
 void handleBinary(uint8_t num, uint8_t *payload, size_t length) {
   DIAG("bin %u in_progress=%d total=%u\n", (unsigned)length, protocol_ws_xfer_in_progress(), (unsigned)(g_diagRx += length));
-  if (!protocol_ws_xfer_in_progress()) return; // no transfer pending - malformed client, ignore
+  if (!protocol_ws_xfer_in_progress() || num != g_xferOwner) return; // no transfer pending, or not this client's - malformed client, ignore
 
   // Same hazard as the serial picture path: an I2C sendBuffer() (~20ms)
   // can starve wsServer.loop()'s TCP servicing mid-transfer if it isn't
@@ -99,6 +104,7 @@ void handleBinary(uint8_t num, uint8_t *payload, size_t length) {
   }
   if (protocol_ws_xfer_complete()) {
     protocol_ws_xfer_finish();
+    g_xferOwner = -1;
     protocol_note_activity();
     wsServer.sendTXT(num, "ttyack;");
   }
@@ -118,11 +124,12 @@ void onWsEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length) {
     case WStype_DISCONNECTED:
       DIAG("client %u disconnected in_progress=%d got=%u\n", num, protocol_ws_xfer_in_progress(), (unsigned)g_diagRx);
       // Don't leave a half-received transfer stuck waiting for chunks
-      // that will never arrive from a client that's gone. Only one
-      // transfer is ever in flight at a time (protocol_ws_xfer_begin()
-      // rejects a second), so "any disconnect" is an adequate signal
-      // without tracking which client owns the pending transfer.
-      if (protocol_ws_xfer_in_progress()) protocol_ws_xfer_abort();
+      // that will never arrive from a client that's gone - but only when it
+      // is the client that owns the transfer (see g_xferOwner).
+      if (protocol_ws_xfer_in_progress() && num == g_xferOwner) {
+        protocol_ws_xfer_abort();
+        g_xferOwner = -1;
+      }
       break;
     default:
       break;
