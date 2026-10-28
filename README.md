@@ -5,7 +5,7 @@
 [Build from source](#build--flash-the-firmware)
 
 <p align="center">
-  <img src="docs/hw-gc9a01-connected.jpg" alt="The round display showing Connected and its network name" width="280" />
+  <img src="docs/cover.jpg" alt="Two round displays in 3D-printed cases and a Cheap Yellow Display in a yellow case, all showing the MiSTer logo" width="720" />
 </p>
 
 **Turn an ESP32 and a colour screen into a full-colour MiSTer marquee.** (An ESP32-C3 with a round GC9A01, the Sunton all-in-one, or the 2.8" "Cheap Yellow Display".)

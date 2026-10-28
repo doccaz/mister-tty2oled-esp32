@@ -98,6 +98,11 @@
       li { margin-bottom: 4px; }
       a { color: var(--accent); }
 
+      .cover {
+        display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover;
+        border-radius: 18px; margin: 0 0 14px;
+        box-shadow: 0 10px 34px rgba(12,18,32,0.28);
+      }
       .hero {
         position: relative;
         overflow: hidden;
@@ -128,7 +133,7 @@
       @media (max-width: 620px) {
         .hero { grid-template-columns: 1fr; padding: 22px; text-align: center; }
         .hero .badges { justify-content: center; }
-        .hero .shot { width: 200px; height: 200px; margin: 0 auto; order: -1; }
+        .hero .shot { display: none; } /* the cover banner above already shows the hardware */
         .hero h1 { font-size: 1.6rem; }
       }
       .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -146,6 +151,7 @@
   </head>
   <body>
     <main>
+      <img class="cover" src="img/cover.jpg" width="1280" height="640" alt="Two round displays in 3D-printed cases and a Cheap Yellow Display in a yellow case, all showing the MiSTer logo" />
       <header class="hero">
         <div>
           <h1>tty2oled<span>-esp32</span><br />web flasher</h1>

@@ -140,7 +140,7 @@ cp "${ROOT}/flasher/index.html" "${SITE}/index.html"
 sed -i "s/__FW_VERSION__/${VERSION}/g" "${SITE}/index.html"
 cp "${ROOT}/web/public/favicon.svg" "${SITE}/favicon.svg"
 mkdir -p "${SITE}/img"
-cp "${ROOT}/docs/hw-gc9a01-connected.jpg" "${ROOT}/docs/hw-supermini-oled.jpg" "${ROOT}/docs/case-photo.jpg" "${SITE}/img/"
+cp "${ROOT}/docs/hw-gc9a01-connected.jpg" "${ROOT}/docs/hw-supermini-oled.jpg" "${ROOT}/docs/case-photo.jpg" "${ROOT}/docs/cover.jpg" "${SITE}/img/"
 
 # ---- MiSTer daemon Downloader database --------------------------------------------------
 # Published at a stable URL (site root) so `update_all` and the daemon's own -update keep
