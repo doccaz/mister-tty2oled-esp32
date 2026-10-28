@@ -486,7 +486,7 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   no `WiFiClientSecure.h` and no classic `mbedtls_sha1_*`. Fixed without pinning, so 2.x and 3.x both build: `lib/WiFiClientSecureShim/`
   (inert stand-in; no wss:// is used), `ws_sha_shim.cpp` (own SHA-1 for WebSockets' `esp_sha`), `backlightBegin/Write()` in
   `display.cpp` (ledc API differs) and an `esp_sntp_*` guard in `time_manager.cpp`. All four envs build; only the CYD was run on
-  hardware, and its WebSocket handshake (the SHA-1 shim) is NOT yet verified. Treat released-image claims above as for the old toolchain.
+  hardware, and its WebSocket handshake is verified (accept key matches SHA-1, CMDHWINF reply, a CMDCORC picture acked, free heap ~152KB with WiFi up). The device name now comes from `esp_read_mac()` because `WiFi.macAddress()` is zeros before WiFi starts on core 3.x. Treat released-image claims above as for the old toolchain.
 - **Touch wake (2026-10-24, CYD only).** `touch.*` reads the XPT2046 pressure (Z1/Z2 commands, software SPI on the touch
   pins so it never shares the display's or the SD card's bus), polled every 25 ms and debounced to two hits in a row. Only
   "is the screen pressed" is used, not coordinates. Measured threshold: idle reads 0 (a stray 17), a resting fingertip
