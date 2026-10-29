@@ -10,7 +10,8 @@
 
 **Turn an ESP32 and a colour screen into a full-colour MiSTer marquee.** (An ESP32-C3 with a round GC9A01, the Sunton all-in-one, or the 2.8" "Cheap Yellow Display".)
 Flash it straight from the browser, no tools to install. USB or WiFi, full-colour
-art, and it works with the stock tty2oled.
+art, and it works with the stock tty2oled. Over WiFi, one MiSTer can drive up to
+three displays at the same time.
 
 An ESP32-C3 + GC9A01 (240×240 round SPI display) reimplementation of
 [venice1200/MiSTer_tty2oled](https://github.com/venice1200/MiSTer_tty2oled) —
@@ -298,7 +299,9 @@ openscad -o case/sunton_2424s012_stand.stl case/sunton_2424s012_stand.scad
 
 `mister/` holds `t2o-wifi`, a companion to the MiSTer's `tty2oled.sh` (it runs next to it, not instead of it) that sends the
 current core's picture to the display over WiFi, so no USB cable is needed. It handles both the
-community's legacy art packs (converted on the fly) and full-colour JPEGs. See
+community's legacy art packs (converted on the fly) and full-colour JPEGs. It can
+broadcast to up to three displays at once (list them comma-separated in `HOST`), each with
+its own settings, so a cabinet, a shelf and a desk can all follow the core you load. See
 [`mister/README.md`](mister/README.md) for building and installing it.
 
 **Keeping it updated.** The daemon is published as a
