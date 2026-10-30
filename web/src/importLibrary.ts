@@ -24,7 +24,7 @@ let packLibraryMissing = false;
 export const PACK_LIBRARY_MISSING_MESSAGE =
   "The community art pack isn't included in this copy of the app (those fan-made packs aren't redistributed). " +
   "Use \"Import folder\" to load a folder of your own (.gsc, .xbm, PNG or JPEG), or import a single image per core; " +
-  "to browse the bundled packs, run the app locally with the library built (see the README).";
+  "to browse the bundled packs, run the app locally with the library built (see https://github.com/doccaz/mister-tty2oled-esp32/blob/main/docs/web-app.md).";
 
 /** Called once the user has imported their own folder: there is a pack to browse after all. */
 export function markPackLibraryAvailable(): void {
