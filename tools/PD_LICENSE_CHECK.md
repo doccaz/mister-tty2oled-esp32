@@ -1,4 +1,4 @@
-# Commons licence re-check (2026-10-23)
+# Commons licence re-check (2026-10-29)
 
 Live check of every Commons source in `themes.json` (`tools/check_commons_licenses.py`).
 This reflects Commons' own tagging at that moment, not legal advice; trademark rights
