@@ -25,13 +25,10 @@ firmware untouched. Not built; the design notes:
 
 ## The public-domain art pack
 
-The tooling to publish a downloadable pack of colour marquees is built and rehearsed but
-nothing is published: a second, opt-in Downloader database installs it into
-`/media/fat/t2o-wifi/art-pd/` (never into your own `art/`), and the daemon already looks
-there after your own pictures and before the stock grayscale ones. It would contain only
-pictures whose source logo is tagged public domain on Wikimedia Commons (about 77 of the
-roughly 430 generated), with a bundled attributions file. What's missing is the decision to
-publish it.
+Published as `art-pd-1` (77 colour pictures, opt-in through its own Downloader database); see
+[Free colour art pack](mister-daemon.md#free-colour-art-pack). What's left is coverage: 28 cores have no
+public-domain source logo and keep their grayscale picture, and the one logo that is only
+CC BY-SA (Archimedes, for `ARCHIE`) is left out on purpose.
 
 ## CYD follow-ups
 

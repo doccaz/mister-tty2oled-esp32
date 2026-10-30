@@ -18,6 +18,7 @@ cheap ESP32 boards: an ESP32-C3 with a round GC9A01, the Sunton all-in-one, or t
 - **Full-colour art** with wipe, iris and fade transitions, built and previewed in a [browser app](docs/web-app.md).
 - **USB or WiFi.** One MiSTer can drive up to three displays at the same time over WiFi, plus MQTT notifications for Home Assistant and friends.
 - **Flash from the browser.** No tools to install; your WiFi settings survive updates.
+- **A free colour art pack** (77 logos from public-domain sources) that installs through the MiSTer Downloader: [how](docs/mister-daemon.md#free-colour-art-pack).
 - **3D-printable [cases](docs/case.md)** for the Sunton board.
 
 ## Get started

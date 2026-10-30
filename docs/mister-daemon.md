@@ -22,3 +22,36 @@ so it survives updates. Or update on demand without touching `downloader.ini`: r
 `t2o-wifi -update` (or the menu's **Check for updates**), which reads the same database,
 verifies the download, and swaps the binary in place. See
 [`mister/README.md`](../mister/README.md#updating) for details.
+
+## Free colour art pack
+
+The stock tty2oled library is grayscale. For about 77 cores there is also a ready-made **colour pack**
+you can install with the Downloader, opt-in and free to redistribute: every picture is rendered from a
+logo that Wikimedia Commons tags as public domain (the generator is in `tools/`, nothing from the
+fan-made packs is used). The pack covers the common systems (NES, SNES, MegaDrive, Game Boy line,
+Atari, Commodore, MSX, Spectrum and more) plus a few arcade families (Street Fighter, King of Fighters,
+Metal Slug, Mortal Kombat). Cores it doesn't cover keep their stock grayscale picture, which the display can
+tint (see [settings](setup.md)).
+
+Add this below the daemon's section in `/media/fat/downloader.ini`, then run `update_all` (or
+the Downloader) once:
+
+```ini
+[doccaz_mister_tty2oled_art_pd]
+db_url = https://doccaz.github.io/mister-tty2oled-esp32/t2o-wifi-art-db.json
+```
+
+The pictures land in `/media/fat/t2o-wifi/art-pd/` together with an `ATTRIBUTIONS.md` listing the
+Commons source of each one. They are installed there and never into `art/`, so the Downloader can't
+overwrite pictures of your own. The daemon (0.7.0 or later) picks art in this order, and the first match wins:
+
+1. your own pictures in `t2o-wifi/art/` (`<core>.jpg`, 240×240, up to 19,000 bytes)
+2. the stock tty2oled's priority folder
+3. the colour pack in `t2o-wifi/art-pd/`
+4. the stock grayscale pictures
+
+The daemon looks the picture up on every core change, so there is nothing to configure: load a core
+the pack has and it shows up in colour. Trademark rights in the logos stay
+with their owners, the same caveat as for the grayscale pictures. The licence re-check behind the pack is in
+[`tools/PD_LICENSE_CHECK.md`](../tools/PD_LICENSE_CHECK.md).
+
