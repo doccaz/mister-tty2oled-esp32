@@ -15,7 +15,8 @@ sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id
   MV and flip one mirror bit, so the picture came out mirrored, not rotated. On a non-square panel a quarter turn must
   clear MV (the panel then addresses as 240 wide x 320 tall) and move the 40px canvas offset from X to Y: now 90 = `0xC0`,
   270 = `0x00`, and `setRotation()` swaps `offX`/`offY` (members used by `setAddrWindow()`). Verified by eye on a second
-  CYD (`tty2oled-E7D4`): all four orientations readable, centred, not mirrored, 90 clockwise.
+  CYD (`tty2oled-E7D4`): all four orientations readable, centred, not mirrored, 90 clockwise. The Sunton (CD20, GC9A01) was
+  re-flashed with this build and checked the same way: all four orientations fine, 90 clockwise (its path is unchanged).
 - **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
   bars once. Existing art is shown as is; wide art would be a later, separate step.
 - **Memory is the constraint (measured, 2026-10-24).** The classic ESP32 has ~160KB static DRAM, no free heap
