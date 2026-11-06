@@ -54,7 +54,7 @@ void GC9A01Display::writeData(uint8_t data) {
 }
 
 void GC9A01Display::setAddrWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1) {
-  x0 += PANEL_OFF_X; x1 += PANEL_OFF_X; y0 += PANEL_OFF_Y; y1 += PANEL_OFF_Y;
+  x0 += offX; x1 += offX; y0 += offY; y1 += offY;
   writeCommand(0x2A); // column address set
   writeData(x0 >> 8);
   writeData(x0 & 0xFF);
@@ -208,12 +208,18 @@ void GC9A01Display::setRotation(uint8_t r) {
   digitalWrite(PIN_LCD_CS, LOW);
   writeCommand(0x36); // MADCTL
 #if defined(PANEL_ILI9341)
-  switch (rotation) { // landscape (MV), RGB order
+  // MY=0x80, MX=0x40, MV=0x20 (row/column exchange), RGB order. 0/180 are landscape (MV set);
+  // a quarter turn must clear MV, which makes the panel 240 wide x 320 tall, so the canvas
+  // offset moves to Y. Keeping MV and flipping one mirror bit (the old 0xE0/0x20) only
+  // mirrored the picture. Both quarter turns need both mirror bits equal (0x00 / 0xC0).
+  switch (rotation) {
     case 0: writeData(0x60); break;              // verified upright on the CYD (MX|MV)
-    case 1: writeData(0xE0); break;
-    case 2: writeData(0xA0); break;              // 180 degrees (both mirror bits flipped)
-    case 3: writeData(0x20); break;
+    case 1: writeData(0xC0); break;              // 90 degrees (MY|MX, portrait addressing)
+    case 2: writeData(0xA0); break;              // 180 degrees (MY|MV)
+    case 3: writeData(0x00); break;              // 270 degrees (portrait addressing)
   }
+  if (rotation & 1) { offX = PANEL_OFF_Y; offY = PANEL_OFF_X; }
+  else              { offX = PANEL_OFF_X; offY = PANEL_OFF_Y; }
 #else
   switch (rotation) {
     case 0: writeData(0x08); break;              // normal (BGR)

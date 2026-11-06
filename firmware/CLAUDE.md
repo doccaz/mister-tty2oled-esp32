@@ -11,6 +11,11 @@ pins at power-up; `display_init()` drives 4/16/17 high. The BOOT button is GPIO0
 settings screen with touch support is still to do. The light
 sensor is an analog photoresistor on GPIO34 (see "Auto brightness" below). HW id `HWCYD28` (`HW_ID` in `version.h`; the C3 boards still answer `HWGC9A01C`).
 
+- **Quarter-turn orientation fix (2026-11-06).** The settings page's 90/270 used to send MADCTL `0xE0`/`0x20`, which keep
+  MV and flip one mirror bit, so the picture came out mirrored, not rotated. On a non-square panel a quarter turn must
+  clear MV (the panel then addresses as 240 wide x 320 tall) and move the 40px canvas offset from X to Y: now 90 = `0xC0`,
+  270 = `0x00`, and `setRotation()` swaps `offX`/`offY` (members used by `setAddrWindow()`). Verified by eye on a second
+  CYD (`tty2oled-E7D4`): all four orientations readable, centred, not mirrored, 90 clockwise.
 - **Canvas:** still 240x240; `PANEL_OFF_X` (40) in `setAddrWindow()` centres it, `clearPanel()` blacks the side
   bars once. Existing art is shown as is; wide art would be a later, separate step.
 - **Memory is the constraint (measured, 2026-10-24).** The classic ESP32 has ~160KB static DRAM, no free heap

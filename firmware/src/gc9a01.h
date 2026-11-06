@@ -5,6 +5,7 @@
 
 #include <Adafruit_GFX.h>
 #include <Arduino.h>
+#include "pins.h"
 
 // Minimal direct-SPI GC9A01 driver, built on plain Arduino SPIClass.
 //
@@ -64,4 +65,9 @@ class GC9A01Display : public Adafruit_GFX {
   void writeData(uint8_t data);
   void setAddrWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
   void clearPanel();
+  // Where the 240x240 canvas sits in the panel's address space. On a non-square panel
+  // (the CYD's 320x240) a quarter turn swaps the panel's axes, so the centring offset
+  // moves from X to Y; setRotation() updates these.
+  int16_t offX = PANEL_OFF_X;
+  int16_t offY = PANEL_OFF_Y;
 };
